@@ -311,6 +311,17 @@
     </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/app.js') }}?v=11" defer></script>
+<script src="{{ url_for('static', filename='js/app.js') }}?v=99" defer></script>
+
+<script>
+    window.addEventListener("load", function () {
+        const moodEl = document.getElementById("alinaMoodText");
+        if (moodEl) {
+            moodEl.textContent = "DEPLOY TEST 99 ✅";
+            moodEl.style.color = "#16a34a";
+            moodEl.style.fontWeight = "800";
+        }
+    });
+</script>
 </body>
 </html>
