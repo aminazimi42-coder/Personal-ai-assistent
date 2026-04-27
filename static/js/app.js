@@ -948,41 +948,43 @@ function getWeatherConditionText(code) {
 }
 // ==================== END WEATHER FUNCTIONS ====================
 
-// ==================== ALINA MOOD ====================
+// ==================== ALINA MOOD (FIXED) ====================
 function updateAlinaMood() {
     const moodEl = document.getElementById("alinaMoodText");
     if (!moodEl) return;
 
     let moodText = "";
 
-    // ⏰ TIME BASED MOOD
-    const hour = new Date().getHours();
-
-    if (hour >= 5 && hour < 12) {
-        moodText = "Good morning ☀️";
-    } else if (hour >= 12 && hour < 17) {
-        moodText = "Active & ready 💪";
-    } else if (hour >= 17 && hour < 21) {
-        moodText = "Relax mode 🌆";
-    } else {
-        moodText = "Sleepy 😴";
-    }
-
-    // 🌦 WEATHER BASED MOOD (override if available)
     const conditionTextEl = document.getElementById("weatherConditionText");
     const condition = conditionTextEl ? conditionTextEl.textContent.toLowerCase() : "";
 
-    if (condition.includes("rain")) {
-        moodText = "Rainy mood 🌧";
-    } else if (condition.includes("cloud")) {
-        moodText = "Calm & cloudy ☁️";
-    } else if (condition.includes("clear") || condition.includes("sun")) {
-        moodText = "Happy & sunny 😎";
+    if (condition && condition !== "—" && condition !== "unknown") {
+        if (condition.includes("rain")) {
+            moodText = "Rainy mood 🌧";
+        } else if (condition.includes("cloud")) {
+            moodText = "Calm & cloudy ☁️";
+        } else if (condition.includes("clear") || condition.includes("sun")) {
+            moodText = "Happy & sunny 😎";
+        } else {
+            moodText = "Weather mood 🌍";
+        }
+    } else {
+        const hour = new Date().getHours();
+
+        if (hour >= 5 && hour < 12) {
+            moodText = "Good morning ☀️";
+        } else if (hour >= 12 && hour < 17) {
+            moodText = "Active & ready 💪";
+        } else if (hour >= 17 && hour < 21) {
+            moodText = "Relax mode 🌆";
+        } else {
+            moodText = "Sleepy 😴";
+        }
     }
 
     moodEl.textContent = moodText;
 }
-// ==================== END ALINA MOOD ====================
+// ==================== END ALINA MOOD FIX ====================
 
 function setVoiceStatus(text) {
     if (voiceStatusText) {
