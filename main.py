@@ -53,6 +53,11 @@ def home():
     return render_template("index.html")
 
 
+@app.route("/frontend")
+def frontend_test():
+    return render_template("frontend/index.html")
+
+
 @app.route("/health")
 def health():
     return jsonify({
@@ -145,4 +150,4 @@ init_task_routes(app, get_connection)
 init_calendar_routes(app, get_connection)
 init_reminder_routes(app, get_connection)
 init_ai_routes(app, get_connection)
-init_user_routes(app, get_connection) 
+init_user_routes(app, get_connection)
