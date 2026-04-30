@@ -93,7 +93,6 @@
             width: 100%;
         }
 
-        /* تغییرات جدید */
         .alina-dance {
             animation: alinaDance 0.6s infinite;
         }
@@ -110,33 +109,31 @@
 <body>
 <div class="container">
 
-    <!-- LILA COMPANY -->
     <div style="text-align:center; font-size:22px; font-weight:bold; margin-bottom:10px;">
         LILA COMPANY
     </div>
 
-    <!-- ALINA Widget -->
     <div id="alinaWidget" style="text-align:center; margin-bottom:20px;">
         <div style="font-weight:bold; font-size:18px;">ALINA</div>
-        
+
         <div id="alinaMoodText" style="font-size:14px; color:#64748b; margin-top:4px;">
             Mood loading...
         </div>
 
         <div id="alinaWrapper" style="position:relative; display:inline-block; width:280px; height:110px;">
-            <img 
+            <img
                 id="alinaLeft"
                 src="{{ url_for('static', filename='IMG_9143.jpeg') }}?v=1"
                 style="width:80px; height:80px; object-fit:cover; border-radius:50%; position:absolute; left:100px; top:10px; opacity:0; transition:0.4s; z-index:1;"
             />
 
-            <img 
+            <img
                 id="alinaAvatar"
                 src="{{ url_for('static', filename='IMG_9142.jpeg') }}?v=1"
                 style="width:100px; height:100px; object-fit:cover; border-radius:50%; cursor:pointer; position:absolute; left:90px; top:0; z-index:3;"
             />
 
-            <img 
+            <img
                 id="alinaRight"
                 src="{{ url_for('static', filename='IMG_9144.jpeg') }}?v=1"
                 style="width:80px; height:80px; object-fit:cover; border-radius:50%; position:absolute; left:100px; top:10px; opacity:0; transition:0.4s; z-index:1;"
@@ -161,7 +158,6 @@
         <div id="smartGreetingSubText" class="greeting-subtitle">Your assistant is ready.</div>
     </div>
 
-    <!-- WEATHER WIDGET -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
         <h3>Weather</h3>
         <button id="refreshWeatherButton" type="button">Refresh Weather</button>
@@ -312,16 +308,5 @@
 </div>
 
 <script src="{{ url_for('static', filename='js/app.js') }}?v=99" defer></script>
-
-<script>
-    window.addEventListener("load", function () {
-        const moodEl = document.getElementById("alinaMoodText");
-        if (moodEl) {
-            moodEl.textContent = "DEPLOY TEST 99 ✅";
-            moodEl.style.color = "#16a34a";
-            moodEl.style.fontWeight = "800";
-        }
-    });
-</script>
 </body>
 </html>
