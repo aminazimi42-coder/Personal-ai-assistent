@@ -1,1 +1,105 @@
-<h1>Frontend OK</h1>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal AI Assistant</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f5f7fb;
+      color: #111827;
+    }
+
+    .app {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 32px;
+      margin: 0 0 12px;
+    }
+
+    p {
+      color: #6b7280;
+      line-height: 1.5;
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      border: none;
+      border-radius: 14px;
+      background: #111827;
+      color: white;
+      font-size: 18px;
+      margin-top: 12px;
+    }
+
+    .result {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #f3f4f6;
+      font-size: 15px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="card">
+      <h1>Personal AI Assistant</h1>
+      <p>
+        Mobile frontend test page connected to the Flask backend.
+      </p>
+
+      <button onclick="checkHealth()">Test Backend Health</button>
+      <button onclick="loadAppInfo()">Load App Info</button>
+
+      <div id="result" class="result">Result will appear here...</div>
+    </div>
+  </div>
+
+  <script>
+    async function checkHealth() {
+      const result = document.getElementById("result");
+      result.textContent = "Checking backend...";
+
+      try {
+        const response = await fetch("/health");
+        const data = await response.json();
+        result.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        result.textContent = "Error: " + error.message;
+      }
+    }
+
+    async function loadAppInfo() {
+      const result = document.getElementById("result");
+      result.textContent = "Loading app info...";
+
+      try {
+        const response = await fetch("/app-info");
+        const data = await response.json();
+        result.textContent = JSON.stringify(data, null, 2);
+      } catch (error) {
+        result.textContent = "Error: " + error.message;
+      }
+    }
+  </script>
+</body>
+</html>
