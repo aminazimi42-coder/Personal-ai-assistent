@@ -208,7 +208,7 @@ body {
 .app-content {
     flex: 1;
     overflow-y: auto;
-    padding-bottom: 80px;
+    padding-bottom: 96px;
 }
 
 @media (max-width: 768px) {
@@ -232,4 +232,48 @@ body {
     .task-actions button {
         width: 100%;
     }
+}
+
+.bottom-nav {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 1000;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(15, 23, 42, 0.12);
+    border-radius: 22px;
+    padding: 8px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.bottom-nav-item {
+    flex: 1;
+    width: auto;
+    min-width: 0;
+    margin: 0;
+    padding: 12px 8px;
+    border-radius: 16px;
+    background: transparent;
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+}
+
+.bottom-nav-item:hover {
+    background: #f1f5f9;
+    color: #0f172a;
+}
+
+.bottom-nav-item.active {
+    background: #111827;
+    color: #ffffff;
 }
