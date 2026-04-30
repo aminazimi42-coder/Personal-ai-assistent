@@ -53,11 +53,6 @@ def home():
     return render_template("index.html")
 
 
-@app.route("/frontend")
-def frontend_test():
-    return render_template("frontend/index.html")
-
-
 @app.route("/health")
 def health():
     return jsonify({
