@@ -108,202 +108,205 @@
 </head>
 <body>
 <div class="container">
+    <div class="app-content">
 
-    <div style="text-align:center; font-size:22px; font-weight:bold; margin-bottom:10px;">
-        LILA COMPANY
-    </div>
-
-    <div id="alinaWidget" style="text-align:center; margin-bottom:20px;">
-        <div style="font-weight:bold; font-size:18px;">ALINA</div>
-
-        <div id="alinaMoodText" style="font-size:14px; color:#64748b; margin-top:4px;">
-            Mood loading...
+        <div style="text-align:center; font-size:22px; font-weight:bold; margin-bottom:10px;">
+            LILA COMPANY
         </div>
 
-        <div id="alinaWrapper" style="position:relative; display:inline-block; width:280px; height:110px;">
-            <img
-                id="alinaLeft"
-                src="{{ url_for('static', filename='IMG_9143.jpeg') }}?v=1"
-                style="width:80px; height:80px; object-fit:cover; border-radius:50%; position:absolute; left:100px; top:10px; opacity:0; transition:0.4s; z-index:1;"
-            />
+        <div id="alinaWidget" style="text-align:center; margin-bottom:20px;">
+            <div style="font-weight:bold; font-size:18px;">ALINA</div>
 
-            <img
-                id="alinaAvatar"
-                src="{{ url_for('static', filename='IMG_9142.jpeg') }}?v=1"
-                style="width:100px; height:100px; object-fit:cover; border-radius:50%; cursor:pointer; position:absolute; left:90px; top:0; z-index:3;"
-            />
-
-            <img
-                id="alinaRight"
-                src="{{ url_for('static', filename='IMG_9144.jpeg') }}?v=1"
-                style="width:80px; height:80px; object-fit:cover; border-radius:50%; position:absolute; left:100px; top:10px; opacity:0; transition:0.4s; z-index:1;"
-            />
-        </div>
-    </div>
-
-    <div class="top-bar">
-        <div>
-            <h1>Personal AI Assistant</h1>
-            <p>Talk to your assistant and let it reply or create a task automatically.</p>
-        </div>
-
-        <div class="datetime-widget">
-            <div id="digitalTimeText" class="datetime-time">--:--</div>
-            <div id="digitalDateText" class="datetime-date">Loading date...</div>
-        </div>
-    </div>
-
-    <div class="greeting-widget">
-        <div id="smartGreetingText" class="greeting-title">Welcome back</div>
-        <div id="smartGreetingSubText" class="greeting-subtitle">Your assistant is ready.</div>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-        <h3>Weather</h3>
-        <button id="refreshWeatherButton" type="button">Refresh Weather</button>
-    </div>
-
-    <div class="task-item">
-        <strong>Status:</strong> <span id="weatherStatusText">Weather not loaded yet.</span><br>
-        <strong>City:</strong> <span id="weatherCityText">—</span><br>
-        <strong>Temperature:</strong> <span id="weatherTempText">—</span><br>
-        <strong>Condition:</strong> <span id="weatherConditionText">—</span><br>
-        <strong>Humidity:</strong> <span id="weatherHumidityText">—</span><br>
-        <strong>Wind:</strong> <span id="weatherWindText">—</span>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-        <h3>Account</h3>
-    </div>
-
-    <div class="task-item">
-        <label for="nameInput">Name / Username</label>
-        <input id="nameInput" type="text" placeholder="Enter your name">
-
-        <label for="emailInput" style="margin-top: 16px;">Email</label>
-        <input id="emailInput" type="email" placeholder="Enter your email">
-
-        <label for="passwordInput" style="margin-top: 16px;">Password</label>
-        <div class="password-field-wrapper">
-            <input id="passwordInput" type="password" placeholder="Enter your password">
-            <button id="togglePasswordButton" type="button" class="password-toggle-button" aria-label="Show password" title="Show password">👁</button>
-        </div>
-
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
-            <button id="signupButton" type="button">Sign Up</button>
-            <button id="loginButton" type="button">Log In</button>
-            <button id="logoutButton" type="button">Log Out</button>
-        </div>
-
-        <div id="authStatusText" style="margin-top:16px;">Not logged in</div>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-        <h3>Live Location</h3>
-        <button id="refreshLocationButton" type="button">Refresh Location</button>
-    </div>
-
-    <div class="task-item">
-        <strong>Status:</strong> <span id="locationStatusText">Location not loaded yet.</span><br>
-        <strong>Live:</strong> <span id="locationLiveText">Unknown</span><br>
-        <strong>Country:</strong> <span id="locationCountryText">Unknown</span><br>
-        <strong>City / Region:</strong> <span id="locationCityText">Unknown</span><br>
-        <strong>Latitude:</strong> <span id="locationLatitudeText">—</span><br>
-        <strong>Longitude:</strong> <span id="locationLongitudeText">—</span>
-    </div>
-
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-        <h3>Exchange Rates</h3>
-        <button id="refreshExchangeRatesButton" type="button">Refresh Rates</button>
-    </div>
-
-    <div class="task-item">
-        <strong>Status:</strong> <span id="exchangeRatesStatusText">Exchange rates not loaded yet.</span><br>
-        <strong>Base:</strong> <span id="exchangeRatesBaseText">USD</span><br>
-        <strong>USD → EUR:</strong> <span id="exchangeRateEurText">—</span><br>
-        <strong>USD → GBP:</strong> <span id="exchangeRateGbpText">—</span><br>
-        <strong>USD → CAD:</strong> <span id="exchangeRateCadText">—</span><br>
-        <strong>USD → TRY:</strong> <span id="exchangeRateTryText">—</span><br>
-        <strong>USD → AED:</strong> <span id="exchangeRateAedText">—</span><br>
-        <strong>Updated:</strong> <span id="exchangeRatesUpdatedText">—</span>
-
-        <div style="margin-top:16px;">
-            <label for="customCurrencyInput">Find currency</label>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
-                <input id="customCurrencyInput" type="text" placeholder="Country or code, e.g. Japan or JPY">
-                <button id="findCurrencyButton" type="button">Find</button>
+            <div id="alinaMoodText" style="font-size:14px; color:#64748b; margin-top:4px;">
+                Mood loading...
             </div>
-            <div style="margin-top:12px;">
-                <strong>Result:</strong> <span id="customCurrencyResultText">—</span>
+
+            <div id="alinaWrapper" style="position:relative; display:inline-block; width:280px; height:110px;">
+                <img
+                    id="alinaLeft"
+                    src="{{ url_for('static', filename='IMG_9143.jpeg') }}?v=1"
+                    style="width:80px; height:80px; object-fit:cover; border-radius:50%; position:absolute; left:100px; top:10px; opacity:0; transition:0.4s; z-index:1;"
+                />
+
+                <img
+                    id="alinaAvatar"
+                    src="{{ url_for('static', filename='IMG_9142.jpeg') }}?v=1"
+                    style="width:100px; height:100px; object-fit:cover; border-radius:50%; cursor:pointer; position:absolute; left:90px; top:0; z-index:3;"
+                />
+
+                <img
+                    id="alinaRight"
+                    src="{{ url_for('static', filename='IMG_9144.jpeg') }}?v=1"
+                    style="width:80px; height:80px; object-fit:cover; border-radius:50%; position:absolute; left:100px; top:10px; opacity:0; transition:0.4s; z-index:1;"
+                />
             </div>
         </div>
-    </div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-        <h3>Voice Input</h3>
-    </div>
+        <div class="top-bar">
+            <div>
+                <h1>Personal AI Assistant</h1>
+                <p>Talk to your assistant and let it reply or create a task automatically.</p>
+            </div>
 
-    <div class="task-item">
-        <div style="display:flex;gap:12px;flex-wrap:wrap;">
-            <button id="startVoiceButton" type="button">Start Voice</button>
-            <button id="stopVoiceButton" type="button">Stop Voice</button>
+            <div class="datetime-widget">
+                <div id="digitalTimeText" class="datetime-time">--:--</div>
+                <div id="digitalDateText" class="datetime-date">Loading date...</div>
+            </div>
         </div>
 
-        <div id="voiceStatusText" style="margin-top:16px;">Voice input is idle.</div>
-        <div id="voiceTranscriptBox" style="margin-top:16px;">No voice transcript yet.</div>
-    </div>
+        <div class="greeting-widget">
+            <div id="smartGreetingText" class="greeting-title">Welcome back</div>
+            <div id="smartGreetingSubText" class="greeting-subtitle">Your assistant is ready.</div>
+        </div>
 
-    <label for="messageInput">Your message</label>
-    <textarea id="messageInput"></textarea>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
+            <h3>Weather</h3>
+            <button id="refreshWeatherButton" type="button">Refresh Weather</button>
+        </div>
 
-    <label for="dueDateInput" style="margin-top: 16px;">Due date</label>
-    <input id="dueDateInput" type="date">
+        <div class="task-item">
+            <strong>Status:</strong> <span id="weatherStatusText">Weather not loaded yet.</span><br>
+            <strong>City:</strong> <span id="weatherCityText">—</span><br>
+            <strong>Temperature:</strong> <span id="weatherTempText">—</span><br>
+            <strong>Condition:</strong> <span id="weatherConditionText">—</span><br>
+            <strong>Humidity:</strong> <span id="weatherHumidityText">—</span><br>
+            <strong>Wind:</strong> <span id="weatherWindText">—</span>
+        </div>
 
-    <label for="dueTimeInput" style="margin-top: 16px;">Due time</label>
-    <input id="dueTimeInput" type="time">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
+            <h3>Account</h3>
+        </div>
 
-    <button id="sendButton">Send</button>
+        <div class="task-item">
+            <label for="nameInput">Name / Username</label>
+            <input id="nameInput" type="text" placeholder="Enter your name">
 
-    <div id="statusText">Ready</div>
+            <label for="emailInput" style="margin-top: 16px;">Email</label>
+            <input id="emailInput" type="email" placeholder="Enter your email">
 
-    <h3>Result</h3>
-    <div id="resultBox">No result yet.</div>
+            <label for="passwordInput" style="margin-top: 16px;">Password</label>
+            <div class="password-field-wrapper">
+                <input id="passwordInput" type="password" placeholder="Enter your password">
+                <button id="togglePasswordButton" type="button" class="password-toggle-button" aria-label="Show password" title="Show password">👁</button>
+            </div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-        <h3>Tasks List</h3>
-        <button id="refreshTasksButton">Refresh Tasks</button>
-    </div>
+            <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
+                <button id="signupButton" type="button">Sign Up</button>
+                <button id="loginButton" type="button">Log In</button>
+                <button id="logoutButton" type="button">Log Out</button>
+            </div>
 
-    <div id="tasksList" class="task-list">
-        <div class="loading">Loading tasks...</div>
-    </div>
+            <div id="authStatusText" style="margin-top:16px;">Not logged in</div>
+        </div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-        <h3>Appointments</h3>
-    </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <h3>Live Location</h3>
+            <button id="refreshLocationButton" type="button">Refresh Location</button>
+        </div>
 
-    <div id="appointmentsList" class="task-list">
-        <div class="loading">Loading appointments...</div>
-    </div>
+        <div class="task-item">
+            <strong>Status:</strong> <span id="locationStatusText">Location not loaded yet.</span><br>
+            <strong>Live:</strong> <span id="locationLiveText">Unknown</span><br>
+            <strong>Country:</strong> <span id="locationCountryText">Unknown</span><br>
+            <strong>City / Region:</strong> <span id="locationCityText">Unknown</span><br>
+            <strong>Latitude:</strong> <span id="locationLatitudeText">—</span><br>
+            <strong>Longitude:</strong> <span id="locationLongitudeText">—</span>
+        </div>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-        <h3>Reminders</h3>
-        <button id="refreshRemindersButton">Refresh</button>
-    </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <h3>Exchange Rates</h3>
+            <button id="refreshExchangeRatesButton" type="button">Refresh Rates</button>
+        </div>
 
-    <div id="remindersList" class="task-list">
-        <div class="loading">Loading reminders...</div>
-    </div>
+        <div class="task-item">
+            <strong>Status:</strong> <span id="exchangeRatesStatusText">Exchange rates not loaded yet.</span><br>
+            <strong>Base:</strong> <span id="exchangeRatesBaseText">USD</span><br>
+            <strong>USD → EUR:</strong> <span id="exchangeRateEurText">—</span><br>
+            <strong>USD → GBP:</strong> <span id="exchangeRateGbpText">—</span><br>
+            <strong>USD → CAD:</strong> <span id="exchangeRateCadText">—</span><br>
+            <strong>USD → TRY:</strong> <span id="exchangeRateTryText">—</span><br>
+            <strong>USD → AED:</strong> <span id="exchangeRateAedText">—</span><br>
+            <strong>Updated:</strong> <span id="exchangeRatesUpdatedText">—</span>
 
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-        <h3>About</h3>
-    </div>
+            <div style="margin-top:16px;">
+                <label for="customCurrencyInput">Find currency</label>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+                    <input id="customCurrencyInput" type="text" placeholder="Country or code, e.g. Japan or JPY">
+                    <button id="findCurrencyButton" type="button">Find</button>
+                </div>
+                <div style="margin-top:12px;">
+                    <strong>Result:</strong> <span id="customCurrencyResultText">—</span>
+                </div>
+            </div>
+        </div>
 
-    <div class="task-item">
-        <strong>App Name:</strong> Personal AI Assistant<br>
-        <strong>Version:</strong> 1.0.0<br>
-        <strong>Author:</strong> Amin Azimi<br>
-        <strong>Description:</strong> A smart productivity assistant for tasks, appointments, reminders, live location, exchange rates, voice input, and AI-powered help.
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <h3>Voice Input</h3>
+        </div>
+
+        <div class="task-item">
+            <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <button id="startVoiceButton" type="button">Start Voice</button>
+                <button id="stopVoiceButton" type="button">Stop Voice</button>
+            </div>
+
+            <div id="voiceStatusText" style="margin-top:16px;">Voice input is idle.</div>
+            <div id="voiceTranscriptBox" style="margin-top:16px;">No voice transcript yet.</div>
+        </div>
+
+        <label for="messageInput">Your message</label>
+        <textarea id="messageInput"></textarea>
+
+        <label for="dueDateInput" style="margin-top: 16px;">Due date</label>
+        <input id="dueDateInput" type="date">
+
+        <label for="dueTimeInput" style="margin-top: 16px;">Due time</label>
+        <input id="dueTimeInput" type="time">
+
+        <button id="sendButton">Send</button>
+
+        <div id="statusText">Ready</div>
+
+        <h3>Result</h3>
+        <div id="resultBox">No result yet.</div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
+            <h3>Tasks List</h3>
+            <button id="refreshTasksButton">Refresh Tasks</button>
+        </div>
+
+        <div id="tasksList" class="task-list">
+            <div class="loading">Loading tasks...</div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <h3>Appointments</h3>
+        </div>
+
+        <div id="appointmentsList" class="task-list">
+            <div class="loading">Loading appointments...</div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <h3>Reminders</h3>
+            <button id="refreshRemindersButton">Refresh</button>
+        </div>
+
+        <div id="remindersList" class="task-list">
+            <div class="loading">Loading reminders...</div>
+        </div>
+
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <h3>About</h3>
+        </div>
+
+        <div class="task-item">
+            <strong>App Name:</strong> Personal AI Assistant<br>
+            <strong>Version:</strong> 1.0.0<br>
+            <strong>Author:</strong> Amin Azimi<br>
+            <strong>Description:</strong> A smart productivity assistant for tasks, appointments, reminders, live location, exchange rates, voice input, and AI-powered help.
+        </div>
+
     </div>
 </div>
 
