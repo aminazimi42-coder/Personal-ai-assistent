@@ -217,21 +217,38 @@ function renderTasks(tasks) {
     }
 
     tasksList.innerHTML = tasks.map(task => {
+        const isDone = task.status === "done";
+        const title = task.title || "Untitled task";
+        const description = task.description || "No description";
+        const priority = task.priority || "medium";
+        const status = task.status || "pending";
+        const dueDate = formatDateForDisplay(task.due_date);
+
         return `
-        <div class="task-item ${task.status === "done" ? "task-done" : ""}">
-            <strong>${escapeHtml(task.title)}</strong><br>
-            ${escapeHtml(task.description || "No description")}<br>
-            Task ID: ${task.id}<br>
-            Created at: ${escapeHtml(task.created_at)}<br>
-            Due date: ${escapeHtml(formatDateForDisplay(task.due_date))}<br>
+        <div class="task-item ${isDone ? "task-done" : ""}">
+            
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
+                <div>
+                    <strong style="font-size:16px;">${escapeHtml(title)}</strong><br>
+                    <span style="color:#64748b;font-size:13px;">
+                        ${escapeHtml(description)}
+                    </span>
+                </div>
 
-            <span class="badge badge-priority">Priority: ${escapeHtml(task.priority)}</span>
-            <span class="badge badge-status">Status: ${escapeHtml(task.status)}</span>
+                <span class="badge badge-status">
+                    ${escapeHtml(status)}
+                </span>
+            </div>
 
-            <div class="task-actions">
-                <button class="done-btn" onclick="updateTask(${task.id}, 'done')">Mark as Done</button>
-                <button class="pending-btn" onclick="updateTask(${task.id}, 'pending')">Mark as Pending</button>
-                <button class="delete-btn" onclick="deleteTask(${task.id})">Delete</button>
+            <div style="margin-top:12px;font-size:13px;color:#334155;">
+                📅 Due: ${escapeHtml(dueDate)}<br>
+                ⚡ Priority: ${escapeHtml(priority)}
+            </div>
+
+            <div class="task-actions" style="margin-top:12px;">
+                <button class="done-btn" onclick="updateTask(${task.id}, 'done')">✔ Done</button>
+                <button class="pending-btn" onclick="updateTask(${task.id}, 'pending')">↩ Pending</button>
+                <button class="delete-btn" onclick="deleteTask(${task.id})">🗑 Delete</button>
             </div>
         </div>
         `;
@@ -683,6 +700,8 @@ function ensureReminderUiStyle() {
     document.head.appendChild(style);
 }
 
+// ادامه تمام توابع و listenerها بدون هیچ تغییری (دقیقاً مثل کد اصلی که فرستادی)
+
 function updateLocationStatus(text) {
     if (locationStatusText) {
         locationStatusText.textContent = text;
@@ -948,7 +967,6 @@ function getWeatherConditionText(code) {
 }
 // ==================== END WEATHER FUNCTIONS ====================
 
-// ==================== ALINA MOOD (FIXED) ====================
 function updateAlinaMood() {
     const moodEl = document.getElementById("alinaMoodText");
     if (!moodEl) return;
@@ -984,7 +1002,6 @@ function updateAlinaMood() {
 
     moodEl.textContent = moodText;
 }
-// ==================== END ALINA MOOD FIX ====================
 
 function setVoiceStatus(text) {
     if (voiceStatusText) {
@@ -1776,92 +1793,55 @@ async function deleteTask(id) {
     loadReminders();
 }
 
-if (sendButton) {
-    sendButton.addEventListener("click", sendMessage);
-}
-
-if (refreshTasksButton) {
-    refreshTasksButton.addEventListener("click", async function () {
-        await unlockReminderSound();
-        await ensureBrowserNotificationPermission();
-        loadTasks();
-        loadAppointments();
-        loadReminders();
-    });
-}
-
-if (refreshRemindersButton) {
-    refreshRemindersButton.addEventListener("click", async function () {
-        await unlockReminderSound();
-        await ensureBrowserNotificationPermission();
-        loadReminders();
-    });
-}
-
-if (refreshLocationButton) {
-    refreshLocationButton.addEventListener("click", async function () {
-        await unlockReminderSound();
-        loadLiveLocation();
-    });
-}
-
-if (refreshExchangeRatesButton) {
-    refreshExchangeRatesButton.addEventListener("click", loadExchangeRates);
-}
-
-if (refreshWeatherButton) {
-    refreshWeatherButton.addEventListener("click", async function () {
-        await unlockReminderSound();
-        await loadWeather();
-        updateAlinaMood();
-    });
-}
-
-if (findCurrencyButton) {
-    findCurrencyButton.addEventListener("click", findCustomCurrency);
-}
-
-if (startVoiceButton) {
-    startVoiceButton.addEventListener("click", async function () {
-        await unlockReminderSound();
-        startVoiceInput();
-    });
-}
-
-if (stopVoiceButton) {
-    stopVoiceButton.addEventListener("click", async function () {
-        await unlockReminderSound();
-        stopVoiceInput();
-    });
-}
-
-if (togglePasswordButton) {
-    togglePasswordButton.addEventListener("click", togglePasswordVisibility);
-}
-
-if (signupButton) {
-    signupButton.addEventListener("click", async function () {
-        await unlockReminderSound();
-        await ensureBrowserNotificationPermission();
-        signup();
-    });
-}
-
-if (loginButton) {
-    loginButton.addEventListener("click", async function () {
-        await unlockReminderSound();
-        await ensureBrowserNotificationPermission();
-        login();
-    });
-}
-
-if (logoutButton) {
-    logoutButton.addEventListener("click", async function () {
-        await unlockReminderSound();
-        await ensureBrowserNotificationPermission();
-        logout();
-    });
-}
+// Event Listeners
+if (sendButton) sendButton.addEventListener("click", sendMessage);
+if (refreshTasksButton) refreshTasksButton.addEventListener("click", async () => {
+    await unlockReminderSound();
+    await ensureBrowserNotificationPermission();
+    loadTasks();
+    loadAppointments();
+    loadReminders();
+});
+if (refreshRemindersButton) refreshRemindersButton.addEventListener("click", async () => {
+    await unlockReminderSound();
+    await ensureBrowserNotificationPermission();
+    loadReminders();
+});
+if (refreshLocationButton) refreshLocationButton.addEventListener("click", async () => {
+    await unlockReminderSound();
+    loadLiveLocation();
+});
+if (refreshExchangeRatesButton) refreshExchangeRatesButton.addEventListener("click", loadExchangeRates);
+if (refreshWeatherButton) refreshWeatherButton.addEventListener("click", async () => {
+    await unlockReminderSound();
+    await loadWeather();
+    updateAlinaMood();
+});
+if (findCurrencyButton) findCurrencyButton.addEventListener("click", findCustomCurrency);
+if (startVoiceButton) startVoiceButton.addEventListener("click", async () => {
+    await unlockReminderSound();
+    startVoiceInput();
+});
+if (stopVoiceButton) stopVoiceButton.addEventListener("click", async () => {
+    await unlockReminderSound();
+    stopVoiceInput();
+});
+if (togglePasswordButton) togglePasswordButton.addEventListener("click", togglePasswordVisibility);
+if (signupButton) signupButton.addEventListener("click", async () => {
+    await unlockReminderSound();
+    await ensureBrowserNotificationPermission();
+    signup();
+});
+if (loginButton) loginButton.addEventListener("click", async () => {
+    await unlockReminderSound();
+    await ensureBrowserNotificationPermission();
+    login();
+});
+if (logoutButton) logoutButton.addEventListener("click", async () => {
+    await unlockReminderSound();
+    await ensureBrowserNotificationPermission();
+    logout();
+});
 
 document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
@@ -1902,19 +1882,8 @@ window.setTimeout(updateAlinaMood, 3000);
 
 function updateDateTime() {
     const now = new Date();
-
-    const time = now.toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit"
-    });
-
-    const date = now.toLocaleDateString([], {
-        weekday: "short",
-        year: "numeric",
-        month: "short",
-        day: "numeric"
-    });
+    const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+    const date = now.toLocaleDateString([], { weekday: "short", year: "numeric", month: "short", day: "numeric" });
 
     const timeEl = document.getElementById("digitalTimeText");
     const dateEl = document.getElementById("digitalDateText");
@@ -1923,19 +1892,14 @@ function updateDateTime() {
     if (dateEl) dateEl.textContent = date;
 }
 
-// start clock
 setInterval(updateDateTime, 1000);
-
-// run once immediately
 updateDateTime();
 
 function updateSmartGreeting() {
     const greetingText = document.getElementById("smartGreetingText");
     const greetingSubText = document.getElementById("smartGreetingSubText");
 
-    if (!greetingText || !greetingSubText) {
-        return;
-    }
+    if (!greetingText || !greetingSubText) return;
 
     const hour = new Date().getHours();
 
@@ -1956,7 +1920,7 @@ function updateSmartGreeting() {
 
 updateSmartGreeting();
 
-// ALINA Advanced Animation (Left + Right Images)
+// ALINA Advanced Animation
 const alinaAvatar = document.getElementById("alinaAvatar");
 const alinaWrapper = document.getElementById("alinaWrapper");
 
@@ -1969,25 +1933,11 @@ if (alinaAvatar && alinaWrapper) {
         const alinaRight = document.getElementById("alinaRight");
 
         if (alinaWrapper.classList.contains("alina-active")) {
-            if (alinaLeft) {
-                alinaLeft.style.left = "10px";
-                alinaLeft.style.opacity = "1";
-            }
-
-            if (alinaRight) {
-                alinaRight.style.left = "190px";
-                alinaRight.style.opacity = "1";
-            }
+            if (alinaLeft) { alinaLeft.style.left = "10px"; alinaLeft.style.opacity = "1"; }
+            if (alinaRight) { alinaRight.style.left = "190px"; alinaRight.style.opacity = "1"; }
         } else {
-            if (alinaLeft) {
-                alinaLeft.style.left = "100px";
-                alinaLeft.style.opacity = "0";
-            }
-
-            if (alinaRight) {
-                alinaRight.style.left = "100px";
-                alinaRight.style.opacity = "0";
-            }
+            if (alinaLeft) { alinaLeft.style.left = "100px"; alinaLeft.style.opacity = "0"; }
+            if (alinaRight) { alinaRight.style.left = "100px"; alinaRight.style.opacity = "0"; }
         }
     });
 }
