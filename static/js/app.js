@@ -46,7 +46,6 @@ const customCurrencyInput = document.getElementById("customCurrencyInput");
 const findCurrencyButton = document.getElementById("findCurrencyButton");
 const customCurrencyResultText = document.getElementById("customCurrencyResultText");
 
-// === Weather Elements ===
 const refreshWeatherButton = document.getElementById("refreshWeatherButton");
 const weatherStatusText = document.getElementById("weatherStatusText");
 const weatherCityText = document.getElementById("weatherCityText");
@@ -226,7 +225,6 @@ function renderTasks(tasks) {
 
         return `
         <div class="task-item ${isDone ? "task-done" : ""}">
-            
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
                 <div>
                     <strong style="font-size:16px;">${escapeHtml(title)}</strong><br>
@@ -486,7 +484,7 @@ function isReminderTriggerable(dateValue) {
     const dueDate = parseReminderDate(dateValue);
 
     if (!dueDate) {
-        console.log("❌ invalid date:", dateValue);
+        console.log("Invalid date:", dateValue);
         return false;
     }
 
@@ -494,9 +492,9 @@ function isReminderTriggerable(dateValue) {
     const dueTime = dueDate.getTime();
     const differenceMs = dueTime - now;
 
-    console.log("⏱ now:", new Date(now).toLocaleTimeString());
-    console.log("⏰ due:", new Date(dueTime).toLocaleTimeString());
-    console.log("📉 diff(ms):", differenceMs);
+    console.log("Now:", new Date(now).toLocaleTimeString());
+    console.log("Due:", new Date(dueTime).toLocaleTimeString());
+    console.log("Difference in ms:", differenceMs);
 
     return differenceMs <= REMINDER_LOOKAHEAD_MS && differenceMs >= -REMINDER_OVERDUE_GRACE_MS;
 }
@@ -700,8 +698,6 @@ function ensureReminderUiStyle() {
     document.head.appendChild(style);
 }
 
-// ادامه تمام توابع و listenerها بدون هیچ تغییری (دقیقاً مثل کد اصلی که فرستادی)
-
 function updateLocationStatus(text) {
     if (locationStatusText) {
         locationStatusText.textContent = text;
@@ -869,7 +865,6 @@ async function loadLiveLocation() {
     );
 }
 
-// ==================== WEATHER FUNCTIONS ====================
 async function loadWeather() {
     if (!weatherStatusText) {
         return;
@@ -965,7 +960,6 @@ function getWeatherConditionText(code) {
 
     return weatherCodeMap[code] || "Unknown";
 }
-// ==================== END WEATHER FUNCTIONS ====================
 
 function updateAlinaMood() {
     const moodEl = document.getElementById("alinaMoodText");
@@ -1793,55 +1787,92 @@ async function deleteTask(id) {
     loadReminders();
 }
 
-// Event Listeners
-if (sendButton) sendButton.addEventListener("click", sendMessage);
-if (refreshTasksButton) refreshTasksButton.addEventListener("click", async () => {
-    await unlockReminderSound();
-    await ensureBrowserNotificationPermission();
-    loadTasks();
-    loadAppointments();
-    loadReminders();
-});
-if (refreshRemindersButton) refreshRemindersButton.addEventListener("click", async () => {
-    await unlockReminderSound();
-    await ensureBrowserNotificationPermission();
-    loadReminders();
-});
-if (refreshLocationButton) refreshLocationButton.addEventListener("click", async () => {
-    await unlockReminderSound();
-    loadLiveLocation();
-});
-if (refreshExchangeRatesButton) refreshExchangeRatesButton.addEventListener("click", loadExchangeRates);
-if (refreshWeatherButton) refreshWeatherButton.addEventListener("click", async () => {
-    await unlockReminderSound();
-    await loadWeather();
-    updateAlinaMood();
-});
-if (findCurrencyButton) findCurrencyButton.addEventListener("click", findCustomCurrency);
-if (startVoiceButton) startVoiceButton.addEventListener("click", async () => {
-    await unlockReminderSound();
-    startVoiceInput();
-});
-if (stopVoiceButton) stopVoiceButton.addEventListener("click", async () => {
-    await unlockReminderSound();
-    stopVoiceInput();
-});
-if (togglePasswordButton) togglePasswordButton.addEventListener("click", togglePasswordVisibility);
-if (signupButton) signupButton.addEventListener("click", async () => {
-    await unlockReminderSound();
-    await ensureBrowserNotificationPermission();
-    signup();
-});
-if (loginButton) loginButton.addEventListener("click", async () => {
-    await unlockReminderSound();
-    await ensureBrowserNotificationPermission();
-    login();
-});
-if (logoutButton) logoutButton.addEventListener("click", async () => {
-    await unlockReminderSound();
-    await ensureBrowserNotificationPermission();
-    logout();
-});
+if (sendButton) {
+    sendButton.addEventListener("click", sendMessage);
+}
+
+if (refreshTasksButton) {
+    refreshTasksButton.addEventListener("click", async function () {
+        await unlockReminderSound();
+        await ensureBrowserNotificationPermission();
+        loadTasks();
+        loadAppointments();
+        loadReminders();
+    });
+}
+
+if (refreshRemindersButton) {
+    refreshRemindersButton.addEventListener("click", async function () {
+        await unlockReminderSound();
+        await ensureBrowserNotificationPermission();
+        loadReminders();
+    });
+}
+
+if (refreshLocationButton) {
+    refreshLocationButton.addEventListener("click", async function () {
+        await unlockReminderSound();
+        loadLiveLocation();
+    });
+}
+
+if (refreshExchangeRatesButton) {
+    refreshExchangeRatesButton.addEventListener("click", loadExchangeRates);
+}
+
+if (refreshWeatherButton) {
+    refreshWeatherButton.addEventListener("click", async function () {
+        await unlockReminderSound();
+        await loadWeather();
+        updateAlinaMood();
+    });
+}
+
+if (findCurrencyButton) {
+    findCurrencyButton.addEventListener("click", findCustomCurrency);
+}
+
+if (startVoiceButton) {
+    startVoiceButton.addEventListener("click", async function () {
+        await unlockReminderSound();
+        startVoiceInput();
+    });
+}
+
+if (stopVoiceButton) {
+    stopVoiceButton.addEventListener("click", async function () {
+        await unlockReminderSound();
+        stopVoiceInput();
+    });
+}
+
+if (togglePasswordButton) {
+    togglePasswordButton.addEventListener("click", togglePasswordVisibility);
+}
+
+if (signupButton) {
+    signupButton.addEventListener("click", async function () {
+        await unlockReminderSound();
+        await ensureBrowserNotificationPermission();
+        signup();
+    });
+}
+
+if (loginButton) {
+    loginButton.addEventListener("click", async function () {
+        await unlockReminderSound();
+        await ensureBrowserNotificationPermission();
+        login();
+    });
+}
+
+if (logoutButton) {
+    logoutButton.addEventListener("click", async function () {
+        await unlockReminderSound();
+        await ensureBrowserNotificationPermission();
+        logout();
+    });
+}
 
 document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
@@ -1882,8 +1913,19 @@ window.setTimeout(updateAlinaMood, 3000);
 
 function updateDateTime() {
     const now = new Date();
-    const time = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-    const date = now.toLocaleDateString([], { weekday: "short", year: "numeric", month: "short", day: "numeric" });
+
+    const time = now.toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit"
+    });
+
+    const date = now.toLocaleDateString([], {
+        weekday: "short",
+        year: "numeric",
+        month: "short",
+        day: "numeric"
+    });
 
     const timeEl = document.getElementById("digitalTimeText");
     const dateEl = document.getElementById("digitalDateText");
@@ -1899,7 +1941,9 @@ function updateSmartGreeting() {
     const greetingText = document.getElementById("smartGreetingText");
     const greetingSubText = document.getElementById("smartGreetingSubText");
 
-    if (!greetingText || !greetingSubText) return;
+    if (!greetingText || !greetingSubText) {
+        return;
+    }
 
     const hour = new Date().getHours();
 
@@ -1920,7 +1964,6 @@ function updateSmartGreeting() {
 
 updateSmartGreeting();
 
-// ALINA Advanced Animation
 const alinaAvatar = document.getElementById("alinaAvatar");
 const alinaWrapper = document.getElementById("alinaWrapper");
 
@@ -1933,11 +1976,51 @@ if (alinaAvatar && alinaWrapper) {
         const alinaRight = document.getElementById("alinaRight");
 
         if (alinaWrapper.classList.contains("alina-active")) {
-            if (alinaLeft) { alinaLeft.style.left = "10px"; alinaLeft.style.opacity = "1"; }
-            if (alinaRight) { alinaRight.style.left = "190px"; alinaRight.style.opacity = "1"; }
+            if (alinaLeft) {
+                alinaLeft.style.left = "10px";
+                alinaLeft.style.opacity = "1";
+            }
+
+            if (alinaRight) {
+                alinaRight.style.left = "190px";
+                alinaRight.style.opacity = "1";
+            }
         } else {
-            if (alinaLeft) { alinaLeft.style.left = "100px"; alinaLeft.style.opacity = "0"; }
-            if (alinaRight) { alinaRight.style.left = "100px"; alinaRight.style.opacity = "0"; }
+            if (alinaLeft) {
+                alinaLeft.style.left = "100px";
+                alinaLeft.style.opacity = "0";
+            }
+
+            if (alinaRight) {
+                alinaRight.style.left = "100px";
+                alinaRight.style.opacity = "0";
+            }
         }
     });
 }
+
+function showAppTab(tabName) {
+    const tabButtons = document.querySelectorAll(".bottom-nav-item");
+    const tabSections = document.querySelectorAll("[data-tab-section]");
+
+    tabSections.forEach(section => {
+        section.classList.toggle("is-hidden", section.dataset.tabSection !== tabName);
+    });
+
+    tabButtons.forEach(button => {
+        button.classList.toggle("active", button.dataset.tab === tabName);
+    });
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+document.querySelectorAll(".bottom-nav-item").forEach(button => {
+    button.addEventListener("click", function () {
+        showAppTab(button.dataset.tab || "home");
+    });
+});
+
+showAppTab("home");
