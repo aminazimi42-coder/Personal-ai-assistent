@@ -15,139 +15,43 @@
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='CF271111-3A51-4CE1-AFB2-1589062C9903.png') }}?v=4">
     <link rel="apple-touch-icon-precomposed" href="{{ url_for('static', filename='CF271111-3A51-4CE1-AFB2-1589062C9903.png') }}?v=4">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
-    <style>
-        .app-tab-section {
-            display: block;
-        }
-
-        .app-tab-section.is-hidden {
-            display: none;
-        }
-
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            gap: 16px;
-        }
-
-        .datetime-widget {
-            text-align: right;
-            background: #f8fafc;
-            border: 1px solid rgba(15, 23, 42, 0.12);
-            border-radius: 14px;
-            padding: 10px 14px;
-            min-width: 130px;
-            color: #0f172a;
-        }
-
-        .datetime-time {
-            font-size: 22px;
-            font-weight: 800;
-            line-height: 1.1;
-        }
-
-        .datetime-date {
-            font-size: 13px;
-            color: #64748b;
-            margin-top: 4px;
-        }
-
-        .greeting-widget {
-            margin-top: 14px;
-            background: #f8fafc;
-            border: 1px solid rgba(15, 23, 42, 0.12);
-            border-radius: 16px;
-            padding: 14px 16px;
-            color: #0f172a;
-        }
-
-        .greeting-title {
-            font-size: 20px;
-            font-weight: 800;
-        }
-
-        .greeting-subtitle {
-            font-size: 14px;
-            color: #64748b;
-            margin-top: 4px;
-        }
-
-        .password-field-wrapper {
-            position: relative;
-            width: 100%;
-        }
-
-        .password-toggle-button {
-            position: absolute;
-            top: 50%;
-            right: 14px;
-            transform: translateY(-50%);
-            border: none;
-            background: transparent;
-            cursor: pointer;
-            font-size: 20px;
-            line-height: 1;
-            padding: 4px;
-            color: #0f172a;
-            z-index: 2;
-        }
-
-        .password-field-wrapper input {
-            padding-right: 52px;
-            box-sizing: border-box;
-            width: 100%;
-        }
-
-        .alina-dance {
-            animation: alinaDance 0.6s infinite;
-        }
-
-        @keyframes alinaDance {
-            0% { transform: rotate(0deg) scale(1); }
-            25% { transform: rotate(-10deg) scale(1.05); }
-            50% { transform: rotate(10deg) scale(1.1); }
-            75% { transform: rotate(-10deg) scale(1.05); }
-            100% { transform: rotate(0deg) scale(1); }
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=300">
 </head>
+
 <body>
 <div class="container">
     <div class="app-content">
 
         <section id="homeSection" class="app-tab-section" data-tab-section="home">
-            <div style="text-align:center; font-size:22px; font-weight:bold; margin-bottom:10px;">
-                LILA COMPANY
-            </div>
+            <div class="brand-block">
+                <div class="brand-title">LILA COMPANY</div>
 
-            <div id="alinaWidget" style="text-align:center; margin-bottom:20px;">
-                <div style="font-weight:bold; font-size:18px;">ALINA</div>
+                <div id="alinaWidget" class="alina-widget">
+                    <div class="alina-name">ALINA</div>
 
-                <div id="alinaMoodText" style="font-size:14px; color:#64748b; margin-top:4px;">
-                    Mood loading...
-                </div>
+                    <div id="alinaMoodText" class="alina-mood">
+                        Mood loading...
+                    </div>
 
-                <div id="alinaWrapper" style="position:relative; display:inline-block; width:280px; height:110px;">
-                    <img
-                        id="alinaLeft"
-                        src="{{ url_for('static', filename='IMG_9143.jpeg') }}?v=1"
-                        style="width:80px; height:80px; object-fit:cover; border-radius:50%; position:absolute; left:100px; top:10px; opacity:0; transition:0.4s; z-index:1;"
-                    />
+                    <div id="alinaWrapper" class="alina-wrapper">
+                        <img
+                            id="alinaLeft"
+                            class="alina-side alina-left"
+                            src="{{ url_for('static', filename='IMG_9143.jpeg') }}?v=1"
+                        >
 
-                    <img
-                        id="alinaAvatar"
-                        src="{{ url_for('static', filename='IMG_9142.jpeg') }}?v=1"
-                        style="width:100px; height:100px; object-fit:cover; border-radius:50%; cursor:pointer; position:absolute; left:90px; top:0; z-index:3;"
-                    />
+                        <img
+                            id="alinaAvatar"
+                            class="alina-avatar"
+                            src="{{ url_for('static', filename='IMG_9142.jpeg') }}?v=1"
+                        >
 
-                    <img
-                        id="alinaRight"
-                        src="{{ url_for('static', filename='IMG_9144.jpeg') }}?v=1"
-                        style="width:80px; height:80px; object-fit:cover; border-radius:50%; position:absolute; left:100px; top:10px; opacity:0; transition:0.4s; z-index:1;"
-                    />
+                        <img
+                            id="alinaRight"
+                            class="alina-side alina-right"
+                            src="{{ url_for('static', filename='IMG_9144.jpeg') }}?v=1"
+                        >
+                    </div>
                 </div>
             </div>
 
@@ -168,7 +72,7 @@
                 <div id="smartGreetingSubText" class="greeting-subtitle">Your assistant is ready.</div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
+            <div class="section-header">
                 <h3>Weather</h3>
                 <button id="refreshWeatherButton" type="button">Refresh Weather</button>
             </div>
@@ -182,7 +86,7 @@
                 <strong>Wind:</strong> <span id="weatherWindText">—</span>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <div class="section-header">
                 <h3>Live Location</h3>
                 <button id="refreshLocationButton" type="button">Refresh Location</button>
             </div>
@@ -196,7 +100,7 @@
                 <strong>Longitude:</strong> <span id="locationLongitudeText">—</span>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <div class="section-header">
                 <h3>Exchange Rates</h3>
                 <button id="refreshExchangeRatesButton" type="button">Refresh Rates</button>
             </div>
@@ -211,19 +115,19 @@
                 <strong>USD → AED:</strong> <span id="exchangeRateAedText">—</span><br>
                 <strong>Updated:</strong> <span id="exchangeRatesUpdatedText">—</span>
 
-                <div style="margin-top:16px;">
+                <div class="field-group">
                     <label for="customCurrencyInput">Find currency</label>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+                    <div class="inline-form">
                         <input id="customCurrencyInput" type="text" placeholder="Country or code, e.g. Japan or JPY">
                         <button id="findCurrencyButton" type="button">Find</button>
                     </div>
-                    <div style="margin-top:12px;">
+                    <div class="result-line">
                         <strong>Result:</strong> <span id="customCurrencyResultText">—</span>
                     </div>
                 </div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <div class="section-header">
                 <h3>About</h3>
             </div>
 
@@ -236,7 +140,7 @@
         </section>
 
         <section id="tasksSection" class="app-tab-section is-hidden" data-tab-section="tasks">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
+            <div class="section-header">
                 <h3>Tasks List</h3>
                 <button id="refreshTasksButton">Refresh Tasks</button>
             </div>
@@ -245,7 +149,7 @@
                 <div class="loading">Loading tasks...</div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <div class="section-header">
                 <h3>Appointments</h3>
             </div>
 
@@ -253,7 +157,7 @@
                 <div class="loading">Loading appointments...</div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <div class="section-header">
                 <h3>Reminders</h3>
                 <button id="refreshRemindersButton">Refresh</button>
             </div>
@@ -264,27 +168,27 @@
         </section>
 
         <section id="aiSection" class="app-tab-section is-hidden" data-tab-section="ai">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
+            <div class="section-header">
                 <h3>Voice Input</h3>
             </div>
 
             <div class="task-item">
-                <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                <div class="button-row">
                     <button id="startVoiceButton" type="button">Start Voice</button>
                     <button id="stopVoiceButton" type="button">Stop Voice</button>
                 </div>
 
-                <div id="voiceStatusText" style="margin-top:16px;">Voice input is idle.</div>
-                <div id="voiceTranscriptBox" style="margin-top:16px;">No voice transcript yet.</div>
+                <div id="voiceStatusText" class="status-line">Voice input is idle.</div>
+                <div id="voiceTranscriptBox" class="transcript-box">No voice transcript yet.</div>
             </div>
 
             <label for="messageInput">Your message</label>
             <textarea id="messageInput"></textarea>
 
-            <label for="dueDateInput" style="margin-top: 16px;">Due date</label>
+            <label for="dueDateInput">Due date</label>
             <input id="dueDateInput" type="date">
 
-            <label for="dueTimeInput" style="margin-top: 16px;">Due time</label>
+            <label for="dueTimeInput">Due time</label>
             <input id="dueTimeInput" type="time">
 
             <button id="sendButton">Send</button>
@@ -296,7 +200,7 @@
         </section>
 
         <section id="accountSection" class="app-tab-section is-hidden" data-tab-section="account">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
+            <div class="section-header">
                 <h3>Account</h3>
             </div>
 
@@ -304,22 +208,22 @@
                 <label for="nameInput">Name / Username</label>
                 <input id="nameInput" type="text" placeholder="Enter your name">
 
-                <label for="emailInput" style="margin-top: 16px;">Email</label>
+                <label for="emailInput">Email</label>
                 <input id="emailInput" type="email" placeholder="Enter your email">
 
-                <label for="passwordInput" style="margin-top: 16px;">Password</label>
+                <label for="passwordInput">Password</label>
                 <div class="password-field-wrapper">
                     <input id="passwordInput" type="password" placeholder="Enter your password">
                     <button id="togglePasswordButton" type="button" class="password-toggle-button" aria-label="Show password" title="Show password">👁</button>
                 </div>
 
-                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
+                <div class="button-row">
                     <button id="signupButton" type="button">Sign Up</button>
                     <button id="loginButton" type="button">Log In</button>
                     <button id="logoutButton" type="button">Log Out</button>
                 </div>
 
-                <div id="authStatusText" style="margin-top:16px;">Not logged in</div>
+                <div id="authStatusText" class="status-line">Not logged in</div>
             </div>
         </section>
 
