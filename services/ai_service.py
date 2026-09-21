@@ -1,271 +1,258 @@
-import os
+"""
+services/ai_service.py
+Centralized AI orchestration layer.
+- Single OpenAI client
+- Explicit timeouts and token budgets
+- Structured output validation
+- Eliminate double-LLM-call for smart-ai
+- Safe error handling — never expose SDK internals
+"""
+
 import json
-import re
-from datetime import datetime
+import logging
+import os
+from datetime import datetime, timezone
+
 from openai import OpenAI
 
+from config import settings
+
+logger = logging.getLogger(__name__)
 
 VALID_PRIORITIES = {"low", "medium", "high"}
 VALID_STATUSES = {"pending", "done"}
 
-
-def get_openai_client():
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise ValueError("OPENAI_API_KEY is not set")
-    return OpenAI(api_key=api_key)
+# ------------------------------------------------------------------ #
+# OpenAI client (singleton per process)
+# ------------------------------------------------------------------ #
+_client: OpenAI | None = None
 
 
-def get_chat_model():
-    return os.getenv("OPENAI_CHAT_MODEL", "gpt-4o-mini")
+def get_openai_client() -> OpenAI:
+    global _client
+    if _client is None:
+        _client = OpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            timeout=settings.AI_REQUEST_TIMEOUT,
+        )
+    return _client
 
 
-def clean_ai_text(text):
-    if not text:
-        return "Sorry, I could not generate a response."
-
-    cleaned = str(text)
-    cleaned = cleaned.replace("\\n", "\n")
-    cleaned = cleaned.replace("\\t", "\t")
-    cleaned = cleaned.replace("\\r", "")
-    return cleaned.strip()
+def get_chat_model() -> str:
+    return settings.OPENAI_CHAT_MODEL
 
 
-def get_response_text(response):
-    try:
-        return response.choices[0].message.content
-    except Exception:
+# ------------------------------------------------------------------ #
+# Helpers
+# ------------------------------------------------------------------ #
+
+def _normalize_priority(priority) -> str:
+    v = str(priority or "medium").strip().lower()
+    return v if v in VALID_PRIORITIES else "medium"
+
+
+def _normalize_status(status) -> str:
+    v = str(status or "pending").strip().lower()
+    return v if v in VALID_STATUSES else "pending"
+
+
+def _normalize_due_date(due_date):
+    if due_date in (None, "", "null"):
         return None
-
-
-def normalize_priority(priority):
-    normalized = str(priority or "medium").strip().lower()
-    if normalized not in VALID_PRIORITIES:
-        return "medium"
-    return normalized
-
-
-def normalize_status(status):
-    normalized = str(status or "pending").strip().lower()
-    if normalized not in VALID_STATUSES:
-        return "pending"
-    return normalized
-
-
-def normalize_due_date(due_date):
-    if due_date in [None, "", "null"]:
-        return None
-
     if isinstance(due_date, str):
-        cleaned_due_date = due_date.strip()
-        if not cleaned_due_date:
-            return None
-        return cleaned_due_date
-
+        cleaned = due_date.strip()
+        return cleaned if cleaned else None
     return None
 
 
-# 🔥 NEW — REAL MULTILINGUAL INSTRUCTION
-def get_language_instruction():
+def _clean_text(text: str | None) -> str:
+    if not text:
+        return "Sorry, I could not generate a response."
     return (
-        "You must ALWAYS detect the user's language from their message and reply in the SAME language. "
-        "Support ALL languages (Persian, English, Arabic, Spanish, French, German, etc). "
-        "Do not translate unless the user asks. "
-        "Match tone, style, and formality naturally."
+        str(text)
+        .replace("\\n", "\n")
+        .replace("\\t", "\t")
+        .replace("\\r", "")
+        .strip()
     )
 
 
-def extract_first_json_object(text):
+def _extract_json(text: str | None) -> dict | None:
+    """Extract the first valid JSON object from text."""
     if not text:
         return None
-
     text = str(text).strip()
-
     try:
         return json.loads(text)
     except Exception:
         pass
-
     start = text.find("{")
     if start == -1:
         return None
-
     depth = 0
     in_string = False
     escape = False
-
-    for index in range(start, len(text)):
-        char = text[index]
-
+    for i in range(start, len(text)):
+        ch = text[i]
         if in_string:
             if escape:
                 escape = False
-            elif char == "\\":
+            elif ch == "\\":
                 escape = True
-            elif char == '"':
+            elif ch == '"':
                 in_string = False
             continue
-
-        if char == '"':
+        if ch == '"':
             in_string = True
-            continue
-
-        if char == "{":
+        elif ch == "{":
             depth += 1
-        elif char == "}":
+        elif ch == "}":
             depth -= 1
-
             if depth == 0:
-                candidate = text[start:index + 1]
                 try:
-                    return json.loads(candidate)
+                    return json.loads(text[start : i + 1])
                 except Exception:
                     return None
-
     return None
 
 
-# 🔥 IMPROVED CHATGPT-STYLE RESPONSE
-def generate_ai_reply(user_message):
-    client = get_openai_client()
+def _get_utc_now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
-    response = client.chat.completions.create(
-        model=get_chat_model(),
-        messages=[
-            {
-                "role": "system",
-                "content": (
-                    "You are a highly intelligent, friendly, and professional AI assistant. "
-                    "You help with thinking, planning, problem-solving, productivity, learning, and real-life decisions. "
-                    "Your answers must be clear, helpful, structured when needed, and natural like ChatGPT. "
-                    "Avoid robotic answers. Be human-like and practical. "
-                    f"{get_language_instruction()}"
-                )
-            },
-            {
-                "role": "user",
-                "content": user_message
-            }
-        ],
-        temperature=0.7
+
+def _language_instruction() -> str:
+    return (
+        "Detect the user's language from their message and always reply in "
+        "the same language."
     )
 
-    return clean_ai_text(get_response_text(response))
+
+# ------------------------------------------------------------------ #
+# AI functions
+# ------------------------------------------------------------------ #
+
+def generate_ai_reply(user_message: str) -> str:
+    """Generate a conversational AI reply. Returns safe fallback on any error."""
+    try:
+        client = get_openai_client()
+        response = client.chat.completions.create(
+            model=get_chat_model(),
+            messages=[
+                {
+                    "role": "system",
+                    "content": (
+                        "You are a helpful, friendly AI assistant for productivity. "
+                        "Be clear, concise, and natural. "
+                        f"{_language_instruction()}"
+                    ),
+                },
+                {"role": "user", "content": user_message},
+            ],
+            max_tokens=settings.AI_MAX_TOKENS,
+            temperature=0.7,
+        )
+        raw = response.choices[0].message.content if response.choices else None
+        return _clean_text(raw)
+    except Exception:
+        logger.error("generate_ai_reply failed", exc_info=True)
+        return "I'm unable to respond right now. Please try again."
 
 
-# 🔥 IMPROVED TASK EXTRACTION
-def extract_task_from_message(user_message):
-    client = get_openai_client()
-    current_datetime = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+def extract_task_from_message(user_message: str) -> dict:
+    """
+    Extract a structured task from a natural language message.
+    Returns a validated task dict. Falls back to a simple task on parse failure.
+    """
+    try:
+        client = get_openai_client()
+        prompt = (
+            f"Current UTC datetime: {_get_utc_now()}\n"
+            f"{_language_instruction()}\n\n"
+            "Extract ONE actionable task. Return ONLY valid JSON:\n"
+            '{"title":"","description":"","priority":"low|medium|high",'
+            '"status":"pending","due_date":"ISO8601 or null"}\n'
+            "Rules: title ≤80 chars; description ≤500 chars; "
+            "convert relative dates to absolute ISO8601; null if no date.\n\n"
+            f"User: {user_message}"
+        )
+        response = client.chat.completions.create(
+            model=get_chat_model(),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=settings.AI_MAX_TOKENS_EXTRACTION,
+            temperature=0.1,
+        )
+        raw = response.choices[0].message.content if response.choices else None
+        parsed = _extract_json(_clean_text(raw))
 
-    prompt = f"""
-You are a task extraction AI.
+        if not parsed:
+            raise ValueError("No JSON in AI response")
 
-Current datetime (UTC):
-{current_datetime}
-
-{get_language_instruction()}
-
-Extract ONE actionable task from the user's message.
-
-Return ONLY valid JSON:
-{{
-  "title": "",
-  "description": "",
-  "priority": "low or medium or high",
-  "status": "pending",
-  "due_date": "ISO datetime or null"
-}}
-
-Rules:
-- Only JSON
-- Title short
-- Description complete
-- Detect language automatically
-- Convert dates to ISO
-- If no date → null
-
-User:
-{user_message}
-"""
-
-    response = client.chat.completions.create(
-        model=get_chat_model(),
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.1
-    )
-
-    raw_text = get_response_text(response)
-    parsed = extract_first_json_object(clean_ai_text(raw_text))
-
-    if not parsed:
         return {
-            "title": user_message[:80] or "New task",
-            "description": user_message,
+            "title": str(parsed.get("title") or user_message)[:80],
+            "description": str(parsed.get("description") or user_message)[:500],
+            "priority": _normalize_priority(parsed.get("priority")),
+            "status": "pending",
+            "due_date": _normalize_due_date(parsed.get("due_date")),
+        }
+    except Exception:
+        logger.warning("extract_task_from_message fallback", exc_info=True)
+        return {
+            "title": user_message[:80],
+            "description": user_message[:500],
             "priority": "medium",
             "status": "pending",
-            "due_date": None
+            "due_date": None,
         }
 
-    return {
-        "title": parsed.get("title") or user_message[:80],
-        "description": parsed.get("description") or user_message,
-        "priority": normalize_priority(parsed.get("priority")),
-        "status": "pending",
-        "due_date": normalize_due_date(parsed.get("due_date"))
-    }
 
+def decide_smart_action(user_message: str) -> dict:
+    """
+    Decide whether to reply conversationally or create a task.
+    Uses a SINGLE LLM call — eliminates the prior double-call pattern.
+    """
+    try:
+        client = get_openai_client()
+        prompt = (
+            f"Current UTC datetime: {_get_utc_now()}\n"
+            f"{_language_instruction()}\n\n"
+            "You are a smart assistant. For each user message:\n"
+            '- If the user wants to remember/schedule something → action="task"\n'
+            '- Otherwise → action="reply"\n\n'
+            "Return ONLY valid JSON:\n"
+            '{"action":"task|reply","title":"","description":"",'
+            '"priority":"low|medium|high","status":"pending",'
+            '"due_date":"ISO8601 or null","reply":""}\n\n'
+            "Rules: title ≤80 chars; description ≤500 chars; "
+            "reply must be natural and helpful; do not over-create tasks.\n\n"
+            f"User: {user_message}"
+        )
+        response = client.chat.completions.create(
+            model=get_chat_model(),
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=settings.AI_MAX_TOKENS_EXTRACTION,
+            temperature=0.2,
+        )
+        raw = response.choices[0].message.content if response.choices else None
+        parsed = _extract_json(_clean_text(raw))
 
-# 🔥 MAIN DECISION ENGINE (SMART LIKE CHATGPT)
-def decide_smart_action(user_message):
-    client = get_openai_client()
-    current_datetime = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%S")
+        if not parsed or parsed.get("action") not in ("task", "reply"):
+            raise ValueError("Invalid AI decision output")
 
-    prompt = f"""
-You are an intelligent assistant.
+        if parsed["action"] == "task":
+            return {
+                "action": "task",
+                "title": str(parsed.get("title") or user_message)[:80],
+                "description": str(parsed.get("description") or user_message)[:500],
+                "priority": _normalize_priority(parsed.get("priority")),
+                "status": "pending",
+                "due_date": _normalize_due_date(parsed.get("due_date")),
+                "reply": "",
+            }
 
-Current datetime:
-{current_datetime}
+        reply_text = str(parsed.get("reply") or "").strip()
+        if not reply_text:
+            reply_text = generate_ai_reply(user_message)
 
-{get_language_instruction()}
-
-Decide:
-- "task" → if user wants to remember something
-- "reply" → normal conversation
-
-Return ONLY JSON:
-{{
-  "action": "task" or "reply",
-  "title": "",
-  "description": "",
-  "priority": "low or medium or high",
-  "status": "pending",
-  "due_date": "ISO datetime or null",
-  "reply": ""
-}}
-
-Rules:
-- Only JSON
-- Be accurate
-- Do NOT over-create tasks
-- If unsure → reply
-- Reply must be natural and helpful
-
-User:
-{user_message}
-"""
-
-    response = client.chat.completions.create(
-        model=get_chat_model(),
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.2
-    )
-
-    parsed = extract_first_json_object(
-        clean_ai_text(get_response_text(response))
-    )
-
-    if not parsed:
         return {
             "action": "reply",
             "title": "",
@@ -273,23 +260,18 @@ User:
             "priority": "medium",
             "status": "pending",
             "due_date": None,
-            "reply": generate_ai_reply(user_message)
+            "reply": reply_text,
         }
 
-    if parsed.get("action") == "task":
-        task = extract_task_from_message(user_message)
+    except Exception:
+        logger.error("decide_smart_action failed", exc_info=True)
+        # Safe fallback: return a reply action without another API call
         return {
-            "action": "task",
-            **task,
-            "reply": ""
+            "action": "reply",
+            "title": "",
+            "description": "",
+            "priority": "medium",
+            "status": "pending",
+            "due_date": None,
+            "reply": "I'm unable to process that right now. Please try again.",
         }
-
-    return {
-        "action": "reply",
-        "title": "",
-        "description": "",
-        "priority": "medium",
-        "status": "pending",
-        "due_date": None,
-        "reply": parsed.get("reply") or generate_ai_reply(user_message)
-    }

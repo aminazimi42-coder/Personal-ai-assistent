@@ -1,227 +1,219 @@
-from flask import Blueprint, jsonify, request
-import tempfile
+"""
+routes/ai_routes.py
+AI endpoints: chat, voice transcription, AI-to-task, smart-ai.
+All require authentication. Uses centralized AI orchestration layer.
+"""
+
+import logging
 import os
+import tempfile
+
+from flask import Blueprint, jsonify, request
 
 from services.auth_service import get_current_user
-from services.task_service import build_task_payload, serialize_task
+from services.ai_service import (
+    generate_ai_reply,
+    extract_task_from_message,
+    decide_smart_action,
+    get_openai_client,
+)
+from routes.task_routes import insert_task
+from config import settings
 
-
-ai_routes = Blueprint("ai_routes", __name__)
-
-
-def ensure_tasks_schema(get_connection):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS tasks (
-            id SERIAL PRIMARY KEY,
-            title TEXT NOT NULL,
-            description TEXT,
-            status TEXT NOT NULL DEFAULT 'pending',
-            priority TEXT NOT NULL DEFAULT 'medium',
-            due_date TIMESTAMP NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            user_id INTEGER
-        );
-        """
-    )
-
-    cur.execute(
-        """
-        ALTER TABLE tasks
-        ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'medium';
-        """
-    )
-
-    cur.execute(
-        """
-        ALTER TABLE tasks
-        ADD COLUMN IF NOT EXISTS due_date TIMESTAMP NULL;
-        """
-    )
-
-    cur.execute(
-        """
-        ALTER TABLE tasks
-        ADD COLUMN IF NOT EXISTS user_id INTEGER;
-        """
-    )
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def insert_task(
-    get_connection,
-    title,
-    description="",
-    status="pending",
-    priority="medium",
-    due_date=None,
-    user_id=None
-):
-    ensure_tasks_schema(get_connection)
-
-    payload = build_task_payload(
-        title=title,
-        description=description,
-        status=status,
-        priority=priority,
-        due_date=due_date,
-        user_id=user_id
-    )
-
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        INSERT INTO tasks (title, description, status, priority, due_date, user_id)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        RETURNING id, title, description, status, priority, due_date, created_at, user_id;
-        """,
-        (
-            payload["title"],
-            payload["description"],
-            payload["status"],
-            payload["priority"],
-            payload["due_date"],
-            payload["user_id"]
-        )
-    )
-
-    row = cur.fetchone()
-    conn.commit()
-    cur.close()
-    conn.close()
-
-    task = {
-        "id": row[0],
-        "title": row[1],
-        "description": row[2],
-        "status": row[3],
-        "priority": row[4],
-        "due_date": row[5],
-        "created_at": row[6],
-        "user_id": row[7]
-    }
-
-    return serialize_task(task)
+logger = logging.getLogger(__name__)
 
 
 def init_ai_routes(app, get_connection):
+    ai_routes = Blueprint("ai_routes", __name__)
+
     @ai_routes.route("/ai", methods=["POST"])
     def ai_chat():
+        """Authenticated AI chat."""
         try:
-            from services.ai_service import generate_ai_reply
+            current_user, error, code = get_current_user(get_connection)
+            if error:
+                return jsonify(error), code
 
-            data = request.get_json()
-
+            data = request.get_json(silent=True)
             if not data:
-                return jsonify({
-                    "status": "error",
-                    "message": "Request body must be JSON"
-                }), 400
+                return jsonify({"status": "error", "message": "Request body must be JSON"}), 400
 
-            message = data.get("message")
-
-            if not message or not str(message).strip():
-                return jsonify({
-                    "status": "error",
-                    "message": "Message is required"
-                }), 400
-
-            reply = generate_ai_reply(message)
-
-            return jsonify({
-                "status": "success",
-                "reply": reply
-            })
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
-
-    @ai_routes.route("/ai-browser")
-    def ai_browser():
-        try:
-            from services.ai_service import generate_ai_reply
-
-            message = request.args.get("message", "").strip()
-
+            message = str(data.get("message", "")).strip()
             if not message:
+                return jsonify({"status": "error", "message": "Message is required"}), 400
+
+            if len(message) > settings.AI_MAX_INPUT_CHARS:
                 return jsonify({
                     "status": "error",
-                    "message": "message query parameter is required"
+                    "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
                 }), 400
 
             reply = generate_ai_reply(message)
+            return jsonify({"status": "success", "reply": reply})
+
+        except Exception:
+            logger.error("AI chat error", exc_info=True)
+            return jsonify({"status": "error", "message": "AI service unavailable"}), 503
+
+    @ai_routes.route("/ai-to-task", methods=["POST"])
+    def ai_to_task():
+        """Extract a task from natural language and create it."""
+        try:
+            current_user, error, code = get_current_user(get_connection)
+            if error:
+                return jsonify(error), code
+
+            data = request.get_json(silent=True)
+            if not data:
+                return jsonify({"status": "error", "message": "Request body must be JSON"}), 400
+
+            message = str(data.get("message", "")).strip()
+            if not message:
+                return jsonify({"status": "error", "message": "Message is required"}), 400
+
+            if len(message) > settings.AI_MAX_INPUT_CHARS:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
+                }), 400
+
+            extracted = extract_task_from_message(message)
+            task = insert_task(
+                get_connection=get_connection,
+                title=extracted["title"],
+                description=extracted["description"],
+                status=extracted["status"],
+                priority=extracted["priority"],
+                due_date=extracted.get("due_date"),
+                user_id=current_user["id"],
+            )
+            return jsonify({
+                "status": "success",
+                "message": "Task created from AI",
+                "task": task,
+            })
+
+        except ValueError as ve:
+            return jsonify({"status": "error", "message": str(ve)}), 400
+        except Exception:
+            logger.error("AI-to-task error", exc_info=True)
+            return jsonify({"status": "error", "message": "AI service unavailable"}), 503
+
+    @ai_routes.route("/smart-ai", methods=["POST"])
+    def smart_ai():
+        """Authenticated smart AI: decides reply vs task creation."""
+        try:
+            current_user, error, code = get_current_user(get_connection)
+            if error:
+                return jsonify(error), code
+
+            data = request.get_json(silent=True)
+            if not data:
+                return jsonify({"status": "error", "message": "Request body must be JSON"}), 400
+
+            message = str(data.get("message", "")).strip()
+            if not message:
+                return jsonify({"status": "error", "message": "Message is required"}), 400
+
+            if len(message) > settings.AI_MAX_INPUT_CHARS:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
+                }), 400
+
+            decision = decide_smart_action(message)
+
+            if decision["action"] == "task":
+                try:
+                    task = insert_task(
+                        get_connection=get_connection,
+                        title=decision["title"],
+                        description=decision["description"],
+                        status=decision["status"],
+                        priority=decision["priority"],
+                        due_date=decision.get("due_date"),
+                        user_id=current_user["id"],
+                    )
+                except ValueError as ve:
+                    return jsonify({"status": "error", "message": str(ve)}), 400
+
+                return jsonify({
+                    "status": "success",
+                    "action": "task",
+                    "message": "Task created",
+                    "task": task,
+                })
 
             return jsonify({
                 "status": "success",
-                "reply": reply
+                "action": "reply",
+                "reply": decision.get("reply", ""),
             })
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
+
+        except Exception:
+            logger.error("Smart AI error", exc_info=True)
+            return jsonify({"status": "error", "message": "AI service unavailable"}), 503
 
     @ai_routes.route("/transcribe-voice", methods=["POST"])
     def transcribe_voice():
+        """Authenticated voice transcription via OpenAI Whisper."""
         temp_path = None
-
         try:
-            from services.ai_service import get_openai_client
-
-            current_user, error_response, status_code = get_current_user(get_connection)
-            if error_response:
-                return jsonify(error_response), status_code
+            current_user, error, code = get_current_user(get_connection)
+            if error:
+                return jsonify(error), code
 
             if "audio" not in request.files:
-                return jsonify({
-                    "status": "error",
-                    "message": "Audio file is required"
-                }), 400
+                return jsonify({"status": "error", "message": "Audio file is required"}), 400
 
             audio_file = request.files["audio"]
-
             if not audio_file or not audio_file.filename:
+                return jsonify({"status": "error", "message": "Invalid audio file"}), 400
+
+            # Read and check size before writing to disk
+            audio_data = audio_file.read(settings.VOICE_MAX_UPLOAD_BYTES + 1)
+            if len(audio_data) > settings.VOICE_MAX_UPLOAD_BYTES:
                 return jsonify({
                     "status": "error",
-                    "message": "Invalid audio file"
-                }), 400
+                    "message": f"Audio file too large (max {settings.VOICE_MAX_UPLOAD_BYTES // (1024*1024)} MB)",
+                }), 413
 
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as temp_audio_file:
-                audio_file.save(temp_audio_file.name)
-                temp_path = temp_audio_file.name
+            if len(audio_data) == 0:
+                return jsonify({"status": "error", "message": "Audio file is empty"}), 400
+
+            # Determine file extension from mime type
+            content_type = audio_file.content_type or ""
+            ext = ".webm"
+            if "mp4" in content_type or "m4a" in content_type:
+                ext = ".mp4"
+            elif "ogg" in content_type:
+                ext = ".ogg"
+            elif "wav" in content_type:
+                ext = ".wav"
+            elif "mpeg" in content_type or "mp3" in content_type:
+                ext = ".mp3"
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+                tmp.write(audio_data)
+                temp_path = tmp.name
 
             client = get_openai_client()
-
             with open(temp_path, "rb") as audio:
                 transcription = client.audio.transcriptions.create(
-                    model="gpt-4o-mini-transcribe",
-                    file=audio
+                    model="whisper-1",
+                    file=audio,
+                    timeout=settings.AI_REQUEST_TIMEOUT,
                 )
 
-            transcript_text = getattr(transcription, "text", "")
+            transcript_text = str(getattr(transcription, "text", "")).strip()
+            if not transcript_text:
+                return jsonify({"status": "success", "text": ""}), 200
 
-            return jsonify({
-                "status": "success",
-                "text": transcript_text
-            })
+            return jsonify({"status": "success", "text": transcript_text})
 
-        except Exception as error:
-            print("VOICE TRANSCRIPTION ERROR:", str(error))
-
-            return jsonify({
-                "status": "error",
-                "message": "Voice processing failed"
-            }), 500
+        except Exception:
+            logger.error("Voice transcription error", exc_info=True)
+            return jsonify({"status": "error", "message": "Voice processing failed"}), 503
 
         finally:
             if temp_path:
@@ -229,197 +221,5 @@ def init_ai_routes(app, get_connection):
                     os.remove(temp_path)
                 except Exception:
                     pass
-
-    @ai_routes.route("/ai-to-task", methods=["POST"])
-    def ai_to_task():
-        try:
-            from services.ai_service import extract_task_from_message
-
-            current_user, error_response, status_code = get_current_user(get_connection)
-            if error_response:
-                return jsonify(error_response), status_code
-
-            data = request.get_json()
-
-            if not data:
-                return jsonify({
-                    "status": "error",
-                    "message": "Request body must be JSON"
-                }), 400
-
-            message = data.get("message")
-
-            if not message or not str(message).strip():
-                return jsonify({
-                    "status": "error",
-                    "message": "Message is required"
-                }), 400
-
-            extracted_task = extract_task_from_message(message.strip())
-
-            task = insert_task(
-                get_connection=get_connection,
-                title=extracted_task["title"],
-                description=extracted_task["description"],
-                status=extracted_task["status"],
-                priority=extracted_task["priority"],
-                due_date=extracted_task.get("due_date"),
-                user_id=current_user["id"]
-            )
-
-            return jsonify({
-                "status": "success",
-                "message": "Task created from AI",
-                "task": task
-            })
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
-
-    @ai_routes.route("/ai-to-task-browser")
-    def ai_to_task_browser():
-        try:
-            from services.ai_service import extract_task_from_message
-
-            current_user, error_response, status_code = get_current_user(get_connection)
-            if error_response:
-                return jsonify(error_response), status_code
-
-            message = request.args.get("message", "").strip()
-
-            if not message:
-                return jsonify({
-                    "status": "error",
-                    "message": "message query parameter is required"
-                }), 400
-
-            extracted_task = extract_task_from_message(message)
-
-            task = insert_task(
-                get_connection=get_connection,
-                title=extracted_task["title"],
-                description=extracted_task["description"],
-                status=extracted_task["status"],
-                priority=extracted_task["priority"],
-                due_date=extracted_task.get("due_date"),
-                user_id=current_user["id"]
-            )
-
-            return jsonify({
-                "status": "success",
-                "message": "Task created from AI",
-                "task": task
-            })
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
-
-    @ai_routes.route("/smart-ai", methods=["POST"])
-    def smart_ai():
-        try:
-            from services.ai_service import decide_smart_action
-
-            current_user, error_response, status_code = get_current_user(get_connection)
-            if error_response:
-                return jsonify(error_response), status_code
-
-            data = request.get_json()
-
-            if not data:
-                return jsonify({
-                    "status": "error",
-                    "message": "Request body must be JSON"
-                }), 400
-
-            message = data.get("message")
-
-            if not message or not str(message).strip():
-                return jsonify({
-                    "status": "error",
-                    "message": "Message is required"
-                }), 400
-
-            decision = decide_smart_action(message.strip())
-
-            if decision["action"] == "task":
-                task = insert_task(
-                    get_connection=get_connection,
-                    title=decision["title"],
-                    description=decision["description"],
-                    status=decision["status"],
-                    priority=decision["priority"],
-                    due_date=decision.get("due_date"),
-                    user_id=current_user["id"]
-                )
-
-                return jsonify({
-                    "status": "success",
-                    "action": "task",
-                    "message": "Task created from Smart AI",
-                    "task": task
-                })
-
-            return jsonify({
-                "status": "success",
-                "action": "reply",
-                "reply": decision["reply"]
-            })
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
-
-    @ai_routes.route("/smart-ai-browser")
-    def smart_ai_browser():
-        try:
-            from services.ai_service import decide_smart_action
-
-            current_user, error_response, status_code = get_current_user(get_connection)
-            if error_response:
-                return jsonify(error_response), status_code
-
-            message = request.args.get("message", "").strip()
-
-            if not message:
-                return jsonify({
-                    "status": "error",
-                    "message": "message query parameter is required"
-                }), 400
-
-            decision = decide_smart_action(message)
-
-            if decision["action"] == "task":
-                task = insert_task(
-                    get_connection=get_connection,
-                    title=decision["title"],
-                    description=decision["description"],
-                    status=decision["status"],
-                    priority=decision["priority"],
-                    due_date=decision.get("due_date"),
-                    user_id=current_user["id"]
-                )
-
-                return jsonify({
-                    "status": "success",
-                    "action": "task",
-                    "message": "Task created from Smart AI",
-                    "task": task
-                })
-
-            return jsonify({
-                "status": "success",
-                "action": "reply",
-                "reply": decision["reply"]
-            })
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
 
     app.register_blueprint(ai_routes)

@@ -1,122 +1,29 @@
+"""
+routes/reminder_routes.py
+Reminder aggregation endpoint.
+No schema DDL — managed by migrations.
+"""
+
+import logging
+
 from flask import Blueprint, jsonify
 
 from services.auth_service import get_current_user
-from services.reminder_service import (
-    build_reminder_window,
-    build_reminders_payload
-)
+from services.reminder_service import build_reminder_window, build_reminders_payload
+from db.pool import return_connection
 
-
-reminder_routes = Blueprint("reminder_routes", __name__)
-
-
-def ensure_tasks_schema(get_connection):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS tasks (
-            id SERIAL PRIMARY KEY,
-            title TEXT NOT NULL,
-            description TEXT,
-            status TEXT NOT NULL DEFAULT 'pending',
-            priority TEXT NOT NULL DEFAULT 'medium',
-            due_date TIMESTAMP NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            user_id INTEGER
-        );
-        """
-    )
-
-    cur.execute(
-        """
-        ALTER TABLE tasks
-        ADD COLUMN IF NOT EXISTS priority TEXT NOT NULL DEFAULT 'medium';
-        """
-    )
-
-    cur.execute(
-        """
-        ALTER TABLE tasks
-        ADD COLUMN IF NOT EXISTS due_date TIMESTAMP NULL;
-        """
-    )
-
-    cur.execute(
-        """
-        ALTER TABLE tasks
-        ADD COLUMN IF NOT EXISTS user_id INTEGER;
-        """
-    )
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def ensure_appointments_schema(get_connection):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute(
-        """
-        CREATE TABLE IF NOT EXISTS appointments (
-            id SERIAL PRIMARY KEY,
-            title TEXT NOT NULL,
-            description TEXT,
-            appointment_time TIMESTAMP NOT NULL,
-            location TEXT,
-            status TEXT NOT NULL DEFAULT 'scheduled',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            user_id INTEGER
-        );
-        """
-    )
-
-    cur.execute(
-        """
-        ALTER TABLE appointments
-        ADD COLUMN IF NOT EXISTS description TEXT;
-        """
-    )
-
-    cur.execute(
-        """
-        ALTER TABLE appointments
-        ADD COLUMN IF NOT EXISTS location TEXT;
-        """
-    )
-
-    cur.execute(
-        """
-        ALTER TABLE appointments
-        ADD COLUMN IF NOT EXISTS status TEXT NOT NULL DEFAULT 'scheduled';
-        """
-    )
-
-    cur.execute(
-        """
-        ALTER TABLE appointments
-        ADD COLUMN IF NOT EXISTS user_id INTEGER;
-        """
-    )
-
-    conn.commit()
-    cur.close()
-    conn.close()
+logger = logging.getLogger(__name__)
 
 
 def init_reminder_routes(app, get_connection):
+    reminder_routes = Blueprint("reminder_routes", __name__)
+
     @reminder_routes.route("/reminders", methods=["GET"])
     def get_reminders():
         try:
-            ensure_tasks_schema(get_connection)
-            ensure_appointments_schema(get_connection)
-
-            current_user, error_response, status_code = get_current_user(get_connection)
-            if error_response:
-                return jsonify(error_response), status_code
+            current_user, error, code = get_current_user(get_connection)
+            if error:
+                return jsonify(error), code
 
             reminder_window = build_reminder_window(hours=1)
             current_time = reminder_window["current_time"]
@@ -124,64 +31,45 @@ def init_reminder_routes(app, get_connection):
 
             conn = get_connection()
             cur = conn.cursor()
+            try:
+                cur.execute("""
+                    SELECT id, title, due_date, status
+                    FROM tasks
+                    WHERE user_id = %s
+                      AND due_date IS NOT NULL
+                      AND due_date >= %s
+                      AND due_date <= %s
+                      AND status = 'pending'
+                    ORDER BY due_date ASC
+                """, (current_user["id"], current_time, end_time))
+                task_rows = cur.fetchall()
 
-            cur.execute(
-                """
-                SELECT id, title, due_date, status
-                FROM tasks
-                WHERE user_id = %s
-                  AND due_date IS NOT NULL
-                  AND due_date >= %s
-                  AND due_date <= %s
-                  AND status = 'pending'
-                ORDER BY due_date ASC;
-                """,
-                (current_user["id"], current_time, end_time)
-            )
-            task_rows = cur.fetchall()
-
-            cur.execute(
-                """
-                SELECT id, title, appointment_time, status
-                FROM appointments
-                WHERE user_id = %s
-                  AND appointment_time >= %s
-                  AND appointment_time <= %s
-                  AND status = 'scheduled'
-                ORDER BY appointment_time ASC;
-                """,
-                (current_user["id"], current_time, end_time)
-            )
-            appointment_rows = cur.fetchall()
-
-            cur.close()
-            conn.close()
+                cur.execute("""
+                    SELECT id, title, appointment_time, status
+                    FROM appointments
+                    WHERE user_id = %s
+                      AND appointment_time >= %s
+                      AND appointment_time <= %s
+                      AND status = 'scheduled'
+                    ORDER BY appointment_time ASC
+                """, (current_user["id"], current_time, end_time))
+                appointment_rows = cur.fetchall()
+            finally:
+                cur.close()
+                return_connection(conn)
 
             tasks = [
-                {
-                    "id": row[0],
-                    "title": row[1],
-                    "due_date": row[2],
-                    "status": row[3]
-                }
-                for row in task_rows
+                {"id": r[0], "title": r[1], "due_date": r[2], "status": r[3]}
+                for r in task_rows
             ]
-
             appointments = [
-                {
-                    "id": row[0],
-                    "title": row[1],
-                    "appointment_time": row[2],
-                    "status": row[3]
-                }
-                for row in appointment_rows
+                {"id": r[0], "title": r[1], "appointment_time": r[2], "status": r[3]}
+                for r in appointment_rows
             ]
 
             return jsonify(build_reminders_payload(tasks, appointments))
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
+        except Exception:
+            logger.error("Get reminders error", exc_info=True)
+            return jsonify({"status": "error", "message": "Could not retrieve reminders"}), 500
 
     app.register_blueprint(reminder_routes)

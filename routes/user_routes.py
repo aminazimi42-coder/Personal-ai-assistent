@@ -1,120 +1,80 @@
+"""
+routes/user_routes.py
+Authentication endpoints: signup, login, logout, /me.
+Uses centralized auth_service — no duplicate logic.
+"""
+
+import logging
+
 from flask import Blueprint, jsonify, request
 from psycopg2.extras import RealDictCursor
-import bcrypt
-import secrets
 
-user_routes = Blueprint("user_routes", __name__)
+from services.auth_service import (
+    validate_email,
+    validate_password,
+    hash_password,
+    verify_password,
+    generate_raw_token,
+    hash_token,
+    token_expiry,
+    get_current_user,
+    get_bearer_token,
+)
+from db.pool import return_connection
 
-
-def ensure_users_schema(get_connection):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS users (
-            id SERIAL PRIMARY KEY,
-            name TEXT,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            auth_token TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-
-    cur.execute("""
-        ALTER TABLE users
-        ADD COLUMN IF NOT EXISTS name TEXT;
-    """)
-
-    cur.execute("""
-        ALTER TABLE users
-        ADD COLUMN IF NOT EXISTS auth_token TEXT;
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
-
-
-def generate_auth_token():
-    return secrets.token_hex(32)
-
-
-def get_bearer_token():
-    auth_header = request.headers.get("Authorization", "").strip()
-
-    if not auth_header:
-        return None
-
-    if not auth_header.startswith("Bearer "):
-        return None
-
-    token = auth_header.replace("Bearer ", "", 1).strip()
-    return token or None
+logger = logging.getLogger(__name__)
 
 
 def init_user_routes(app, get_connection):
+    user_routes = Blueprint("user_routes", __name__)
 
     @user_routes.route("/signup", methods=["POST"])
     def signup():
         try:
-            ensure_users_schema(get_connection)
-
-            data = request.get_json()
-
+            data = request.get_json(silent=True)
             if not data:
-                return jsonify({
-                    "status": "error",
-                    "message": "Request body must be JSON"
-                }), 400
+                return jsonify({"status": "error", "message": "Request body must be JSON"}), 400
 
-            name = str(data.get("name", "")).strip()
-            email = str(data.get("email", "")).strip().lower()
-            password = str(data.get("password", "")).strip()
+            # Validate inputs
+            try:
+                email = validate_email(str(data.get("email", "")))
+                password = validate_password(str(data.get("password", "")))
+            except ValueError as ve:
+                return jsonify({"status": "error", "message": str(ve)}), 400
 
-            if not email or not password:
-                return jsonify({
-                    "status": "error",
-                    "message": "Email and password required"
-                }), 400
+            name = str(data.get("name", "")).strip()[:200]
 
             conn = get_connection()
             cur = conn.cursor(cursor_factory=RealDictCursor)
+            try:
+                # Check existing user
+                cur.execute(
+                    "SELECT id FROM users WHERE email = %s", (email,)
+                )
+                if cur.fetchone():
+                    return jsonify({
+                        "status": "error",
+                        "message": "An account with this email already exists",
+                    }), 409
 
-            cur.execute("""
-                SELECT id
-                FROM users
-                WHERE email = %s;
-            """, (email,))
-            existing_user = cur.fetchone()
+                hashed_pw = hash_password(password)
+                raw_token = generate_raw_token()
+                token_hash = hash_token(raw_token)
+                expires_at = token_expiry()
 
-            if existing_user:
+                cur.execute("""
+                    INSERT INTO users
+                        (name, email, password, auth_token_hash, auth_token, token_expires_at)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    RETURNING id, name, email, created_at
+                """, (name, email, hashed_pw, token_hash, raw_token, expires_at))
+                user = cur.fetchone()
+                conn.commit()
+            finally:
                 cur.close()
-                conn.close()
-                return jsonify({
-                    "status": "error",
-                    "message": "User already exists"
-                }), 409
+                return_connection(conn)
 
-            hashed_password = bcrypt.hashpw(
-                password.encode("utf-8"),
-                bcrypt.gensalt()
-            ).decode("utf-8")
-
-            auth_token = generate_auth_token()
-
-            cur.execute("""
-                INSERT INTO users (name, email, password, auth_token)
-                VALUES (%s, %s, %s, %s)
-                RETURNING id, name, email, auth_token, created_at;
-            """, (name, email, hashed_password, auth_token))
-
-            user = cur.fetchone()
-
-            conn.commit()
-            cur.close()
-            conn.close()
-
+            logger.info("New user registered: id=%d", user["id"])
             return jsonify({
                 "status": "success",
                 "message": "Signup successful",
@@ -122,194 +82,136 @@ def init_user_routes(app, get_connection):
                     "id": user["id"],
                     "name": user["name"],
                     "email": user["email"],
-                    "auth_token": user["auth_token"],
-                    "created_at": user["created_at"].isoformat() if user["created_at"] else None
-                }
+                    "token": raw_token,
+                    "created_at": user["created_at"].isoformat() if user["created_at"] else None,
+                },
             }), 201
 
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
+        except Exception:
+            logger.error("Signup error", exc_info=True)
+            return jsonify({"status": "error", "message": "Signup failed"}), 500
 
     @user_routes.route("/login", methods=["POST"])
     def login():
         try:
-            ensure_users_schema(get_connection)
-
-            data = request.get_json()
-
+            data = request.get_json(silent=True)
             if not data:
-                return jsonify({
-                    "status": "error",
-                    "message": "Request body must be JSON"
-                }), 400
+                return jsonify({"status": "error", "message": "Request body must be JSON"}), 400
 
-            email = str(data.get("email", "")).strip().lower()
-            password = str(data.get("password", "")).strip()
+            try:
+                email = validate_email(str(data.get("email", "")))
+            except ValueError as ve:
+                return jsonify({"status": "error", "message": str(ve)}), 400
 
-            if not email or not password:
-                return jsonify({
-                    "status": "error",
-                    "message": "Email and password required"
-                }), 400
+            password = str(data.get("password", ""))
+            if not password:
+                return jsonify({"status": "error", "message": "Password is required"}), 400
 
             conn = get_connection()
             cur = conn.cursor(cursor_factory=RealDictCursor)
+            try:
+                cur.execute(
+                    "SELECT id, name, email, password, created_at FROM users WHERE email = %s",
+                    (email,),
+                )
+                user = cur.fetchone()
 
-            cur.execute("""
-                SELECT id, name, email, password, auth_token, created_at
-                FROM users
-                WHERE email = %s;
-            """, (email,))
+                # Anti-enumeration: same response for "not found" and "wrong password"
+                if not user or not verify_password(password, user["password"]):
+                    return jsonify({
+                        "status": "error",
+                        "message": "Invalid email or password",
+                    }), 401
 
-            user = cur.fetchone()
+                raw_token = generate_raw_token()
+                token_hash = hash_token(raw_token)
+                expires_at = token_expiry()
 
-            if not user:
+                cur.execute("""
+                    UPDATE users
+                    SET auth_token_hash = %s,
+                        auth_token = %s,
+                        token_expires_at = %s
+                    WHERE id = %s
+                """, (token_hash, raw_token, expires_at, user["id"]))
+                conn.commit()
+            finally:
                 cur.close()
-                conn.close()
-                return jsonify({
-                    "status": "error",
-                    "message": "User not found"
-                }), 404
+                return_connection(conn)
 
-            if not bcrypt.checkpw(
-                password.encode("utf-8"),
-                user["password"].encode("utf-8")
-            ):
-                cur.close()
-                conn.close()
-                return jsonify({
-                    "status": "error",
-                    "message": "Invalid password"
-                }), 401
-
-            auth_token = generate_auth_token()
-
-            cur.execute("""
-                UPDATE users
-                SET auth_token = %s
-                WHERE id = %s
-                RETURNING id, name, email, auth_token, created_at;
-            """, (auth_token, user["id"]))
-
-            updated_user = cur.fetchone()
-
-            conn.commit()
-            cur.close()
-            conn.close()
-
+            logger.info("User logged in: id=%d", user["id"])
             return jsonify({
                 "status": "success",
                 "message": "Login successful",
                 "user": {
-                    "id": updated_user["id"],
-                    "name": updated_user["name"],
-                    "email": updated_user["email"],
-                    "auth_token": updated_user["auth_token"],
-                    "created_at": updated_user["created_at"].isoformat() if updated_user["created_at"] else None
-                }
+                    "id": user["id"],
+                    "name": user["name"],
+                    "email": user["email"],
+                    "token": raw_token,
+                    "created_at": user["created_at"].isoformat() if user["created_at"] else None,
+                },
             })
 
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
+        except Exception:
+            logger.error("Login error", exc_info=True)
+            return jsonify({"status": "error", "message": "Login failed"}), 500
+
+    @user_routes.route("/logout", methods=["POST"])
+    def logout():
+        try:
+            raw_token = get_bearer_token()
+            if not raw_token:
+                return jsonify({"status": "error", "message": "Authentication required"}), 401
+
+            token_hash = hash_token(raw_token)
+            conn = get_connection()
+            cur = conn.cursor(cursor_factory=RealDictCursor)
+            try:
+                cur.execute("""
+                    UPDATE users
+                    SET auth_token_hash = NULL,
+                        auth_token = NULL,
+                        token_expires_at = NULL
+                    WHERE auth_token_hash = %s OR auth_token = %s
+                    RETURNING id
+                """, (token_hash, raw_token))
+                revoked = cur.fetchone()
+                conn.commit()
+            finally:
+                cur.close()
+                return_connection(conn)
+
+            if not revoked:
+                return jsonify({"status": "error", "message": "Invalid token"}), 401
+
+            return jsonify({"status": "success", "message": "Logout successful"})
+
+        except Exception:
+            logger.error("Logout error", exc_info=True)
+            return jsonify({"status": "error", "message": "Logout failed"}), 500
 
     @user_routes.route("/me", methods=["GET"])
     def me():
         try:
-            ensure_users_schema(get_connection)
-
-            token = get_bearer_token()
-
-            if not token:
-                return jsonify({
-                    "status": "error",
-                    "message": "Authorization token is required"
-                }), 401
-
-            conn = get_connection()
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-
-            cur.execute("""
-                SELECT id, name, email, auth_token, created_at
-                FROM users
-                WHERE auth_token = %s;
-            """, (token,))
-
-            user = cur.fetchone()
-            cur.close()
-            conn.close()
-
-            if not user:
-                return jsonify({
-                    "status": "error",
-                    "message": "Invalid token"
-                }), 401
+            user, error, code = get_current_user(get_connection)
+            if error:
+                return jsonify(error), code
 
             return jsonify({
                 "status": "success",
                 "user": {
                     "id": user["id"],
-                    "name": user["name"],
+                    "name": user.get("name"),
                     "email": user["email"],
-                    "auth_token": user["auth_token"],
-                    "created_at": user["created_at"].isoformat() if user["created_at"] else None
-                }
+                    "created_at": (
+                        user["created_at"].isoformat()
+                        if user.get("created_at") else None
+                    ),
+                },
             })
 
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
-
-    @user_routes.route("/logout", methods=["POST"])
-    def logout():
-        try:
-            ensure_users_schema(get_connection)
-
-            token = get_bearer_token()
-
-            if not token:
-                return jsonify({
-                    "status": "error",
-                    "message": "Authorization token is required"
-                }), 401
-
-            conn = get_connection()
-            cur = conn.cursor(cursor_factory=RealDictCursor)
-
-            cur.execute("""
-                UPDATE users
-                SET auth_token = NULL
-                WHERE auth_token = %s
-                RETURNING id, name, email, created_at;
-            """, (token,))
-
-            user = cur.fetchone()
-            conn.commit()
-            cur.close()
-            conn.close()
-
-            if not user:
-                return jsonify({
-                    "status": "error",
-                    "message": "Invalid token"
-                }), 401
-
-            return jsonify({
-                "status": "success",
-                "message": "Logout successful"
-            })
-
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "message": str(e)
-            }), 500
+        except Exception:
+            logger.error("Me endpoint error", exc_info=True)
+            return jsonify({"status": "error", "message": "Could not retrieve user"}), 500
 
     app.register_blueprint(user_routes)
