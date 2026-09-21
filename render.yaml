@@ -1,0 +1,46 @@
+services:
+  - type: web
+    name: personal-ai-assistant
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn main:app --config gunicorn.conf.py
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: personal-ai-assistant-db
+          property: connectionString
+      - key: OPENAI_API_KEY
+        sync: false   # Set manually in Render dashboard — never in this file
+      - key: SECRET_KEY
+        generateValue: true
+      - key: FLASK_ENV
+        value: production
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false   # Set to your frontend origin in dashboard
+      - key: OPENAI_CHAT_MODEL
+        value: gpt-4o-mini
+      - key: AUTH_TOKEN_EXPIRY_SECONDS
+        value: "604800"   # 7 days
+      - key: DB_POOL_MIN
+        value: "2"
+      - key: DB_POOL_MAX
+        value: "10"
+      - key: AI_MAX_INPUT_CHARS
+        value: "2000"
+      - key: AI_MAX_TOKENS
+        value: "1024"
+      - key: AI_MAX_TOKENS_EXTRACTION
+        value: "512"
+      - key: AI_REQUEST_TIMEOUT
+        value: "60"
+      - key: VOICE_MAX_UPLOAD_BYTES
+        value: "26214400"   # 25 MB
+      - key: LOG_LEVEL
+        value: INFO
+
+databases:
+  - name: personal-ai-assistant-db
+    databaseName: personal_ai_assistant
+    user: assistant_user
+    plan: free

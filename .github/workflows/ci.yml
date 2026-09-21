@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache pip dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Check for secrets in tracked files
+        run: |
+          # Fail if any tracked file contains common secret patterns
+          if git grep -lE "(SECRET_KEY|OPENAI_API_KEY|DATABASE_URL)\s*=" -- '*.py' '*.txt' '*.yaml' '*.yml' '*.json' | grep -v '\.env\.example\|conftest\.py\|test_config\.py'; then
+            echo "ERROR: Potential secret found in tracked files"
+            exit 1
+          fi
+
+      - name: Run tests
+        env:
+          DATABASE_URL: postgresql://test:test@localhost/testdb
+          OPENAI_API_KEY: sk-test-key-for-ci
+          SECRET_KEY: ci-test-secret-key
+          FLASK_ENV: testing
+          CORS_ALLOWED_ORIGINS: http://localhost:5000
+        run: |
+          pytest tests/ -v --tb=short
+
+      - name: Verify imports (startup smoke check)
+        env:
+          DATABASE_URL: postgresql://test:test@localhost/testdb
+          OPENAI_API_KEY: sk-test-key-for-ci
+          SECRET_KEY: ci-test-secret-key
+          FLASK_ENV: testing
+          CORS_ALLOWED_ORIGINS: http://localhost:5000
+        run: |
+          python -c "
+          import os
+          # Env already set above
+          from config import settings
+          print('config OK — model:', settings.OPENAI_CHAT_MODEL)
+          from db.pool import get_connection, return_connection
+          print('db.pool OK')
+          from services.auth_service import generate_raw_token, hash_token, validate_email
+          print('auth_service OK')
+          from services.ai_service import generate_ai_reply, decide_smart_action
+          print('ai_service OK')
+          print('All imports successful')
+          "
+
+      - name: Check migration files are valid Python
+        run: |
+          python -c "
+          import ast, os
+          for root, dirs, files in os.walk('migrations'):
+              for f in files:
+                  if f.endswith('.py'):
+                      path = os.path.join(root, f)
+                      with open(path) as fh:
+                          ast.parse(fh.read())
+          print('All migration files parse OK')
+          "
