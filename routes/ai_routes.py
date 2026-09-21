@@ -17,6 +17,7 @@ from services.ai_service import (
     decide_smart_action,
     get_openai_client,
 )
+from services.usage_service import check_and_increment
 from routes.task_routes import insert_task
 from config import settings
 
@@ -47,6 +48,13 @@ def init_ai_routes(app, get_connection):
                     "status": "error",
                     "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
                 }), 400
+
+            allowed, _ = check_and_increment(current_user["id"])
+            if not allowed:
+                return jsonify({
+                    "status": "error",
+                    "message": "Daily AI request limit reached. Please try again tomorrow.",
+                }), 429
 
             reply = generate_ai_reply(message)
             return jsonify({"status": "success", "reply": reply})
@@ -120,6 +128,13 @@ def init_ai_routes(app, get_connection):
                     "status": "error",
                     "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
                 }), 400
+
+            allowed, _ = check_and_increment(current_user["id"])
+            if not allowed:
+                return jsonify({
+                    "status": "error",
+                    "message": "Daily AI request limit reached. Please try again tomorrow.",
+                }), 429
 
             decision = decide_smart_action(message)
 

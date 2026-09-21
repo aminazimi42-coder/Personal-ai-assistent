@@ -20,6 +20,7 @@ from services.auth_service import (
     get_current_user,
     get_bearer_token,
 )
+from services.usage_service import get_usage
 from db.pool import return_connection
 
 logger = logging.getLogger(__name__)
@@ -213,5 +214,20 @@ def init_user_routes(app, get_connection):
         except Exception:
             logger.error("Me endpoint error", exc_info=True)
             return jsonify({"status": "error", "message": "Could not retrieve user"}), 500
+
+    @user_routes.route("/me/usage", methods=["GET"])
+    def me_usage():
+        """Return the authenticated user's AI usage for today."""
+        try:
+            user, error, code = get_current_user(get_connection)
+            if error:
+                return jsonify(error), code
+
+            usage = get_usage(user["id"])
+            return jsonify({"status": "success", "usage": usage})
+
+        except Exception:
+            logger.error("Usage endpoint error", exc_info=True)
+            return jsonify({"status": "error", "message": "Could not retrieve usage"}), 500
 
     app.register_blueprint(user_routes)

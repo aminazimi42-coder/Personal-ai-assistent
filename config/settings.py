@@ -113,6 +113,12 @@ ALLOWED_AUDIO_MIME_TYPES: list[str] = [
 ]
 
 # ------------------------------------------------------------------ #
+# SAAS / QUOTAS
+# ------------------------------------------------------------------ #
+# Max AI requests per user per day (0 = unlimited)
+AI_DAILY_QUOTA_PER_USER: int = _get_int("AI_DAILY_QUOTA_PER_USER", 0)
+
+# ------------------------------------------------------------------ #
 # LOGGING
 # ------------------------------------------------------------------ #
 LOG_LEVEL_NAME: str = _get("LOG_LEVEL", "INFO").upper()
