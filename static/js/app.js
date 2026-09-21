@@ -1534,8 +1534,8 @@ async function signup() {
 
         const data = await res.json();
 
-        if (data.status === "success" && data.user && data.user.auth_token) {
-            setAuthToken(data.user.auth_token);
+        if (data.status === "success" && data.user && data.user.token) {
+            setAuthToken(data.user.token);
             updateAuthStatus("Signup successful and logged in");
             startReminderAutoRefresh();
             loadTasks();
@@ -1571,8 +1571,8 @@ async function login() {
 
         const data = await res.json();
 
-        if (data.status === "success" && data.user && data.user.auth_token) {
-            setAuthToken(data.user.auth_token);
+        if (data.status === "success" && data.user && data.user.token) {
+            setAuthToken(data.user.token);
             updateAuthStatus("Logged in");
             startReminderAutoRefresh();
             loadTasks();
@@ -1665,94 +1665,92 @@ function renderTaskResult(taskData, actionLabel) {
 async function sendMessage(isAuto = false) {
     const message = messageInput ? messageInput.value.trim() : "";
     const dueDateValue = dueDateInput ? dueDateInput.value : "";
-    const dueTimeInput = document.getElementById("dueTimeInput");
-    const dueTimeValue = dueTimeInput ? dueTimeInput.value : "";
+    const dueTimeInputEl = document.getElementById("dueTimeInput");
+    const dueTimeValue = dueTimeInputEl ? dueTimeInputEl.value : "";
 
     let finalDueDate = dueDateValue;
-
     if (dueDateValue && dueTimeValue) {
         finalDueDate = `${dueDateValue}T${dueTimeValue}:00`;
     }
 
     if (!message) {
-        statusText.textContent = "Please enter a message";
+        if (statusText) statusText.textContent = "Please enter a message";
         return;
     }
 
-    statusText.textContent = "Sending...";
+    if (statusText) statusText.textContent = "Sending...";
 
     if (!isAuto) {
         await unlockReminderSound();
         await ensureBrowserNotificationPermission();
     }
 
-    const res = await authorizedFetch(`/smart-ai-browser?message=${encodeURIComponent(message)}`);
-    const data = await res.json();
+    try {
+        // POST JSON to /smart-ai (authenticated, no URL length limit)
+        const res = await authorizedFetch("/smart-ai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ message })
+        });
 
-    if (data.action === "reply") {
-        renderReplyResult(data.reply || "No reply");
-        statusText.textContent = "Done";
-        return;
-    }
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            if (statusText) statusText.textContent = "Server error";
+            return;
+        }
 
-    if (data.action === "task" && data.task) {
-        let finalTask = data.task;
+        if (!res.ok || data.status !== "success") {
+            if (statusText) statusText.textContent = data.message || "Request failed";
+            return;
+        }
 
-        if (finalDueDate) {
-            const updateData = await updateTaskDueDate(data.task.id, finalDueDate);
-            if (updateData.status === "success" && updateData.task) {
-                finalTask = updateData.task;
+        if (data.action === "reply") {
+            renderReplyResult(data.reply || "No reply");
+            if (statusText) statusText.textContent = "Done";
+            return;
+        }
+
+        if (data.action === "task" && data.task) {
+            let finalTask = data.task;
+
+            // If user provided a due date override, update the task
+            if (finalDueDate && data.task.id) {
+                try {
+                    const updateData = await updateTaskDueDate(data.task.id, finalDueDate);
+                    if (updateData && updateData.status === "success" && updateData.task) {
+                        finalTask = updateData.task;
+                    }
+                } catch (e) {
+                    console.warn("Due date update failed:", e);
+                }
             }
+
+            renderTaskResult(finalTask, "task");
+            if (statusText) statusText.textContent = "Done";
+
+            if (messageInput) messageInput.value = "";
+            if (dueDateInput) dueDateInput.value = "";
+            if (dueTimeInputEl) dueTimeInputEl.value = "";
+
+            loadTasks();
+            loadAppointments();
+            loadReminders();
+            return;
         }
 
-        renderTaskResult(finalTask, "task");
-        statusText.textContent = "Done";
-
-        if (messageInput) {
-            messageInput.value = "";
-        }
-
-        if (dueDateInput) {
-            dueDateInput.value = "";
-        }
-
+        // Fallback: show raw response
+        if (resultBox) resultBox.textContent = JSON.stringify(data, null, 2);
+        if (statusText) statusText.textContent = "Done";
         loadTasks();
         loadAppointments();
         loadReminders();
-        return;
+
+    } catch (error) {
+        console.error("sendMessage error:", error);
+        if (statusText) statusText.textContent = "Send failed";
     }
-
-    if (!finalDueDate) {
-        if (resultBox) {
-            resultBox.textContent = JSON.stringify(data, null, 2);
-        }
-
-        statusText.textContent = "Done";
-        loadTasks();
-        loadAppointments();
-        loadReminders();
-        return;
-    }
-
-    const manualTaskData = await createTaskFromMessage(message, finalDueDate);
-
-    if (resultBox) {
-        resultBox.textContent = JSON.stringify(manualTaskData, null, 2);
-    }
-
-    statusText.textContent = "Done";
-
-    if (messageInput) {
-        messageInput.value = "";
-    }
-
-    if (dueDateInput) {
-        dueDateInput.value = "";
-    }
-
-    loadTasks();
-    loadAppointments();
-    loadReminders();
 }
 
 async function updateTask(id, status) {
@@ -1789,6 +1787,112 @@ async function deleteTask(id) {
 
 if (sendButton) {
     sendButton.addEventListener("click", sendMessage);
+}
+
+// ---- Manual task creation ----
+async function createTaskManual() {
+    const titleEl = document.getElementById("newTaskTitleInput");
+    const descEl = document.getElementById("newTaskDescInput");
+    const priorityEl = document.getElementById("newTaskPrioritySelect");
+    const dueDateEl = document.getElementById("newTaskDueDateInput");
+    const statusEl = document.getElementById("createTaskStatus");
+
+    const title = titleEl ? titleEl.value.trim() : "";
+    if (!title) {
+        if (statusEl) statusEl.textContent = "Title is required";
+        return;
+    }
+
+    if (statusEl) statusEl.textContent = "Creating...";
+
+    try {
+        const body = {
+            title,
+            description: descEl ? descEl.value.trim() : "",
+            priority: priorityEl ? priorityEl.value : "medium",
+        };
+        if (dueDateEl && dueDateEl.value) {
+            body.due_date = dueDateEl.value;
+        }
+
+        const res = await authorizedFetch("/tasks", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+            if (statusEl) statusEl.textContent = "Task created!";
+            if (titleEl) titleEl.value = "";
+            if (descEl) descEl.value = "";
+            if (dueDateEl) dueDateEl.value = "";
+            loadTasks();
+            loadReminders();
+        } else {
+            if (statusEl) statusEl.textContent = data.message || "Failed to create task";
+        }
+    } catch (e) {
+        if (statusEl) statusEl.textContent = "Error creating task";
+    }
+}
+
+// ---- Manual appointment creation ----
+async function createAppointmentManual() {
+    const titleEl = document.getElementById("newApptTitleInput");
+    const timeEl = document.getElementById("newApptTimeInput");
+    const locationEl = document.getElementById("newApptLocationInput");
+    const statusEl = document.getElementById("createApptStatus");
+
+    const title = titleEl ? titleEl.value.trim() : "";
+    const apptTime = timeEl ? timeEl.value : "";
+
+    if (!title) {
+        if (statusEl) statusEl.textContent = "Title is required";
+        return;
+    }
+    if (!apptTime) {
+        if (statusEl) statusEl.textContent = "Appointment time is required";
+        return;
+    }
+
+    if (statusEl) statusEl.textContent = "Creating...";
+
+    try {
+        const res = await authorizedFetch("/appointments", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                title,
+                appointment_time: apptTime,
+                location: locationEl ? locationEl.value.trim() : "",
+            }),
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+            if (statusEl) statusEl.textContent = "Appointment created!";
+            if (titleEl) titleEl.value = "";
+            if (timeEl) timeEl.value = "";
+            if (locationEl) locationEl.value = "";
+            loadAppointments();
+            loadReminders();
+        } else {
+            if (statusEl) statusEl.textContent = data.message || "Failed to create appointment";
+        }
+    } catch (e) {
+        if (statusEl) statusEl.textContent = "Error creating appointment";
+    }
+}
+
+const createTaskButton = document.getElementById("createTaskButton");
+if (createTaskButton) {
+    createTaskButton.addEventListener("click", createTaskManual);
+}
+
+const createApptButton = document.getElementById("createApptButton");
+if (createApptButton) {
+    createApptButton.addEventListener("click", createAppointmentManual);
 }
 
 if (refreshTasksButton) {
