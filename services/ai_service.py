@@ -11,6 +11,7 @@ Centralized AI orchestration layer.
 import json
 import logging
 import os
+import time
 from datetime import datetime, timezone
 
 from openai import OpenAI
@@ -133,10 +134,12 @@ def _language_instruction() -> str:
 
 def generate_ai_reply(user_message: str) -> str:
     """Generate a conversational AI reply. Returns safe fallback on any error."""
+    t0 = time.monotonic()
     try:
         client = get_openai_client()
+        model = get_chat_model()
         response = client.chat.completions.create(
-            model=get_chat_model(),
+            model=model,
             messages=[
                 {
                     "role": "system",
@@ -151,10 +154,26 @@ def generate_ai_reply(user_message: str) -> str:
             max_tokens=settings.AI_MAX_TOKENS,
             temperature=0.7,
         )
+        usage = getattr(response, "usage", None)
+        logger.info(
+            "ai_reply completed",
+            extra={
+                "op": "generate_ai_reply",
+                "model": model,
+                "duration_ms": round((time.monotonic() - t0) * 1000),
+                "prompt_tokens": getattr(usage, "prompt_tokens", None),
+                "completion_tokens": getattr(usage, "completion_tokens", None),
+                "total_tokens": getattr(usage, "total_tokens", None),
+            },
+        )
         raw = response.choices[0].message.content if response.choices else None
         return _clean_text(raw)
     except Exception:
-        logger.error("generate_ai_reply failed", exc_info=True)
+        logger.error(
+            "generate_ai_reply failed",
+            extra={"op": "generate_ai_reply", "duration_ms": round((time.monotonic() - t0) * 1000)},
+            exc_info=True,
+        )
         return "I'm unable to respond right now. Please try again."
 
 
@@ -210,8 +229,10 @@ def decide_smart_action(user_message: str) -> dict:
     Decide whether to reply conversationally or create a task.
     Uses a SINGLE LLM call — eliminates the prior double-call pattern.
     """
+    t0 = time.monotonic()
     try:
         client = get_openai_client()
+        model = get_chat_model()
         prompt = (
             f"Current UTC datetime: {_get_utc_now()}\n"
             f"{_language_instruction()}\n\n"
@@ -227,10 +248,22 @@ def decide_smart_action(user_message: str) -> dict:
             f"User: {user_message}"
         )
         response = client.chat.completions.create(
-            model=get_chat_model(),
+            model=model,
             messages=[{"role": "user", "content": prompt}],
             max_tokens=settings.AI_MAX_TOKENS_EXTRACTION,
             temperature=0.2,
+        )
+        usage = getattr(response, "usage", None)
+        logger.info(
+            "smart_action completed",
+            extra={
+                "op": "decide_smart_action",
+                "model": model,
+                "duration_ms": round((time.monotonic() - t0) * 1000),
+                "prompt_tokens": getattr(usage, "prompt_tokens", None),
+                "completion_tokens": getattr(usage, "completion_tokens", None),
+                "total_tokens": getattr(usage, "total_tokens", None),
+            },
         )
         raw = response.choices[0].message.content if response.choices else None
         parsed = _extract_json(_clean_text(raw))
@@ -264,7 +297,11 @@ def decide_smart_action(user_message: str) -> dict:
         }
 
     except Exception:
-        logger.error("decide_smart_action failed", exc_info=True)
+        logger.error(
+            "decide_smart_action failed",
+            extra={"op": "decide_smart_action", "duration_ms": round((time.monotonic() - t0) * 1000)},
+            exc_info=True,
+        )
         # Safe fallback: return a reply action without another API call
         return {
             "action": "reply",

@@ -5,6 +5,8 @@ Flask application factory and entry point.
 
 import logging
 import os
+import time
+import uuid
 
 from flask import Flask, jsonify, g, request
 
@@ -77,6 +79,32 @@ def create_app() -> Flask:
             response.headers["Access-Control-Allow-Methods"] = (
                 "GET, POST, PUT, PATCH, DELETE, OPTIONS"
             )
+        return response
+
+    # ------------------------------------------------------------------ #
+    # Request ID + latency tracking
+    # ------------------------------------------------------------------ #
+    @app.before_request
+    def _start_request():
+        g.request_id = str(uuid.uuid4())[:8]
+        g.request_start = time.monotonic()
+
+    @app.after_request
+    def _log_request(response):
+        duration_ms = round((time.monotonic() - g.get("request_start", time.monotonic())) * 1000)
+        request_id = g.get("request_id", "-")
+        # Structured access log — never logs body/tokens/keys
+        logger.info(
+            "request completed",
+            extra={
+                "request_id": request_id,
+                "method": request.method,
+                "path": request.path,
+                "status": response.status_code,
+                "duration_ms": duration_ms,
+            },
+        )
+        response.headers["X-Request-Id"] = request_id
         return response
 
     @app.before_request
