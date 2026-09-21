@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 
 def serialize_reminder_item(item, time_field):
@@ -14,7 +14,8 @@ def serialize_reminder_item(item, time_field):
 
 
 def build_reminder_window(hours=1):
-    current_time = datetime.utcnow()
+    """Return a time window starting now (UTC-aware)."""
+    current_time = datetime.now(timezone.utc)
     end_time = current_time + timedelta(hours=hours)
 
     return {
