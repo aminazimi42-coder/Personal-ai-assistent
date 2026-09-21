@@ -1,17 +1,20 @@
+"""
+services/user_service.py
+Thin compatibility shim — kept for any future CLI/management use.
+Schema is now managed by Flask-Migrate migrations.
+"""
+
+import logging
+
+logger = logging.getLogger(__name__)
+
+
 def create_user_table(get_connection):
-    conn = get_connection()
-    cur = conn.cursor()
-
-    cur.execute("""
-    CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name TEXT,
-        email TEXT UNIQUE NOT NULL,
-        password TEXT NOT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
+    """
+    Legacy stub — schema is now managed by Flask-Migrate.
+    This function is intentionally a no-op to prevent accidental schema bypass.
+    """
+    logger.warning(
+        "create_user_table() called but schema is managed by Flask-Migrate. "
+        "Run 'flask db upgrade' to apply migrations."
+    )
