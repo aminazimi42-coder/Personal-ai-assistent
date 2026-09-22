@@ -51,7 +51,7 @@ def init_ai_routes(app, get_connection):
                     "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
                 }), 400
 
-            allowed, _ = check_and_increment(current_user["id"])
+            allowed, _ = check_and_increment(current_user["id"], get_connection)
             if not allowed:
                 return jsonify({
                     "status": "error",
@@ -133,7 +133,7 @@ def init_ai_routes(app, get_connection):
                     "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
                 }), 400
 
-            allowed, _ = check_and_increment(current_user["id"])
+            allowed, _ = check_and_increment(current_user["id"], get_connection)
             if not allowed:
                 return jsonify({
                     "status": "error",

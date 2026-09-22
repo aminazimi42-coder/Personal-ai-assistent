@@ -230,7 +230,7 @@ def init_user_routes(app, get_connection):
             if error:
                 return jsonify(error), code
 
-            usage = get_usage(user["id"])
+            usage = get_usage(user["id"], get_connection)
             return jsonify({"status": "success", "usage": usage})
 
         except Exception:
