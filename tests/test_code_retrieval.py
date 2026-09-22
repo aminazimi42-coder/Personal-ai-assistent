@@ -96,7 +96,7 @@ def test_extract_symbols_sets_line_numbers():
 def test_ingest_repository():
     """Ingesting a real directory should find Python files."""
     repo_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    chunks = ingest_repository(repo_path, max_files=50)
+    chunks = ingest_repository(repo_path, max_files=200)
     assert len(chunks) > 0
     # Should find our service files
     file_paths = [c.file_path for c in chunks]

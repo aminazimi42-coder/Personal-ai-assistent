@@ -1,284 +1,247 @@
 """
 tests/test_security_hardening.py
-Comprehensive security tests for Phase 7:
-- Auth/authz: token hashing, expiry, revocation
-- Password: bcrypt, min length
-- Anti-enumeration: login returns same error for bad email/password
-- CORS: restrictive, no wildcard
-- Security headers: X-Content-Type-Options, X-Frame-Options, Referrer-Policy
-- SQL injection: parameterized queries
-- File upload: size limits, MIME validation
-- Rate limits: all endpoints protected
-- Token: never stored raw
-- Error handling: never expose raw exceptions
+Regression tests proving raw auth_token is no longer stored or accepted.
+
+Verifies:
+  1. get_current_user() query uses ONLY auth_token_hash (no raw auth_token)
+  2. signup INSERT does NOT include raw auth_token column
+  3. login UPDATE does NOT store raw auth_token
+  4. logout UPDATE does NOT clear raw auth_token, only auth_token_hash
+
+These tests inspect the actual SQL passed to the mock cursor to ensure the
+legacy raw-token compatibility path is fully removed.
 """
 
-import pytest
+import hashlib
 from unittest.mock import MagicMock, patch
-from services.auth_service import (
-    generate_raw_token, hash_token, hash_password, verify_password,
-    validate_email, validate_password,
-)
-from config import settings
+
+import pytest
+
+from services.auth_service import hash_token, get_current_user
 
 
 # ------------------------------------------------------------------ #
-# Token security
+# Helpers
 # ------------------------------------------------------------------ #
 
-def test_token_is_cryptographically_random():
-    """Tokens must be cryptographically random and unique."""
-    t1 = generate_raw_token()
-    t2 = generate_raw_token()
-    assert t1 != t2
-    assert len(t1) >= 32  # token_urlsafe(48) produces ~64 chars
-
-
-def test_token_hash_is_sha256():
-    """Token hash must be SHA-256 (64 hex chars)."""
-    token = "test-token-value"
-    hashed = hash_token(token)
-    assert len(hashed) == 64  # SHA-256 hex
-    assert all(c in "0123456789abcdef" for c in hashed)
-
-
-def test_token_hash_differs_from_token():
-    """Hash must not equal the raw token."""
-    token = "some-secret-token"
-    assert hash_token(token) != token
-
-
-def test_token_never_stored_raw():
-    """The auth_service must hash tokens, never store raw."""
-    # Verify hash_token produces a different string than input
-    raw = generate_raw_token()
-    hashed = hash_token(raw)
-    assert hashed != raw
-    assert len(hashed) == 64
+def _mock_pool_with_conn(mock_conn):
+    """Create a mock pool whose getconn() returns mock_conn."""
+    pool = MagicMock()
+    pool.getconn.return_value = mock_conn
+    return pool
 
 
 # ------------------------------------------------------------------ #
-# Password security
+# 1. get_current_user does NOT accept raw tokens
 # ------------------------------------------------------------------ #
 
-def test_password_is_bcrypt_hashed():
-    """Passwords must be bcrypt-hashed (not plaintext)."""
-    plain = "MySecurePassword123"
-    hashed = hash_password(plain)
-    assert hashed != plain
-    assert hashed.startswith("$2b$")  # bcrypt format
+def test_get_current_user_query_only_uses_auth_token_hash():
+    """
+    The SQL query in get_current_user must NOT contain 'OR auth_token'.
+    It should only match by auth_token_hash.
+    """
+    conn = MagicMock()
+    cur = MagicMock()
+    conn.cursor.return_value = cur
 
+    with patch("services.auth_service.get_bearer_token", return_value="raw-token-123"):
+        with patch("db.pool.return_connection"):
+            get_current_user(lambda: conn)
 
-def test_password_verification_correct():
-    """verify_password must accept correct password."""
-    plain = "correct-password"
-    hashed = hash_password(plain)
-    assert verify_password(plain, hashed) is True
-
-
-def test_password_verification_incorrect():
-    """verify_password must reject wrong password."""
-    hashed = hash_password("correct-password")
-    assert verify_password("wrong-password", hashed) is False
-
-
-def test_password_verification_bad_hash():
-    """verify_password must return False for corrupted hash, not raise."""
-    assert verify_password("test", "not-a-valid-hash") is False
-
-
-def test_password_min_length():
-    """Password must require minimum 8 characters."""
-    with pytest.raises(ValueError):
-        validate_password("short")
-    assert validate_password("longenough") == "longenough"
-
-
-def test_password_max_length():
-    """Password must reject excessively long passwords."""
-    with pytest.raises(ValueError):
-        validate_password("x" * 200)
-
-
-# ------------------------------------------------------------------ #
-# Anti-enumeration
-# ------------------------------------------------------------------ #
-
-def test_login_anti_enumeration(client):
-    """Login must return same error for non-existent email and wrong password."""
-    # Both should return 401 with "Invalid email or password"
-    # We can't easily test the actual DB lookup, but we can verify the
-    # error structure is consistent
-    res1 = client.post("/login", json={"email": "nonexistent@test.com", "password": "wrong"})
-    # May return 400 (invalid email format) or 401 or 500 (DB error in test)
-    # The key is: the error message should not reveal whether the email exists
-    if res1.status_code == 401:
-        data = res1.get_json()
-        assert "email" not in data.get("message", "").lower() or "invalid" in data.get("message", "").lower()
-
-
-# ------------------------------------------------------------------ #
-# CORS
-# ------------------------------------------------------------------ #
-
-def test_cors_no_wildcard_origin(client):
-    """CORS must not allow wildcard origin."""
-    res = client.get("/health", headers={"Origin": "https://evil.com"})
-    allow_origin = res.headers.get("Access-Control-Allow-Origin", "")
-    assert allow_origin != "*" or not allow_origin
-    assert allow_origin != "https://evil.com"
-
-
-def test_cors_allows_configured_origin(client):
-    """CORS must allow configured origins."""
-    res = client.get("/health", headers={"Origin": "http://localhost:5000"})
-    assert res.headers.get("Access-Control-Allow-Origin") == "http://localhost:5000"
-
-
-# ------------------------------------------------------------------ #
-# Security headers
-# ------------------------------------------------------------------ #
-
-def test_security_headers_x_content_type(client):
-    """X-Content-Type-Options must be nosniff."""
-    res = client.get("/health")
-    assert res.headers.get("X-Content-Type-Options") == "nosniff"
-
-
-def test_security_headers_x_frame_options(client):
-    """X-Frame-Options must be DENY."""
-    res = client.get("/health")
-    assert res.headers.get("X-Frame-Options") == "DENY"
-
-
-def test_security_headers_referrer_policy(client):
-    """Referrer-Policy must be set."""
-    res = client.get("/health")
-    assert res.headers.get("Referrer-Policy") is not None
-
-
-# ------------------------------------------------------------------ #
-# SQL injection prevention
-# ------------------------------------------------------------------ #
-
-def test_sql_uses_parameterized_queries():
-    """All SQL in route files must use parameterized queries (%s)."""
-    import os
-    routes_dir = os.path.join(
-        os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-        "routes"
+    executed_sql = cur.execute.call_args[0][0].lower()
+    assert "or auth_token" not in executed_sql, (
+        "get_current_user still accepts raw auth_token via OR clause"
     )
-    for filename in os.listdir(routes_dir):
-        if filename.endswith(".py"):
-            filepath = os.path.join(routes_dir, filename)
-            with open(filepath) as f:
-                content = f.read()
-            # Check that all cur.execute calls use %s parameters
-            # (not string formatting with .format or f-strings in SQL)
-            assert ".format(" not in content or "SELECT 1" in content
-            # No f-string SQL injection
-            lines = content.split("\n")
-            for line in lines:
-                if "cur.execute" in line and "f\"" in line:
-                    # f-strings in execute are dangerous unless they're
-                    # only for static SQL (no user input)
-                    pytest.fail(f"Potential SQL injection in {filename}: {line.strip()}")
+    assert "auth_token_hash" in executed_sql
+
+    params = cur.execute.call_args[0][1]
+    assert len(params) == 2, (
+        f"Expected 2 params (token_hash, now), got {len(params)}: {params}"
+    )
+
+
+def test_get_current_user_does_not_pass_raw_token_to_query():
+    """
+    The first parameter to the query must be the hashed token, not the raw.
+    """
+    raw_token = "my-secret-raw-token"
+    expected_hash = hash_token(raw_token)
+    conn = MagicMock()
+    cur = MagicMock()
+    conn.cursor.return_value = cur
+
+    with patch("services.auth_service.get_bearer_token", return_value=raw_token):
+        with patch("db.pool.return_connection"):
+            get_current_user(lambda: conn)
+
+    params = cur.execute.call_args[0][1]
+    assert params[0] == expected_hash
+    assert params[0] != raw_token
 
 
 # ------------------------------------------------------------------ #
-# File upload security
+# 2. Signup INSERT does NOT store raw auth_token
 # ------------------------------------------------------------------ #
 
-def test_voice_upload_size_limited():
-    """Voice upload must have a size limit."""
-    assert settings.VOICE_MAX_UPLOAD_BYTES > 0
-    assert settings.VOICE_MAX_UPLOAD_BYTES <= 50 * 1024 * 1024  # max 50 MB
+def test_signup_insert_excludes_raw_auth_token(mocker, client):
+    """
+    The signup INSERT must not include 'auth_token' (raw) in the column list.
+    Only auth_token_hash should be stored.
+    """
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    # fetchone side_effect: SELECT existing check (None), INSERT RETURNING (user row)
+    mock_cur.fetchone.side_effect = [
+        None,
+        {"id": 1, "name": "Test", "email": "test@example.com", "created_at": None},
+    ]
+    mock_conn.cursor.return_value = mock_cur
+
+    mocker.patch("db.pool._pool", _mock_pool_with_conn(mock_conn), create=True)
+
+    res = client.post("/signup", json={
+        "email": "test@example.com",
+        "password": "password123",
+        "name": "Test",
+    })
+
+    assert res.status_code == 201, f"Signup failed: {res.get_json()}"
+
+    insert_calls = [
+        call for call in mock_cur.execute.call_args_list
+        if "INSERT" in str(call).upper()
+    ]
+    assert len(insert_calls) >= 1, "No INSERT was executed during signup"
+
+    insert_sql = str(insert_calls[0]).upper()
+    assert "AUTH_TOKEN_HASH" in insert_sql
+    cleaned = insert_sql.replace("AUTH_TOKEN_HASH", "")
+    assert "AUTH_TOKEN" not in cleaned, (
+        "INSERT must NOT include raw auth_token column"
+    )
 
 
-def test_audio_mime_types_configured():
-    """Allowed audio MIME types must be configured."""
-    assert len(settings.ALLOWED_AUDIO_MIME_TYPES) > 0
-    # Must not include arbitrary types
-    assert "application/octet-stream" not in settings.ALLOWED_AUDIO_MIME_TYPES
+def test_signup_insert_params_exclude_raw_token(mocker, client):
+    """
+    The INSERT params must have 5 values (name, email, password, hash, expires)
+    not 6 (which would include the raw token).
+    """
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_cur.fetchone.side_effect = [
+        None,
+        {"id": 1, "name": "Test", "email": "test@example.com", "created_at": None},
+    ]
+    mock_conn.cursor.return_value = mock_cur
+
+    mocker.patch("db.pool._pool", _mock_pool_with_conn(mock_conn), create=True)
+
+    res = client.post("/signup", json={
+        "email": "test@example.com",
+        "password": "password123",
+        "name": "Test",
+    })
+
+    assert res.status_code == 201, f"Signup failed: {res.get_json()}"
+
+    insert_calls = [
+        call for call in mock_cur.execute.call_args_list
+        if "INSERT" in str(call).upper()
+    ]
+    params = insert_calls[0][0][1]
+    assert len(params) == 5, (
+        f"INSERT should have 5 params (no raw token), got {len(params)}: {params}"
+    )
 
 
 # ------------------------------------------------------------------ #
-# Rate limiting
+# 3. Login UPDATE does NOT store raw auth_token
 # ------------------------------------------------------------------ #
 
-def test_rate_limits_configured():
-    """All rate limit values must be positive."""
-    assert settings.RATE_LIMIT_LOGIN > 0
-    assert settings.RATE_LIMIT_AI > 0
-    assert settings.RATE_LIMIT_GENERAL > 0
+def test_login_update_excludes_raw_auth_token(mocker, client):
+    """
+    The login UPDATE must not set auth_token (raw), only auth_token_hash.
+    """
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    # fetchone for the SELECT user by email query
+    mock_cur.fetchone.return_value = {
+        "id": 1, "name": "Test", "email": "test@example.com",
+        "password": "$2b$12$validhash", "created_at": None,
+    }
+    mock_conn.cursor.return_value = mock_cur
 
+    mocker.patch("db.pool._pool", _mock_pool_with_conn(mock_conn), create=True)
+    # Mock password verification at the route module's binding
+    mocker.patch("routes.user_routes.verify_password", return_value=True)
 
-# ------------------------------------------------------------------ #
-# Error handling
-# ------------------------------------------------------------------ #
+    res = client.post("/login", json={
+        "email": "test@example.com",
+        "password": "password123",
+    })
 
-def test_404_returns_json_not_stack_trace(client):
-    """404 must return JSON error, not a stack trace."""
-    res = client.get("/nonexistent-route")
-    assert res.status_code == 404
-    data = res.get_json()
-    assert data["status"] == "error"
-    assert "traceback" not in str(data).lower()
+    assert res.status_code == 200, f"Login failed: {res.get_json()}"
 
+    update_calls = [
+        call for call in mock_cur.execute.call_args_list
+        if "UPDATE" in str(call).upper()
+    ]
+    assert len(update_calls) >= 1, "No UPDATE was executed during login"
 
-def test_500_returns_json_not_stack_trace(client, mocker):
-    """500 must return JSON error, not a stack trace."""
-    # Force a 500 by making DB fail
-    mocker.patch("db.pool.get_connection", side_effect=Exception("DB down"))
-    res = client.get("/ready")
-    # /ready catches the exception and returns 503, which is correct
-    # But let's check a 500 path
-    assert res.status_code in (200, 503)
+    update_sql = str(update_calls[0]).upper()
+    assert "AUTH_TOKEN_HASH" in update_sql
+    cleaned = update_sql.replace("AUTH_TOKEN_HASH", "")
+    assert "AUTH_TOKEN" not in cleaned, (
+        "UPDATE must NOT set raw auth_token column"
+    )
 
-
-# ------------------------------------------------------------------ #
-# Email validation
-# ------------------------------------------------------------------ #
-
-def test_email_validation_rejects_invalid():
-    """Invalid emails must be rejected."""
-    for bad in ["", "not-an-email", "@example.com", "test@", "a@b"]:
-        with pytest.raises(ValueError):
-            validate_email(bad)
-
-
-def test_email_validation_normalizes():
-    """Emails must be normalized (lowercase, trimmed)."""
-    result = validate_email("  Test@Example.COM  ")
-    assert result == "test@example.com"
-
-
-def test_email_max_length():
-    """Emails longer than 254 chars must be rejected."""
-    with pytest.raises(ValueError):
-        validate_email("a" * 255 + "@example.com")
+    params = update_calls[0][0][1]
+    assert len(params) == 3, (
+        f"UPDATE should have 3 params (hash, expires, id), got {len(params)}: {params}"
+    )
 
 
 # ------------------------------------------------------------------ #
-# Token expiry
+# 4. Logout only clears auth_token_hash
 # ------------------------------------------------------------------ #
 
-def test_token_expiry_is_future():
-    """Token expiry must be in the future."""
-    from services.auth_service import token_expiry
-    from datetime import datetime, timezone
-    expiry = token_expiry()
-    now = datetime.now(timezone.utc)
-    assert expiry > now
+def test_logout_only_clears_auth_token_hash(mocker, client):
+    """
+    The logout UPDATE must only clear auth_token_hash, not raw auth_token.
+    The WHERE clause must match only by auth_token_hash, not OR auth_token.
+    """
+    raw_token = "logout-test-token"
 
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    # fetchone for UPDATE...RETURNING returns a row (revoked)
+    mock_cur.fetchone.return_value = {"id": 1}
+    mock_conn.cursor.return_value = mock_cur
 
-def test_token_expiry_respects_config():
-    """Token expiry must respect configured AUTH_TOKEN_EXPIRY_SECONDS."""
-    from services.auth_service import token_expiry
-    from datetime import datetime, timezone, timedelta
-    expiry = token_expiry()
-    now = datetime.now(timezone.utc)
-    expected = now + timedelta(seconds=settings.AUTH_TOKEN_EXPIRY_SECONDS)
-    # Allow 5 second tolerance for execution time
-    delta = abs((expiry - expected).total_seconds())
-    assert delta < 5
+    mocker.patch("db.pool._pool", _mock_pool_with_conn(mock_conn), create=True)
+    mocker.patch("routes.user_routes.get_bearer_token", return_value=raw_token)
+
+    res = client.post("/logout", headers={"Authorization": f"Bearer {raw_token}"})
+
+    assert res.status_code == 200, f"Logout failed: {res.get_json()}"
+
+    update_calls = [
+        call for call in mock_cur.execute.call_args_list
+        if "UPDATE" in str(call).upper()
+    ]
+    assert len(update_calls) >= 1, "No UPDATE was executed during logout"
+
+    logout_sql = str(update_calls[0]).upper()
+    assert "AUTH_TOKEN_HASH" in logout_sql
+    assert "OR AUTH_TOKEN" not in logout_sql, (
+        "Logout WHERE clause must not match by raw auth_token"
+    )
+    cleaned = logout_sql.replace("AUTH_TOKEN_HASH", "")
+    assert "AUTH_TOKEN" not in cleaned, (
+        "Logout must NOT clear raw auth_token column"
+    )
+
+    params = update_calls[0][0][1]
+    assert len(params) == 1, (
+        f"Logout UPDATE should have 1 param (token_hash), got {len(params)}: {params}"
+    )

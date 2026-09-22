@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="160" viewBox="0 0 1200 160" role="img" aria-labelledby="t d">
+<title id="t">Personal AI Assistant — status ribbon</title>
+<desc id="d">Production-grade status ribbon showing live app, API, tests, security, deployment verified status</desc>
+<defs>
+<linearGradient id="rbg" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#020714"/><stop offset=".5" stop-color="#071c3d"/><stop offset="1" stop-color="#0d1a3d"/></linearGradient>
+<linearGradient id="rg" x1="0" x2="1"><stop stop-color="#52f4ff"/><stop offset="1" stop-color="#bd6cff"/></linearGradient>
+</defs>
+<rect width="1200" height="160" rx="16" fill="url(#rbg)"/>
+<text x="600" y="36" text-anchor="middle" fill="#fff" font-family="Arial" font-size="16" font-weight="800" letter-spacing="3">PRODUCTION-GRADE SaaS · ACTIVE MAINTENANCE</text>
+<g font-family="Arial" font-size="12" text-anchor="middle">
+<g transform="translate(160 90)"><rect x="-70" y="-18" width="140" height="36" rx="8" fill="#08233b" stroke="#52f4ff" stroke-width="1"/><text y="-1" fill="#6cf0ff" font-weight="700">LIVE APP</text><text y="13" fill="#d2e3f7">Render</text></g>
+<g transform="translate(360 90)"><rect x="-70" y="-18" width="140" height="36" rx="8" fill="#08233b" stroke="#52f4ff" stroke-width="1"/><text y="-1" fill="#6cf0ff" font-weight="700">API v1</text><text y="13" fill="#d2e3f7">OpenAPI</text></g>
+<g transform="translate(560 90)"><rect x="-70" y="-18" width="140" height="36" rx="8" fill="#0b2145" stroke="#4d8dff" stroke-width="1"/><text y="-1" fill="#7eb5ff" font-weight="700">TESTS</text><text y="13" fill="#d2e3f7">pytest</text></g>
+<g transform="translate(760 90)"><rect x="-70" y="-18" width="140" height="36" rx="8" fill="#1a1844" stroke="#8b6cff" stroke-width="1"/><text y="-1" fill="#a88fff" font-weight="700">SECURITY</text><text y="13" fill="#d2e3f7">hardened</text></g>
+<g transform="translate(960 90)"><rect x="-70" y="-18" width="140" height="36" rx="8" fill="#2a1240" stroke="#b55eff" stroke-width="1"/><text y="-1" fill="#d4a0ff" font-weight="700">DEPLOY</text><text y="13" fill="#d2e3f7">verified</text></g>
+</g>
+<path d="M100 130H1100" stroke="url(#rg)" stroke-width="2" opacity=".4"/>
+</svg>

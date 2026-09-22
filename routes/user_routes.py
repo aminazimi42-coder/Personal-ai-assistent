@@ -68,10 +68,10 @@ def init_user_routes(app, get_connection):
 
                 cur.execute("""
                     INSERT INTO users
-                        (name, email, password, auth_token_hash, auth_token, token_expires_at)
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                        (name, email, password, auth_token_hash, token_expires_at)
+                    VALUES (%s, %s, %s, %s, %s)
                     RETURNING id, name, email, created_at
-                """, (name, email, hashed_pw, token_hash, raw_token, expires_at))
+                """, (name, email, hashed_pw, token_hash, expires_at))
                 user = cur.fetchone()
                 conn.commit()
             finally:
@@ -135,10 +135,9 @@ def init_user_routes(app, get_connection):
                 cur.execute("""
                     UPDATE users
                     SET auth_token_hash = %s,
-                        auth_token = %s,
                         token_expires_at = %s
                     WHERE id = %s
-                """, (token_hash, raw_token, expires_at, user["id"]))
+                """, (token_hash, expires_at, user["id"]))
                 conn.commit()
             finally:
                 cur.close()
@@ -176,11 +175,10 @@ def init_user_routes(app, get_connection):
                 cur.execute("""
                     UPDATE users
                     SET auth_token_hash = NULL,
-                        auth_token = NULL,
                         token_expires_at = NULL
-                    WHERE auth_token_hash = %s OR auth_token = %s
+                    WHERE auth_token_hash = %s
                     RETURNING id
-                """, (token_hash, raw_token))
+                """, (token_hash,))
                 revoked = cur.fetchone()
                 conn.commit()
             finally:

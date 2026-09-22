@@ -118,6 +118,11 @@ ALLOWED_AUDIO_MIME_TYPES: list[str] = [
 # Max AI requests per user per day (0 = unlimited)
 AI_DAILY_QUOTA_PER_USER: int = _get_int("AI_DAILY_QUOTA_PER_USER", 0)
 
+# Max AI cost per user per month in USD (0 = unlimited)
+AI_MONTHLY_COST_LIMIT_PER_USER: float = float(
+    _get("AI_MONTHLY_COST_LIMIT_PER_USER", "0") or "0"
+)
+
 # ------------------------------------------------------------------ #
 # LOGGING
 # ------------------------------------------------------------------ #

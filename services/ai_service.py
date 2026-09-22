@@ -1,7 +1,7 @@
 """
 services/ai_service.py
 Centralized AI orchestration layer.
-- Single OpenAI client
+- Provider-neutral LLM boundary (services/llm_provider)
 - Explicit timeouts and token budgets
 - Structured output validation
 - Eliminate double-LLM-call for smart-ai
@@ -10,13 +10,20 @@ Centralized AI orchestration layer.
 
 import json
 import logging
-import os
 import time
 from datetime import datetime, timezone
 
 from openai import OpenAI
 
 from config import settings
+from services.llm_provider import (
+    LLMError,
+    LLMProvider,
+    OpenAIProvider,
+    get_llm_provider,
+    register_provider,
+    set_default_provider,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -24,7 +31,8 @@ VALID_PRIORITIES = {"low", "medium", "high"}
 VALID_STATUSES = {"pending", "done"}
 
 # ------------------------------------------------------------------ #
-# OpenAI client (singleton per process)
+# OpenAI client (singleton per process) — kept for backward compat
+# (used by routes/ai_routes.py transcribe and by the OpenAIProvider)
 # ------------------------------------------------------------------ #
 _client: OpenAI | None = None
 
@@ -41,6 +49,35 @@ def get_openai_client() -> OpenAI:
 
 def get_chat_model() -> str:
     return settings.OPENAI_CHAT_MODEL
+
+
+# ------------------------------------------------------------------ #
+# Provider registration — wire OpenAIProvider to use our singleton client
+# ------------------------------------------------------------------ #
+def _build_default_provider() -> OpenAIProvider:
+    """Build an OpenAIProvider that reuses the singleton OpenAI client."""
+    return OpenAIProvider(
+        client_factory=lambda: get_openai_client(),
+        model=get_chat_model(),
+        max_retries=2,
+        retry_delay=0.5,
+    )
+
+
+# We use the llm_provider module-level registry directly
+import services.llm_provider as _llm_mod
+
+
+def _ensure_registered() -> None:
+    if "openai" not in _llm_mod._registry:
+        _llm_mod._registry["openai"] = _build_default_provider()
+        set_default_provider("openai")
+
+
+def get_llm() -> LLMProvider:
+    """Return the configured LLM provider (default: OpenAI)."""
+    _ensure_registered()
+    return get_llm_provider()
 
 
 # ------------------------------------------------------------------ #
@@ -136,38 +173,36 @@ def generate_ai_reply(user_message: str) -> str:
     """Generate a conversational AI reply. Returns safe fallback on any error."""
     t0 = time.monotonic()
     try:
-        client = get_openai_client()
-        model = get_chat_model()
-        response = client.chat.completions.create(
-            model=model,
-            messages=[
-                {
-                    "role": "system",
-                    "content": (
-                        "You are a helpful, friendly AI assistant for productivity. "
-                        "Be clear, concise, and natural. "
-                        f"{_language_instruction()}"
-                    ),
-                },
-                {"role": "user", "content": user_message},
-            ],
+        provider = get_llm()
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful, friendly AI assistant for productivity. "
+                    "Be clear, concise, and natural. "
+                    f"{_language_instruction()}"
+                ),
+            },
+            {"role": "user", "content": user_message},
+        ]
+        result = provider.chat_completion(
+            messages=messages,
             max_tokens=settings.AI_MAX_TOKENS,
             temperature=0.7,
         )
-        usage = getattr(response, "usage", None)
+        usage = result.get("usage", {})
         logger.info(
             "ai_reply completed",
             extra={
                 "op": "generate_ai_reply",
-                "model": model,
+                "model": result.get("model"),
                 "duration_ms": round((time.monotonic() - t0) * 1000),
-                "prompt_tokens": getattr(usage, "prompt_tokens", None),
-                "completion_tokens": getattr(usage, "completion_tokens", None),
-                "total_tokens": getattr(usage, "total_tokens", None),
+                "prompt_tokens": usage.get("prompt_tokens"),
+                "completion_tokens": usage.get("completion_tokens"),
+                "total_tokens": usage.get("total_tokens"),
             },
         )
-        raw = response.choices[0].message.content if response.choices else None
-        return _clean_text(raw)
+        return _clean_text(result.get("content"))
     except Exception:
         logger.error(
             "generate_ai_reply failed",
@@ -183,7 +218,7 @@ def extract_task_from_message(user_message: str) -> dict:
     Returns a validated task dict. Falls back to a simple task on parse failure.
     """
     try:
-        client = get_openai_client()
+        provider = get_llm()
         prompt = (
             f"Current UTC datetime: {_get_utc_now()}\n"
             f"{_language_instruction()}\n\n"
@@ -194,13 +229,12 @@ def extract_task_from_message(user_message: str) -> dict:
             "convert relative dates to absolute ISO8601; null if no date.\n\n"
             f"User: {user_message}"
         )
-        response = client.chat.completions.create(
-            model=get_chat_model(),
+        result = provider.chat_completion(
             messages=[{"role": "user", "content": prompt}],
             max_tokens=settings.AI_MAX_TOKENS_EXTRACTION,
             temperature=0.1,
         )
-        raw = response.choices[0].message.content if response.choices else None
+        raw = result.get("content")
         parsed = _extract_json(_clean_text(raw))
 
         if not parsed:
@@ -231,8 +265,7 @@ def decide_smart_action(user_message: str) -> dict:
     """
     t0 = time.monotonic()
     try:
-        client = get_openai_client()
-        model = get_chat_model()
+        provider = get_llm()
         prompt = (
             f"Current UTC datetime: {_get_utc_now()}\n"
             f"{_language_instruction()}\n\n"
@@ -247,25 +280,24 @@ def decide_smart_action(user_message: str) -> dict:
             "reply must be natural and helpful; do not over-create tasks.\n\n"
             f"User: {user_message}"
         )
-        response = client.chat.completions.create(
-            model=model,
+        result = provider.chat_completion(
             messages=[{"role": "user", "content": prompt}],
             max_tokens=settings.AI_MAX_TOKENS_EXTRACTION,
             temperature=0.2,
         )
-        usage = getattr(response, "usage", None)
+        usage = result.get("usage", {})
         logger.info(
             "smart_action completed",
             extra={
                 "op": "decide_smart_action",
-                "model": model,
+                "model": result.get("model"),
                 "duration_ms": round((time.monotonic() - t0) * 1000),
-                "prompt_tokens": getattr(usage, "prompt_tokens", None),
-                "completion_tokens": getattr(usage, "completion_tokens", None),
-                "total_tokens": getattr(usage, "total_tokens", None),
+                "prompt_tokens": usage.get("prompt_tokens"),
+                "completion_tokens": usage.get("completion_tokens"),
+                "total_tokens": usage.get("total_tokens"),
             },
         )
-        raw = response.choices[0].message.content if response.choices else None
+        raw = result.get("content")
         parsed = _extract_json(_clean_text(raw))
 
         if not parsed or parsed.get("action") not in ("task", "reply"):

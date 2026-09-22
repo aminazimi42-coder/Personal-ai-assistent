@@ -37,6 +37,8 @@ class DashboardMetrics:
 
     # Cost
     monthly_cost_usd: float = 0.0
+    cost_limit_usd: Optional[float] = None
+    cost_exceeded: bool = False
 
     # Tokens
     total_tokens_consumed: int = 0
@@ -61,9 +63,20 @@ class DashboardMetrics:
     automation_enabled_count: int = 0
     automation_recent_executions: list[dict] = field(default_factory=list)
 
+    # Agent runs
+    agent_run_count: int = 0
+
     # Security
     rate_limits: dict[str, int] = field(default_factory=dict)
     cors_origins_count: int = 0
+
+    # Tenant / billing
+    tenant_id: Optional[int] = None
+    tenant_plan: str = "individual"
+    billing_status: str = "active"
+
+    # Tool audit
+    tool_audit_events: list[dict] = field(default_factory=list)
 
     # Activity
     recent_audit_events: list[dict] = field(default_factory=list)
@@ -78,6 +91,8 @@ class DashboardMetrics:
             "ai_quota": self.ai_quota,
             "quota_exceeded": self.quota_exceeded,
             "monthly_cost_usd": round(self.monthly_cost_usd, 6),
+            "cost_limit_usd": self.cost_limit_usd,
+            "cost_exceeded": self.cost_exceeded,
             "total_tokens_consumed": self.total_tokens_consumed,
             "retrieval_tokens_saved": self.retrieval_tokens_saved,
             "memory_count": self.memory_count,
@@ -89,8 +104,13 @@ class DashboardMetrics:
             "automation_count": self.automation_count,
             "automation_enabled_count": self.automation_enabled_count,
             "automation_recent_executions": self.automation_recent_executions[:10],
+            "agent_run_count": self.agent_run_count,
             "rate_limits": self.rate_limits,
             "cors_origins_count": self.cors_origins_count,
+            "tenant_id": self.tenant_id,
+            "tenant_plan": self.tenant_plan,
+            "billing_status": self.billing_status,
+            "tool_audit_events": self.tool_audit_events[:10],
             "recent_audit_events": self.recent_audit_events[:10],
             "generated_at": self.generated_at,
             "latency_ms": self.latency_ms,
@@ -119,6 +139,15 @@ def get_dashboard_metrics(user_id: int, get_connection_fn=None) -> DashboardMetr
     try:
         from services.cost_intelligence import get_monthly_cost
         metrics.monthly_cost_usd = get_monthly_cost(user_id)
+        metrics.cost_limit_usd = (
+            settings.AI_MONTHLY_COST_LIMIT_PER_USER
+            if settings.AI_MONTHLY_COST_LIMIT_PER_USER > 0
+            else None
+        )
+        metrics.cost_exceeded = (
+            settings.AI_MONTHLY_COST_LIMIT_PER_USER > 0
+            and metrics.monthly_cost_usd >= settings.AI_MONTHLY_COST_LIMIT_PER_USER
+        )
     except Exception:
         pass
 
@@ -148,9 +177,18 @@ def get_dashboard_metrics(user_id: int, get_connection_fn=None) -> DashboardMetr
         autos = list_automations(user_id)
         metrics.automation_count = len(autos)
         metrics.automation_enabled_count = sum(1 for a in autos if a.enabled)
-        metrics.automation_recent_executions = get_execution_log(user_id, limit=10)
+        exec_log = get_execution_log(user_id, limit=10)
+        metrics.automation_recent_executions = exec_log
+        # Agent runs — count from execution log
+        metrics.agent_run_count = len(get_execution_log(user_id, limit=10000))
     except Exception:
         pass
+
+    # Tenant / billing
+    # Each user is their own tenant with an individual plan.
+    metrics.tenant_id = user_id
+    metrics.tenant_plan = "individual"
+    metrics.billing_status = "active" if not metrics.cost_exceeded else "budget_exceeded"
 
     # Security
     metrics.rate_limits = {
@@ -167,6 +205,13 @@ def get_dashboard_metrics(user_id: int, get_connection_fn=None) -> DashboardMetr
     except Exception:
         pass
 
+    # Tool audit events (from tool_gateway)
+    try:
+        from services.tool_gateway import get_tool_audit_log
+        metrics.tool_audit_events = get_tool_audit_log(user_id, limit=10)
+    except Exception:
+        pass
+
     # Timestamp
     from datetime import datetime, timezone
     metrics.generated_at = datetime.now(timezone.utc).isoformat()
@@ -178,6 +223,31 @@ def get_dashboard_metrics(user_id: int, get_connection_fn=None) -> DashboardMetr
     )
 
     return metrics
+
+
+def get_control_center(user_id: int, get_connection_fn=None) -> dict:
+    """
+    Comprehensive control center snapshot for a user.
+
+    Combines dashboard metrics, health summary, and cost dashboard
+    into a single response. All values come from real service state.
+    """
+    metrics = get_dashboard_metrics(user_id, get_connection_fn)
+    health = get_health_summary()
+
+    cost_dashboard: dict = {}
+    try:
+        from services.cost_intelligence import get_cost_dashboard
+        cost_dashboard = get_cost_dashboard(user_id, get_connection_fn)
+    except Exception:
+        pass
+
+    return {
+        "dashboard": metrics.to_dict(),
+        "health": health,
+        "cost": cost_dashboard,
+        "user_id": user_id,
+    }
 
 
 def get_health_summary() -> dict:

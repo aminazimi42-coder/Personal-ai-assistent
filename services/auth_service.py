@@ -131,13 +131,13 @@ def get_current_user(get_connection):
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        # Support both new hashed-token column and legacy plain auth_token
+        # Only match by hashed token — raw tokens are never stored
         cur.execute("""
             SELECT id, name, email, created_at, token_expires_at
             FROM users
-            WHERE (auth_token_hash = %s OR auth_token = %s)
+            WHERE auth_token_hash = %s
               AND (token_expires_at IS NULL OR token_expires_at > %s)
-        """, (token_hash, raw_token, now))
+        """, (token_hash, now))
         user = cur.fetchone()
     finally:
         cur.close()

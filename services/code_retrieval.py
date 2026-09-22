@@ -32,6 +32,34 @@ from typing import Optional
 logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------ #
+# Prompt-injection defense
+# ------------------------------------------------------------------ #
+MAX_QUERY_LENGTH = 10000
+
+# Control characters (C0 + DEL) — never allowed in sanitized input
+_CTRL_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]")
+
+
+def sanitize_input(text: str, max_length: int = MAX_QUERY_LENGTH) -> str:
+    """
+    Sanitize untrusted user input before using it in retrieval or LLM prompts.
+
+    - Strips control characters that could be used to obfuscate injections
+      or hide malicious content from display.
+    - Truncates to ``max_length`` to bound resource use.
+    Returns the cleaned string (possibly empty).
+    """
+    if not text:
+        return ""
+    # Remove control characters
+    cleaned = _CTRL_RE.sub("", str(text))
+    # Collapse excessive whitespace
+    cleaned = re.sub(r"\s+", " ", cleaned)
+    # Length guard
+    cleaned = cleaned.strip()[:max_length]
+    return cleaned
+
+# ------------------------------------------------------------------ #
 # Token counting (uses tiktoken if available, else heuristic)
 # ------------------------------------------------------------------ #
 _tiktoken_available = False
@@ -369,7 +397,9 @@ def retrieve_code(
     t0 = time.monotonic()
 
     # Sanitize query (prompt-injection aware)
-    sanitized = _sanitize_query(query)
+    sanitized = sanitize_input(query)
+    # Also apply the query-specific sanitization (removes special chars)
+    sanitized = _sanitize_query(sanitized)
 
     # Ingest
     chunks = ingest_repository(repo_path)

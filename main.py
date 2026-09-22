@@ -259,12 +259,24 @@ def create_app() -> Flask:
     from routes.calendar_routes import init_calendar_routes
     from routes.reminder_routes import init_reminder_routes
     from routes.ai_routes import init_ai_routes
+    from routes.automation_routes import init_automation_routes
+    from routes.workspace_routes import init_workspace_routes
+    from routes.agent_routes import init_agent_routes
+    from routes.privacy_routes import init_privacy_routes
+    from routes.control_center_routes import init_control_center_routes
+    from routes.api_v1 import init_api_v1_routes
 
     init_user_routes(app, get_connection)
     init_task_routes(app, get_connection)
     init_calendar_routes(app, get_connection)
     init_reminder_routes(app, get_connection)
     init_ai_routes(app, get_connection)
+    init_automation_routes(app, get_connection)
+    init_workspace_routes(app, get_connection)
+    init_agent_routes(app, get_connection)
+    init_privacy_routes(app, get_connection)
+    init_control_center_routes(app, get_connection)
+    init_api_v1_routes(app, get_connection)
 
     logger.info("Flask application created (env=%s)", settings.FLASK_ENV)
     return app

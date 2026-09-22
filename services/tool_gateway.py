@@ -68,6 +68,19 @@ class ToolCallResult:
 # Tool registry
 _registry: dict[str, ToolDefinition] = {}
 
+# Tool call audit log
+_tool_audit_log: list[dict] = []
+
+
+def get_tool_audit_log(user_id: int, limit: int = 50) -> list[dict]:
+    """Get tool call audit log entries for a user."""
+    return [e for e in _tool_audit_log if e.get("user_id") == user_id][:limit]
+
+
+def reset_tool_audit_log() -> None:
+    """Reset the tool audit log (for tests)."""
+    _tool_audit_log.clear()
+
 
 def register_tool(
     name: str,
@@ -141,6 +154,18 @@ def call_tool(
         logger.error("Tool gateway: %s failed (user=%d): %s", tool_name, user_id, exc)
     finally:
         result.duration_ms = round((time.monotonic() - t0) * 1000)
+
+    # Log to audit trail
+    _tool_audit_log.append({
+        "call_id": call_id,
+        "tool_name": tool_name,
+        "user_id": user_id,
+        "allowed": result.allowed,
+        "approved": approved,
+        "duration_ms": result.duration_ms,
+        "timestamp": time.time(),
+        "error": result.error,
+    })
 
     return result
 

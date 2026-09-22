@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="620" viewBox="0 0 1440 620" role="img" aria-labelledby="t d">
+<title id="t">author-command-deck.svg</title><desc id="d">Amin Azimi author command deck with a prominent identity and four architectural pillars</desc><defs>
+<linearGradient id="bg" x2="1" y2="1"><stop stop-color="#020817"/><stop offset=".52" stop-color="#071b3b"/><stop offset="1" stop-color="#180b38"/></linearGradient>
+<linearGradient id="neon"><stop stop-color="#4bf5ff"/><stop offset="1" stop-color="#a86cff"/></linearGradient>
+<filter id="glow"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs><rect width="1440" height="620" rx="28" fill="url(#bg)"/>
+<g fill="#fff" opacity=".42"><circle cx="90" cy="76" r="2"/><circle cx="310" cy="145" r="1"/><circle cx="580" cy="74" r="1.5"/><circle cx="960" cy="94" r="2"/><circle cx="1260" cy="126" r="1.5"/></g>
+<text x="720" y="82" text-anchor="middle" fill="#fff" font-family="Arial" font-size="25" letter-spacing="8">AUTHOR • SYSTEM ARCHITECT</text>
+<text x="720" y="170" text-anchor="middle" fill="url(#neon)" font-family="Arial" font-size="68" font-weight="900" letter-spacing="7" filter="url(#glow)">AMIN AZIMI</text>
+<text x="720" y="218" text-anchor="middle" fill="#b9cbed" font-family="Arial" font-size="23" letter-spacing="5">AI ARCHITECT</text>
+<path d="M265 272H1175" stroke="url(#neon)" stroke-width="2"/>
+<g font-family="Arial" text-anchor="middle"><g transform="translate(275 390)"><circle r="103" fill="#06203a" stroke="#44eaff" stroke-width="2"/><text y="-17" fill="#62efff" font-size="18" font-weight="700">ROLE</text><text y="16" fill="#fff" font-size="16">End-to-End</text><text y="40" fill="#cad7ec" font-size="14">System Architecture</text></g>
+<g transform="translate(570 390)"><path d="M0-110L95-55V55L0 110L-95 55V-55Z" fill="#0b2145" stroke="#5abaff" stroke-width="2"/><text y="-17" fill="#76c8ff" font-size="18" font-weight="700">MISSION</text><text y="16" fill="#fff" font-size="16">Evidence-led</text><text y="40" fill="#cad7ec" font-size="14">AI systems</text></g>
+<g transform="translate(870 390)"><path d="M0-110L95-55V55L0 110L-95 55V-55Z" fill="#171846" stroke="#967dff" stroke-width="2"/><text y="-17" fill="#b09aff" font-size="18" font-weight="700">LAB</text><text y="16" fill="#fff" font-size="16">Azimi Innovation</text><text y="40" fill="#dad1ef" font-size="14">Beyond the Horizon</text></g>
+<g transform="translate(1165 390)"><circle r="103" fill="#24123d" stroke="#c16fff" stroke-width="2"/><text y="-17" fill="#d99dff" font-size="18" font-weight="700">AUTHORITY</text><text y="16" fill="#fff" font-size="16">Human-governed</text><text y="40" fill="#e2d4ef" font-size="14">Advisory-only AI</text></g></g>
+<circle r="5" fill="#fff"><animateMotion dur="6s" repeatCount="indefinite" path="M275 390H1165"/></circle>
+<text x="720" y="578" text-anchor="middle" fill="#8297ba" font-family="Arial" font-size="14" letter-spacing="3">ARCHITECTURE • INTEGRITY • VERIFICATION • HUMAN AUTHORITY</text>
+</svg>

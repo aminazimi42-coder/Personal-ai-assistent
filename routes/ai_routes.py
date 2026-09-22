@@ -88,6 +88,14 @@ def init_ai_routes(app, get_connection):
                     "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
                 }), 400
 
+            # Quota enforcement — ai-to-task also incurs an AI call
+            allowed, _ = check_and_increment(current_user["id"], get_connection)
+            if not allowed:
+                return jsonify({
+                    "status": "error",
+                    "message": "Daily AI request limit reached. Please try again tomorrow.",
+                }), 429
+
             extracted = extract_task_from_message(message)
             task = insert_task(
                 get_connection=get_connection,
@@ -183,6 +191,14 @@ def init_ai_routes(app, get_connection):
             if error:
                 return jsonify(error), code
 
+            # Quota enforcement — transcription also incurs an AI call
+            allowed, _ = check_and_increment(current_user["id"], get_connection)
+            if not allowed:
+                return jsonify({
+                    "status": "error",
+                    "message": "Daily AI request limit reached. Please try again tomorrow.",
+                }), 429
+
             if "audio" not in request.files:
                 return jsonify({"status": "error", "message": "Audio file is required"}), 400
 
@@ -201,8 +217,18 @@ def init_ai_routes(app, get_connection):
             if len(audio_data) == 0:
                 return jsonify({"status": "error", "message": "Audio file is empty"}), 400
 
-            # Determine file extension from mime type
+            # MIME content-type validation
             content_type = audio_file.content_type or ""
+            if content_type not in settings.ALLOWED_AUDIO_MIME_TYPES:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Unsupported audio type: {content_type}. Allowed: {', '.join(settings.ALLOWED_AUDIO_MIME_TYPES)}",
+                }), 415
+
+            # Sanitize filename to prevent path traversal
+            safe_name = os.path.basename(audio_file.filename)
+
+            # Determine file extension from mime type
             ext = ".webm"
             if "mp4" in content_type or "m4a" in content_type:
                 ext = ".mp4"
@@ -241,5 +267,86 @@ def init_ai_routes(app, get_connection):
                     os.remove(temp_path)
                 except Exception:
                     pass
+
+    @ai_routes.route("/voice-to-task", methods=["POST"])
+    @ai_limit()
+    def voice_to_task():
+        """Authenticated voice-to-task: transcribe → extract → return for confirmation."""
+        try:
+            current_user, error, code = get_current_user(get_connection)
+            if error:
+                return jsonify(error), code
+
+            if "audio" not in request.files:
+                return jsonify({"status": "error", "message": "Audio file is required"}), 400
+
+            audio_file = request.files["audio"]
+            if not audio_file or not audio_file.filename:
+                return jsonify({"status": "error", "message": "Invalid audio file"}), 400
+
+            audio_data = audio_file.read(settings.VOICE_MAX_UPLOAD_BYTES + 1)
+            if len(audio_data) > settings.VOICE_MAX_UPLOAD_BYTES:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Audio file too large (max {settings.VOICE_MAX_UPLOAD_BYTES // (1024 * 1024)} MB)",
+                }), 413
+
+            if len(audio_data) == 0:
+                return jsonify({"status": "error", "message": "Audio file is empty"}), 400
+
+            content_type = audio_file.content_type or ""
+            if content_type not in settings.ALLOWED_AUDIO_MIME_TYPES:
+                return jsonify({
+                    "status": "error",
+                    "message": f"Unsupported audio type: {content_type}. Allowed: {', '.join(settings.ALLOWED_AUDIO_MIME_TYPES)}",
+                }), 415
+
+            from services.voice_to_task import process_voice_to_task
+
+            result = process_voice_to_task(
+                user_id=current_user["id"],
+                audio_data=audio_data,
+                content_type=content_type,
+                get_connection=get_connection,
+            )
+            return jsonify(result)
+
+        except ValueError as ve:
+            return jsonify({"status": "error", "message": str(ve)}), 400
+        except Exception:
+            logger.error("Voice-to-task error", exc_info=True)
+            return jsonify({"status": "error", "message": "Voice processing failed"}), 503
+
+    @ai_routes.route("/voice-to-task/confirm", methods=["POST"])
+    @ai_limit()
+    def voice_to_task_confirm():
+        """Confirm and create a task from a voice-to-task extraction."""
+        try:
+            current_user, error, code = get_current_user(get_connection)
+            if error:
+                return jsonify(error), code
+
+            data = request.get_json(silent=True)
+            if not data:
+                return jsonify({"status": "error", "message": "Request body must be JSON"}), 400
+
+            task_data = data.get("task")
+            if not task_data or not task_data.get("title"):
+                return jsonify({"status": "error", "message": "Task with title is required for confirmation"}), 400
+
+            from services.voice_to_task import confirm_and_create_task
+
+            task = confirm_and_create_task(
+                user_id=current_user["id"],
+                task_data=task_data,
+                get_connection=get_connection,
+            )
+            return jsonify({"status": "success", "message": "Task created from voice", "task": task})
+
+        except ValueError as ve:
+            return jsonify({"status": "error", "message": str(ve)}), 400
+        except Exception:
+            logger.error("Voice-to-task confirm error", exc_info=True)
+            return jsonify({"status": "error", "message": "Could not create task"}), 503
 
     app.register_blueprint(ai_routes)

@@ -158,3 +158,164 @@ def get_monthly_cost(user_id: int) -> float:
     month_key = datetime.now().strftime("%Y-%m")
     with _get_cache_lock():
         return _monthly_cache.get(user_id, {}).get(month_key, 0.0)
+
+
+# ------------------------------------------------------------------ #
+# Extended cost intelligence: monthly usage, budgets, routing, dashboard
+# ------------------------------------------------------------------ #
+# Cache hit/miss tracking
+_cache_stats: dict[str, int] = {"hits": 0, "misses": 0}
+
+
+def record_cache_hit() -> None:
+    """Record a cache hit."""
+    with _get_cache_lock():
+        _cache_stats["hits"] += 1
+
+
+def record_cache_miss() -> None:
+    """Record a cache miss."""
+    with _get_cache_lock():
+        _cache_stats["misses"] += 1
+
+
+def get_cache_stats() -> dict[str, int]:
+    """Return cache hit/miss statistics."""
+    with _get_cache_lock():
+        return dict(_cache_stats)
+
+
+def reset_cache_stats() -> None:
+    """Reset cache statistics (for tests)."""
+    with _get_cache_lock():
+        _cache_stats["hits"] = 0
+        _cache_stats["misses"] = 0
+
+
+def get_monthly_usage(user_id: int, get_connection=None) -> dict:
+    """
+    Aggregate monthly cost breakdown for a user.
+
+    Returns a dict with month, total cost, daily breakdown,
+    and budget limit status.
+    """
+    from datetime import datetime, timezone
+
+    month_key = datetime.now(timezone.utc).strftime("%Y-%m")
+    total = get_monthly_cost(user_id)
+    limit = settings.AI_MONTHLY_COST_LIMIT_PER_USER
+
+    # Daily breakdown from usage service
+    daily = {}
+    try:
+        from services.usage_service import get_usage
+        today_usage = get_usage(user_id, get_connection)
+        daily["today"] = today_usage.get("ai_calls_today", 0)
+    except Exception:
+        daily["today"] = 0
+
+    return {
+        "user_id": user_id,
+        "month": month_key,
+        "total_cost_usd": round(total, 6),
+        "budget_limit_usd": limit if limit > 0 else None,
+        "budget_exceeded": limit > 0 and total >= limit,
+        "budget_remaining": round(max(0, limit - total), 6) if limit > 0 else None,
+        "daily": daily,
+    }
+
+
+def check_workspace_budget(user_id: int, workspace_id: int = 0, get_connection=None) -> bool:
+    """
+    Check if a user/workspace is within budget.
+
+    Returns True if within budget (or if no limit is set), False otherwise.
+    """
+    limit = settings.AI_MONTHLY_COST_LIMIT_PER_USER
+    if limit <= 0:
+        return True  # No limit set
+
+    total = get_monthly_cost(user_id)
+    return total < limit
+
+
+def get_cost_dashboard(user_id: int, get_connection=None) -> dict:
+    """
+    Comprehensive cost breakdown for the dashboard.
+
+    Returns model usage, cache stats, budget status, and cost trends.
+    """
+    from datetime import datetime, timezone
+
+    monthly = get_monthly_usage(user_id, get_connection)
+    cache_stats = get_cache_stats()
+    total_cache_entries = get_cache_size()
+
+    # Model breakdown from monthly cache
+    model_costs: dict[str, float] = {}
+    try:
+        from services.cost_intelligence import _monthly_cache
+        month_key = datetime.now(timezone.utc).strftime("%Y-%m")
+        user_data = _monthly_cache.get(user_id, {})
+        for mk, val in user_data.items():
+            if mk == month_key:
+                model_costs["current_month"] = val
+    except Exception:
+        pass
+
+    return {
+        "user_id": user_id,
+        "monthly": monthly,
+        "cache": {
+            "hits": cache_stats["hits"],
+            "misses": cache_stats["misses"],
+            "total_entries": total_cache_entries,
+            "hit_rate": (
+                round(cache_stats["hits"] / (cache_stats["hits"] + cache_stats["misses"]), 4)
+                if (cache_stats["hits"] + cache_stats["misses"]) > 0
+                else 0.0
+            ),
+        },
+        "model_costs": model_costs,
+        "configured_model": settings.OPENAI_CHAT_MODEL,
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def route_request(complexity: str = "simple", user_id: int = 0) -> dict:
+    """
+    Route a request to the appropriate model based on complexity and budget.
+
+    Returns a dict with model selection, cost estimate, and budget status.
+    """
+    model = select_model(complexity)
+
+    # Estimate cost for a typical request
+    est = estimate_cost(model, input_tokens=1000, output_tokens=500)
+
+    # Check budget
+    within_budget = True
+    budget_status = "ok"
+    limit = settings.AI_MONTHLY_COST_LIMIT_PER_USER
+    if limit > 0:
+        current = get_monthly_cost(user_id)
+        if current >= limit:
+            within_budget = False
+            budget_status = "exceeded"
+        elif current + est.total_cost_usd > limit:
+            within_budget = False
+            budget_status = "would_exceed"
+
+    return {
+        "model": model,
+        "complexity": complexity,
+        "cost_estimate": {
+            "input_tokens": est.input_tokens,
+            "output_tokens": est.output_tokens,
+            "total_cost_usd": est.total_cost_usd,
+        },
+        "within_budget": within_budget,
+        "budget_status": budget_status,
+        "monthly_cost_usd": round(get_monthly_cost(user_id), 6),
+        "budget_limit_usd": limit if limit > 0 else None,
+    }
