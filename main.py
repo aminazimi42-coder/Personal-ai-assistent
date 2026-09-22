@@ -172,7 +172,7 @@ def create_app() -> Flask:
     # Routes
     # ------------------------------------------------------------------ #
     from flask import render_template
-    import requests as http_requests
+    from services.external_api import fetch_exchange_rates, ExternalAPIError
 
     @app.route("/")
     def home():
@@ -213,23 +213,18 @@ def create_app() -> Flask:
     @app.route("/exchange-rates")
     def exchange_rates():
         try:
-            response = http_requests.get(
-                "https://api.frankfurter.app/latest"
-                "?from=USD&to=EUR,GBP,CAD,AUD,JPY,TRY,AED",
-                timeout=10,
-            )
-            if not response.ok:
-                return jsonify({
-                    "status": "error",
-                    "message": "Exchange rate provider unavailable",
-                }), 502
-            data = response.json()
+            data = fetch_exchange_rates()
             return jsonify({
                 "status": "success",
-                "base": data.get("base"),
-                "date": data.get("date"),
-                "rates": data.get("rates", {}),
+                "base": data["base"],
+                "date": data["date"],
+                "rates": data["rates"],
             })
+        except ExternalAPIError:
+            return jsonify({
+                "status": "error",
+                "message": "Exchange rate provider unavailable",
+            }), 502
         except Exception:
             logger.warning("Exchange rates fetch failed", exc_info=True)
             return jsonify({
