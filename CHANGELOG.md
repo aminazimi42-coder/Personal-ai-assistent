@@ -5,6 +5,86 @@ All notable changes to the Personal AI Assistant project are documented in this 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-09-22
+
+### Evolution — Production-Grade SaaS
+
+Post-freeze evolution directive. The project is unfrozen for active maintenance
+and production-grade SaaS capabilities. v1.0.0 remains immutable history.
+
+### Security Hardening
+
+- Removed legacy raw `auth_token` compatibility — only SHA-256 hashed tokens stored/accepted
+- Fixed quota bypass on `/ai-to-task` and `/transcribe-voice` routes
+- Added MIME content-type validation for voice uploads
+- Added filename sanitization to prevent path traversal
+- Added prompt-injection defense: query sanitization, control-character stripping, length bounds
+- Migration `005_remove_legacy_auth_token` drops the raw token column
+
+### LLM Provider Abstraction
+
+- `services/llm_provider.py`: abstract `LLMProvider` boundary with `OpenAIProvider` adapter
+- Provider registry, timeout, bounded retries, normalized `LLMError` exceptions
+- Cost metadata (model, input/output tokens, estimated cost) returned with each call
+- `ai_service.py` refactored to use the provider abstraction
+
+### Multi-Tenant SaaS + Billing
+
+- `services/tenant_service.py`: tenants, memberships, roles (owner/admin/member)
+- `services/billing_service.py`: plan model (free/pro), subscription lifecycle, idempotent webhooks
+- `routes/api_v1.py`: versioned `/api/v1/` API with generated OpenAPI spec
+- Migration `006_add_tenant_billing`: tenants, tenant_memberships, subscriptions, billing_events
+
+### Durable Agent Execution
+
+- `agent_runs` table with state machine (PENDING → APPROVED → EXECUTING → COMPLETED/FAILED/DENIED/CANCELED)
+- Idempotency via unique `action_id`, cancellation, retry, approval gates
+- `routes/agent_routes.py`: execute, approve, cancel, retry, list, get
+- Migration `007_add_agent_runs`
+
+### Context Compiler
+
+- `services/context_compiler.py`: compiles inspectable context from memories, code, tasks, projects
+- Records source, relevance, provenance, token budget, compression decisions
+- Selection explanation: why context was selected
+
+### Automation + Background Jobs + Voice-to-Task
+
+- `services/background_jobs.py`: job queue with enqueue, process, status, idempotency, retries
+- `services/voice_to_task.py`: voice → transcription → task extraction → user confirmation
+- `services/automation.py` refactored to DB-backed with pause/resume
+- Migrations `008_add_workspaces`, `009_automation_jobs_voice_to_task`
+
+### AI Evaluation + MCP-Compatible Tools
+
+- `services/ai_evaluation.py`: 12 scenario families (task extraction, language understanding, retrieval relevance, context sufficiency, prompt-injection resistance, user isolation, token budget, cost controls, agent safety, tool permissions, verification correctness, voice-to-task)
+- `services/mcp_tools.py`: MCP-compatible schemas routing through tool gateway — MCP cannot bypass
+- `routes/evaluation_routes.py`: AI evaluation and MCP tool endpoints
+
+### Privacy Operations + Cost Intelligence + Control Center
+
+- `services/privacy.py`: user data export, account deletion, safe logging, AI data boundary
+- `services/cost_intelligence.py`: monthly usage, workspace budgets, cost dashboard, cache stats
+- `services/control_center.py`: tenant, billing, agent, automation, tool audit metrics
+- `routes/privacy_routes.py`, `routes/control_center_routes.py`
+
+### Durable Workspace System
+
+- `services/workspace.py` refactored to DB-backed with in-memory fallback for tests
+- `routes/workspace_routes.py`: workspace and project CRUD API routes
+- Migration `008_add_workspaces`
+
+### Cinematic README
+
+- Rebuilt README using AILORA-inspired cinematic documentation/visual language
+- Hero, connected-systems, status-ribbon, evidence-constellation, control-center SVGs
+- Bob engineering-agent portrait in Author section
+- 27-section structure per directive specification
+
+### Test Count
+
+- 384 → 743 tests (359 new tests across 15+ new test modules)
+
 ## [1.0.0] — 2026-09-22
 
 ### Final Release — Development Freeze

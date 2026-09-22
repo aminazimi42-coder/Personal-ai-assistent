@@ -202,7 +202,7 @@ def create_app() -> Flask:
     def app_info():
         return jsonify({
             "name": "Personal AI Assistant",
-            "version": "1.0.0",
+            "version": "1.1.0",
             "author": "Amin Azimi",
             "description": (
                 "A smart productivity assistant for tasks, appointments, "
