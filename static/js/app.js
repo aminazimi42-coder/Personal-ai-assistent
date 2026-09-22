@@ -764,14 +764,28 @@ function restoreCachedLocation() {
     updateLocationStatus(cachedLocation.status || "Showing last known location.");
 }
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 10000) {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+    try {
+        const response = await fetch(url, {
+            ...options,
+            signal: controller.signal
+        });
+        return response;
+    } finally {
+        window.clearTimeout(timeoutId);
+    }
+}
+
 async function reverseGeocode(latitude, longitude) {
     const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${encodeURIComponent(latitude)}&lon=${encodeURIComponent(longitude)}`;
 
-    const response = await fetch(url, {
+    const response = await fetchWithTimeout(url, {
         headers: {
             "Accept": "application/json"
         }
-    });
+    }, 10000);
 
     if (!response.ok) {
         throw new Error("Failed to reverse geocode location");
@@ -886,7 +900,7 @@ async function loadWeather() {
 
         const url = `https://api.open-meteo.com/v1/forecast?latitude=${encodeURIComponent(latitude)}&longitude=${encodeURIComponent(longitude)}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m`;
 
-        const response = await fetch(url);
+        const response = await fetchWithTimeout(url, {}, 10000);
 
         if (!response.ok) {
             throw new Error("Failed to load weather");

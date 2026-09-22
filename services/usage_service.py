@@ -4,17 +4,20 @@ Per-user AI usage accounting and quota enforcement.
 
 Tracks AI call counts per user per calendar day (UTC).
 Uses a database-backed store for multi-worker correctness:
-  - Atomic check-and-increment via SQL
+  - Atomic check-and-increment via SQL UPSERT
   - Daily partition via date-column (one row per user per day)
-  - No in-memory state for production — safe across Gunicorn workers and restarts
+  - Fail-closed: if the DB is unavailable in production, deny the
+    request rather than silently allowing unlimited AI calls.
 
 Table: ai_usage_events
   (user_id INTEGER, usage_date DATE, ai_calls INTEGER,
    PRIMARY KEY (user_id, usage_date))
 
 Created by migration 003_add_ai_usage_events.py.
-A fallback in-memory store is used if the DB table is not yet migrated
-(e.g., during tests), so the interface stays the same.
+
+A thread-safe in-memory store is used ONLY when no DB connection is
+available (e.g., unit tests with no DB).  In production, the DB-backed
+path is used exclusively; if the DB query fails, the request is denied.
 """
 
 import logging
@@ -27,8 +30,8 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 # ------------------------------------------------------------------ #
-# Fallback in-memory store (used when DB table is not available)
-# Thread-safe, but NOT shared across workers — only for tests/dev.
+# In-memory store — used ONLY when no get_connection_fn is provided
+# (e.g., unit tests).  NOT used in production paths.
 # ------------------------------------------------------------------ #
 _lock = threading.Lock()
 _mem_store: dict[int, dict[str, int]] = defaultdict(lambda: defaultdict(int))
@@ -75,54 +78,74 @@ def check_and_increment(user_id: int, get_connection_fn=None) -> tuple[bool, int
 
     If AI_DAILY_QUOTA_PER_USER == 0, quota is unlimited.
 
-    Uses atomic SQL UPSERT when the DB table is available;
-    falls back to in-memory for tests/dev.
+    Production: uses atomic SQL UPSERT (multi-worker safe).
+    If the DB query fails in production (IS_PRODUCTION), the request
+    is DENIED (fail-closed) — never silently allow unlimited AI calls.
+    If no get_connection_fn is provided (tests), uses in-memory store.
     """
     quota = settings.AI_DAILY_QUOTA_PER_USER
     today = _today_utc()
 
-    # --- DB-backed (multi-worker safe) ---
-    if get_connection_fn and _is_db_available(get_connection_fn):
-        try:
-            conn = get_connection_fn()
-            cur = conn.cursor()
-            # Atomic upsert — get the count AFTER increment
-            cur.execute("""
-                INSERT INTO ai_usage_events (user_id, usage_date, ai_calls)
-                VALUES (%s, %s, 1)
-                ON CONFLICT (user_id, usage_date)
-                DO UPDATE SET ai_calls = ai_usage_events.ai_calls + 1
-                RETURNING ai_calls
-            """, (user_id, today))
-            result = cur.fetchone()
-            conn.commit()
-            cur.close()
-            from db.pool import return_connection
-            return_connection(conn)
+    # --- No connection function → in-memory (unit tests) ---
+    if get_connection_fn is None:
+        return _mem_check_and_increment(user_id, today, quota)
 
-            new_count = result[0] if result else 1
+    # --- DB-backed (production) ---
+    if not _is_db_available(get_connection_fn):
+        # DB table not available
+        if settings.IS_PRODUCTION:
+            logger.error(
+                "AI quota DB table not available in production — denying request (fail-closed)"
+            )
+            return False, 0
+        # Non-production: use in-memory
+        return _mem_check_and_increment(user_id, today, quota)
 
-            # Quota check: if we just exceeded, deny (but keep the increment
-            # — the call was attempted, even if we now reject it).
-            if quota > 0 and new_count > quota:
-                logger.warning(
-                    "AI quota exceeded",
-                    extra={"user_id": user_id, "daily_count": new_count, "quota": quota},
-                )
-                return False, new_count
+    try:
+        conn = get_connection_fn()
+        cur = conn.cursor()
+        # Atomic upsert — get the count AFTER increment
+        cur.execute("""
+            INSERT INTO ai_usage_events (user_id, usage_date, ai_calls)
+            VALUES (%s, %s, 1)
+            ON CONFLICT (user_id, usage_date)
+            DO UPDATE SET ai_calls = ai_usage_events.ai_calls + 1
+            RETURNING ai_calls
+        """, (user_id, today))
+        result = cur.fetchone()
+        conn.commit()
+        cur.close()
+        from db.pool import return_connection
+        return_connection(conn)
 
-            return True, new_count
-        except Exception as exc:
-            logger.warning("DB usage check failed, falling back to memory: %s", exc)
-            global _db_available
-            _db_available = False  # don't retry DB on subsequent calls
+        new_count = result[0] if result else 1
 
-    # --- In-memory fallback (tests / single-worker) ---
+        # Quota check: if we just exceeded, deny
+        if quota > 0 and new_count > quota:
+            logger.warning(
+                "AI quota exceeded",
+                extra={"user_id": user_id, "daily_count": new_count, "quota": quota},
+            )
+            return False, new_count
+
+        return True, new_count
+    except Exception as exc:
+        logger.error("DB usage check failed: %s", exc, exc_info=True)
+        if settings.IS_PRODUCTION:
+            # Fail-closed in production — deny the request
+            return False, 0
+        # Non-production: fall back to in-memory
+        logger.warning("Falling back to in-memory usage store (non-production)")
+        return _mem_check_and_increment(user_id, today, quota)
+
+
+def _mem_check_and_increment(user_id: int, today: str, quota: int) -> tuple[bool, int]:
+    """In-memory check-and-increment (thread-safe, single-worker only)."""
     with _lock:
         current = _mem_store[user_id][today]
         if quota > 0 and current >= quota:
             logger.warning(
-                "AI quota exceeded",
+                "AI quota exceeded (in-memory)",
                 extra={"user_id": user_id, "daily_count": current, "quota": quota},
             )
             return False, current
@@ -132,7 +155,7 @@ def check_and_increment(user_id: int, get_connection_fn=None) -> tuple[bool, int
 
     if quota > 0:
         logger.debug(
-            "AI usage recorded",
+            "AI usage recorded (in-memory)",
             extra={"user_id": user_id, "daily_count": new_count, "quota": quota},
         )
 

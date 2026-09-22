@@ -150,6 +150,33 @@ def get_current_user(get_connection):
     return dict(user), None, None
 
 
+def _lookup_user_by_token(token_hash: str) -> int | None:
+    """
+    Lightweight token-to-user-id lookup for rate limiting.
+    Returns the user ID if a valid (non-expired) token hash matches,
+    or None if not found.  Does NOT raise — callers handle None.
+    """
+    try:
+        from db.pool import get_connection, return_connection
+        from datetime import datetime, timezone
+        now = datetime.now(timezone.utc)
+        conn = get_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute("""
+                SELECT id FROM users
+                WHERE auth_token_hash = %s
+                  AND (token_expires_at IS NULL OR token_expires_at > %s)
+            """, (token_hash, now))
+            row = cur.fetchone()
+        finally:
+            cur.close()
+            return_connection(conn)
+        return row[0] if row else None
+    except Exception:
+        return None
+
+
 def require_auth(get_connection):
     """
     Decorator-free auth check for use inside route functions.

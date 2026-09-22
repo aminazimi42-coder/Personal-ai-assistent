@@ -4,7 +4,7 @@ Centralized rate limiting using Flask-Limiter.
 
 Three configurable rate-limit tiers:
   - RATE_LIMIT_LOGIN:  per-IP, protects /signup and /login
-  - RATE_LIMIT_AI:      per-user, protects AI endpoints
+  - RATE_LIMIT_AI:      per-user (authenticated), protects AI endpoints
   - RATE_LIMIT_GENERAL: per-IP, default for all other API routes
 
 Uses an in-memory storage backend by default.  For multi-worker
@@ -15,6 +15,7 @@ All limits are expressed as "N per minute".
 import logging
 import os
 
+from flask import g, request
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -41,7 +42,6 @@ def _key_func_user() -> str:
     Falls back to IP so that unauthenticated requests are still
     rate-limited (the auth check happens after the limiter).
     """
-    from flask import g
     uid = g.get("user_id")
     if uid is not None:
         return f"user:{uid}"
@@ -60,7 +60,31 @@ limiter = Limiter(
 
 
 def init_limiter(app):
-    """Initialize the limiter on the Flask app."""
+    """Initialize the limiter on the Flask app and register the
+    before_request hook that resolves g.user_id for per-user AI limits."""
+
+    @app.before_request
+    def _resolve_user_identity():
+        """Resolve the authenticated user_id into g for per-user rate limits.
+        Does NOT replace auth_service.get_current_user — it just peeks at
+        the bearer token so the AI rate limiter can use per-user identity.
+        If the token is invalid or missing, g.user_id stays unset and the
+        limiter falls back to IP-based limiting (which is still safe)."""
+        auth_header = request.headers.get("Authorization", "").strip()
+        if not auth_header.startswith("Bearer "):
+            return
+        raw_token = auth_header[len("Bearer "):].strip()
+        if not raw_token:
+            return
+        try:
+            from services.auth_service import hash_token, _lookup_user_by_token
+            token_hash = hash_token(raw_token)
+            user_id = _lookup_user_by_token(token_hash)
+            if user_id is not None:
+                g.user_id = user_id
+        except Exception:
+            pass  # If lookup fails, fall back to IP-based rate limiting
+
     limiter.init_app(app)
     logger.info(
         "Rate limiter initialized (storage=%s, login=%d/min, ai=%d/min, general=%d/min)",
