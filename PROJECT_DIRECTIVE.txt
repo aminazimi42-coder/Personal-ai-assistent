@@ -1,366 +1,782 @@
-PERSONAL AI ASSISTANT — FINAL ENGINEERING DIRECTIVE Production-Grade
-SaaS Completion, Product Evolution, Verification & Release
+PERSONAL AI ASSISTANT
+ULTIMATE FINAL ENGINEERING, RELEASE & FREEZE DIRECTIVE
+========================================================
 
-STATUS / SCOPE This is the authoritative execution directive for
-Personal AI Assistant. Scope is ONLY this project. Do not import
-requirements, terminology, architecture, files, or roadmap from any
-other project. Goal: a genuinely Production-Grade SaaS product, not
-merely a production-oriented prototype.
+PURPOSE
+This is the LAST completion directive for the Personal AI Assistant project.
+It replaces the previous PROJECT_DIRECTIVE.txt as the authoritative execution
+source for the final completion cycle.
 
-REPOSITORY GitHub: aminazimi42-coder/Personal-ai-assistent Branch: main
-Repository: https://github.com/aminazimi42-coder/Personal-ai-assistent
-Render: https://personal-ai-assistent.onrender.com Last directly
-verified baseline: 9b58e3318c13b300c179a7e909b067698b64a493 Previous
-baseline: 840e8938fb14934ba123b1d2b56319cca5ba611b The documented
-baseline had 12 commits ahead and 0 behind. This is historical evidence,
-not a substitute for current verification.
+Target:
+FINAL CODE-COMPLETE → SECURITY-COMPLETE → DOCUMENTATION-COMPLETE →
+LICENSE-COMPLETE → VERSIONED → RELEASED → EVIDENCE-VERIFIED → FROZEN.
 
-MANDATORY FIRST ACTION — READ ONLY Before changing anything,
-run/inspect: 1. git remote -v 2. git status –short –branch 3. git log
-–oneline -20 4. git ls-remote origin HEAD main 5. current
-Directive/PROJECT_DIRECTIVE.txt 6. HANDOFF.md 7. repository tree 8.
-tests/CI/migrations/dependencies Never reset, rebase, amend, squash,
-force-push, rewrite history, or delete anything during baseline
-verification. Actual repository state overrides stale documentation;
-reconcile discrepancies safely.
+After successful completion, the current development program is CLOSED.
+Future ideas belong only to the separate README ROADMAP.
 
-COMPLETED FOUNDATION — DO NOT REPEAT BLINDLY Previously implemented
-areas include: - .gitignore, .env.example, centralized configuration,
-orphan-service cleanup - connection pooling, Flask-Migrate/Alembic, FKs,
-indexes, removal of DDL-on-request - centralized authentication, token
-expiry/hashing, duplicate auth cleanup - authenticated AI endpoints,
-bounded AI tokens, single-call smart-ai behavior where implemented -
-task/appointment frontend forms, token-field correction, POST /smart-ai,
-stylesheet extraction, exchange-rate correction - request IDs, latency
-logging, AI token metadata, user-isolation tests, pytest configuration;
-previous report: 86 tests passing - Procfile, Gunicorn, render.yaml,
-GitHub Actions CI - UTC-aware reminder timestamps and deployment
-hardening already documented - AI daily quota/usage accounting and
-/me/usage - PROJECT_DIRECTIVE.txt, HANDOFF.md, API/release documentation
-Do not recreate these unless inspection proves a defect, missing
-integration, security problem, or required evolution.
+========================================================
+0. ABSOLUTE PROJECT BOUNDARY
+========================================================
 
-NON-NEGOTIABLE ENGINEERING RULES Inspect before changing. Never guess
-when the repository can answer. Preserve data and secrets. No
-unauthorized destructive changes. No blind dependency/architecture
-changes. No unrelated features. No fake tests or unsupported completion
-claims. No production deployment without approval. No token optimization
-that removes required context. Use simple, maintainable, evidence-driven
-engineering.
+Project: Personal AI Assistant
+GitHub: https://github.com/aminazimi42-coder/Personal-ai-assistent
+Branch: main
+Known live URL: https://personal-ai-assistent.onrender.com
 
-MANDATORY PHASE LOOP READ → PLAN → IMPLEMENT → TEST → DEBUG/FIX →
-INSPECT DIFF → SECURITY CHECK → REGRESSION CHECK → VERIFY → MEANINGFUL
-COMMIT → PUSH → VERIFY REMOTE → REPORT → REQUEST APPROVAL → STOP. After
-EVERY phase, stop and obtain explicit approval before starting the next
-phase. A phase may contain multiple coherent changes. Commits must be
-meaningful, not artificial. Every verified phase must be pushed to
-origin/main and remote-verified. A local commit without successful push
-is not completion.
+Render dashboard operations/deployment execution are OUTSIDE this directive's
+coding scope. The owner/assistant handle Render operational actions separately.
+The agent may prepare deployment configuration, documentation and smoke tests,
+but must not treat Render dashboard clicks/credentials as coding work.
 
-APPROVAL REQUIRED FOR Next phase; destructive migrations/data actions;
-production DB migration; deployment behavior changes; major/new paid
-infrastructure; material auth/security/API changes; licensing/ownership
-changes; scope changes. Ordinary reversible implementation inside an
-approved phase may proceed without separate approval.
+Do not import requirements, terminology, architecture, files, code or roadmap
+from any other project.
 
-PHASE 1 — CURRENT STATE AUDIT / DOCUMENT RECONCILIATION Verify actual
-GitHub state, tests, CI, dependencies, migrations, Render configuration,
-security-sensitive configuration, HANDOFF and Directive. Correct stale
-documentation. Known stale item: HANDOFF previously described
-push/remote as unresolved although origin/main was later directly
-verified at 9b58e33. Acceptance: documented state matches reality;
-tests/status verified; meaningful commit/push if needed. STOP +
-approval.
+The repository is the technical source of truth. Documentation must match it.
 
-PHASE 2 — RATE LIMITING Implement/verify production rate limiting,
-likely flask-limiter if justified. Support configurable
-RATE_LIMIT_LOGIN, RATE_LIMIT_AI, RATE_LIMIT_GENERAL. Protect
-login/AI/general API, use safe client identity, correct 429 semantics,
-tests, observability, no obvious bypass. STOP + approval.
+========================================================
+1. COMPLETED FOUNDATION — VERIFY, DO NOT BLINDLY REPEAT
+========================================================
 
-PHASE 3 — SHARED QUOTA / MULTI-WORKER CORRECTNESS Audit
-services/usage_service.py. Replace in-memory quota state if it remains
-non-shared. Evaluate Redis (or a simpler justified alternative) before
-adding infrastructure. Prefer atomic increment + daily TTL, correct
-concurrency, bounded failure behavior, cost protection, tests. STOP +
-approval.
+Known completed phase history:
+P1  132cea9  state audit/document reconciliation
+P2  b266c63  rate limiting
+P3  1017111  shared/durable usage and quota correctness
+P4  4273ad1  external API timeout/retry reliability
+P5  5dd825f  migration safety
+P6  aa12fe7  production configuration/security/CORS/Gunicorn
+P7  fdf08a4  final security hardening
+P8  f277d8a  code retrieval/token efficiency
+P9  f5810d8  memory engine
+P10–13 fac3fe3 agentic execution, tool gateway, cost intelligence, workspace
+P14–17 1be3f3a knowledge retrieval, verification, automation, privacy
+P18 8140aa2 control center
+P19 a3102d9 final regression/release readiness
+P20 94fc97a production smoke/E2E test preparation
 
-PHASE 4 — EXTERNAL API RELIABILITY Audit all existing external HTTP
-calls (including weather/geocoding if present). Add deliberate timeouts,
-bounded safe retries, graceful degradation, structured logs, secret
-protection and failure-path tests. No unrelated integrations. STOP +
-approval.
+Previously reported regression: 384/384 tests passing.
+This MUST be re-run from the actual current repository. Historical evidence
+never substitutes for current verification.
 
-PHASE 5 — DATABASE MIGRATION SAFETY Audit 001_initial_schema.py,
-002_upgrade_existing_schema.py, models, constraints, indexes and
-existing-data compatibility. Pay special attention to Task.user_id and
-Appointment.user_id becoming non-null/FK fields and whether existing
-rows can be safely migrated. No production flask db upgrade without
-explicit approval. Document backup/rollback strategy. STOP + approval.
+Existing architecture includes, subject to final audit:
+- Flask + PostgreSQL
+- DB pooling and managed migrations
+- authentication/token hardening
+- user isolation
+- rate limiting
+- AI quotas/usage accounting
+- bounded AI token/context behavior
+- request IDs/latency logging
+- CI/Gunicorn/deployment configuration
+- Code Retrieval
+- Memory Engine
+- Agentic Execution
+- Tool Gateway
+- Cost/Token Intelligence
+- Project Workspace
+- Unified Knowledge Retrieval
+- Verification Engine
+- Automation
+- Privacy controls
+- Control Center
 
-PHASE 6 — PRODUCTION ENVIRONMENT / RENDER Verify, without exposing
-secrets: OPENAI_API_KEY, SECRET_KEY, DATABASE_URL, CORS_ALLOWED_ORIGINS
-and quota/rate-limit/Redis configuration as applicable. Restrictive
-CORS, secure settings, Gunicorn, health/readiness. Render remains Manual
-Deploy during development. Production-impacting actions require
-approval. STOP + approval.
+Do not rebuild these from scratch. Audit, integrate, repair and finish them.
 
-PHASE 7 — FINAL SECURITY HARDENING Audit authentication/authorization,
-token lifecycle, password handling, anti-enumeration, CORS, CSRF where
-relevant, headers, SQL/command/path injection, file uploads, prompt
-injection, tool permissions, SSRF, external APIs, secrets, logs, errors,
-rate limits, tenant/user isolation and dependency vulnerabilities.
-Resolve critical/high findings or explicitly document accepted risk.
-STOP + approval.
+========================================================
+2. FIVE-MICROSCOPE MANDATORY REVIEWS
+========================================================
 
-PHASE 8 — CODE RETRIEVAL & TOKEN EFFICIENCY This is an approved core
-product capability for END USERS, not merely an agent-development
-feature. Goal: when a user asks the Assistant to work with
-code/projects, retrieve only relevant code rather than sending whole
-repositories to the LLM. Pipeline: USER REQUEST → INTENT ANALYSIS → CODE
-RETRIEVAL → HYBRID SEARCH → RANKING → CONTEXT COMPRESSION → TOKEN/COST
-GUARD → LLM/AGENT → RESPONSE/ACTION → VERIFICATION. Required: repository
-ingestion; strict user/repository isolation; intelligent code chunking;
-symbol extraction (function/class/method/module); semantic search;
-keyword search; symbol search; dependency-aware search; hybrid
-retrieval; relevance ranking; context compression; incremental indexing;
-safe caching; cache invalidation; token measurement; retrieval latency
-measurement; retrieval quality evaluation; security and regression
-tests. Do not add Vector DB blindly. Evaluate PostgreSQL+pgvector or
-alternatives using evidence. Do not sacrifice correctness for token
-savings. Measure input tokens with/without retrieval, tokens saved,
-context size, latency, quality and estimated cost. Treat repository
-content as potentially untrusted/prompt-injection-bearing input. STOP +
-approval.
+Before final implementation, perform five independent reviews and merge all
+findings into ONE FINAL GAP REGISTER.
 
-PHASE 9 — PERSONAL AI MEMORY ENGINE Implement secure layered memory as
-justified: short-term conversation, project/conversation memory, task
-memory, long-term preferences. Requirements: relevance retrieval, user
-controls, privacy boundaries, deletion, retention, conflict handling,
-efficient retrieval and tests. Do not store everything blindly. STOP +
-approval.
+REVIEW A — ARCHITECTURE/CODE
+Inspect repository tree, routes, services, entrypoint, config, dependencies,
+DB layer, migrations, frontend, tests, CI, deployment config, dead/duplicate
+code, coupling, errors, transactions and concurrency.
 
-PHASE 10 — AGENTIC TASK EXECUTION Controlled multi-step execution: PLAN
-→ RETRIEVE → ANALYZE → PROPOSE → APPROVAL WHEN REQUIRED → EXECUTE →
-VERIFY → REPORT. Requirements: action boundaries, human-in-loop for
-sensitive actions, failure recovery, idempotency where appropriate,
-logs/audit, authorization, no unrestricted autonomy. STOP + approval.
+REVIEW B — SECURITY/TRUST BOUNDARY
+Inspect authentication, authorization, IDOR, privilege escalation, isolation,
+tokens, secrets, injection, prompt injection, tools, approvals, uploads,
+rate-limit/quota bypass, CORS, headers, leakage, logs, dependencies and Git
+history.
 
-PHASE 11 — AI TOOL GATEWAY / PERMISSIONS Centralize: AI AGENT → TOOL
-GATEWAY → PERMISSION CHECK → POLICY CHECK → TOOL → RESULT →
-VERIFICATION. Use least privilege, explicit registry, read-only vs write
-vs destructive vs communication policies, approval gates, audit logs,
-isolation and safe failure. Tools must not bypass policy. STOP +
-approval.
+REVIEW C — PRODUCT/UX/E2E
+Trace signup → login → dashboard → task → appointment → reminder → AI →
+memory → workspace → retrieval → tool/agent → verification → usage/cost →
+account/privacy. Verify UI/API/DB/services agree. Find dead controls, stale
+states, broken routes, missing errors, mobile/accessibility issues.
 
-PHASE 12 — COST & TOKEN INTELLIGENCE Centralize model routing where
-justified, token/context budgets, retrieval-aware budgets, caching,
-usage accounting, daily/monthly limits and cost estimates. Do not choose
-solely by cheapest model; consider correctness, latency and complexity.
-STOP + approval.
+REVIEW D — DATA/RELIABILITY/PERFORMANCE
+Inspect schema, constraints, indexes, transactions, pooling, migrations,
+concurrency, retries, timeouts, external APIs, caching/invalidation,
+multi-worker state, recovery, health/readiness, observability and performance.
 
-PHASE 13 — PROJECT WORKSPACE If compatible with the architecture,
-introduce structured workspaces: Workspace → Projects / Files / Code /
-Documents / Tasks / Conversations / Memories / AI Context. Requirements:
-ownership, isolation, access control, scalable model, retrieval
-boundaries, migration safety, tests. STOP + approval.
+REVIEW E — RELEASE/DOCUMENTATION/LEGAL-IP
+Verify README, API/OpenAPI, HANDOFF, Directive, env docs, screenshots, links,
+version, changelog, tag/release plan, license, ownership, attribution and
+unsupported claims.
 
-PHASE 14 — UNIFIED KNOWLEDGE RETRIEVAL Extend the retrieval architecture
-coherently to Code, Documents, Memory, Tasks, Notes and Project
-information where justified. Typed sources, ranking, authorization,
-context assembly, source attribution internally, token budgets and
-tests. Do not create unrelated duplicate search systems. STOP +
-approval.
+No finding may be silently dropped.
 
-PHASE 15 — AI RELIABILITY / VERIFICATION ENGINE Never claim success
-without evidence: ACTION → EXECUTION → VERIFICATION → EVIDENCE → RESULT.
-Examples: code changes require tests/diff checks; DB actions require
-result validation; file operations require existence/content
-verification; external actions require response validation. Support
-structured result states, failure/partial-success reporting and no
-fabricated success. STOP + approval.
+========================================================
+3. FINAL GAP REGISTER
+========================================================
 
-PHASE 16 — PERSONAL AUTOMATION Controlled: TRIGGER → CONDITION → AI
-PROCESSING → ACTION → VERIFICATION. Potential examples: daily summaries,
-overdue notifications, file/project analysis triggers. Requirements:
-scheduling, idempotency, retries, failure handling, permissions,
-auditability, cost/resource limits and user control. No uncontrolled
-background AI spend. STOP + approval.
+These are mandatory final checks. Each item must be verified. Fix only what is
+actually missing/defective, but do not skip an applicable item.
 
-PHASE 17 — PRIVACY-FIRST / LOCAL-AWARE ARCHITECTURE Define data
-classification, encryption where appropriate, secrets isolation,
-user/tenant isolation, retention/deletion, audit logs and AI data
-boundaries. Local processing may be future capability only; never claim
-it exists unless implemented and verified. STOP + approval.
+A. LICENSE / LEGAL / IP
+1. Create/finalize the official LICENSE.
+2. Verify ownership/authority for every project-owned file.
+3. Audit third-party dependency licenses.
+4. Add SPDX/license metadata where appropriate.
+5. Add required attribution/notices.
+6. Do not claim rights over third-party assets/code.
+7. Evaluate Apache-2.0 as the default permissive candidate because it allows
+   broad use/modification/distribution/commercial use and includes a patent
+   grant.
+8. If ownership/dependency compatibility prevents it, document the blocker;
+   never invent legal certainty.
+9. LICENSE text, copyright holder/year and repository metadata must agree.
+10. README license section must match the actual LICENSE.
+11. A project license never overrides third-party licenses or law.
 
-PHASE 18 — PERSONAL AI CONTROL CENTER Professional dashboard for real
-data: usage, cost, tokens, retrieval savings, memories, projects, tasks,
-automations, connected tools, security and activity/audit. No fabricated
-metrics; secure access; responsive/error/loading states; frontend tests.
-STOP + approval.
+B. README / DOCUMENTATION
+12. Rewrite README around the actual final product, not the old MVP.
+13. Remove stale "MVP/incomplete/planned hardening" language where obsolete.
+14. Document every completed major capability.
+15. Document architecture and end-to-end flows.
+16. Document auth/security/isolation/rate limiting.
+17. Document AI/token/quota/cost controls.
+18. Document Code Retrieval.
+19. Document Memory Engine.
+20. Document Agentic Execution.
+21. Document Tool Gateway/permissions.
+22. Document Cost & Token Intelligence.
+23. Document Project Workspace.
+24. Document Unified Knowledge Retrieval.
+25. Document Verification Engine.
+26. Document Automation.
+27. Document Privacy/Local-Aware architecture.
+28. Document Control Center.
+29. Add a professional capability matrix.
+30. Add architecture diagrams.
+31. Add security architecture.
+32. Add testing/QA matrix.
+33. Add CI/CD/deployment architecture.
+34. Add environment-variable documentation.
+35. Add API documentation links.
+36. Add Swagger/OpenAPI links only where actually provided.
+37. Add GitHub link.
+38. Add live application link.
+39. Add relevant handoff/directive/documentation links.
+40. Add release/version information.
+41. Add license information.
+42. Add changelog/release-note reference.
+43. Add professional Screenshot Showcase.
+44. Showcase multiple verified screenshots: app UI, AI, dashboard, Swagger/API,
+   GitHub, Render, security/observability, retrieval, workspace and other major
+   areas where assets exist.
+45. Use a cinematic/professional layout: hero, badges, feature cards/tables,
+   diagrams, galleries, collapsible technical sections and strong hierarchy.
+46. Animation must remain GitHub-compatible: SVG/GIF/WebP or similar assets;
+   never depend on JavaScript.
+47. Verify every link.
+48. No fake screenshots, metrics, badges or claims.
+49. Clearly distinguish current verified capabilities from future roadmap.
+50. Never expose secrets/private credentials/internal tokens.
 
-EXISTING DOMAIN AUDIT Productionize existing tasks, appointments,
-reminders, voice and external integrations. Ensure
-authentication/authorization, validation, time-zone correctness,
-idempotency, safe HTTP semantics (no side effects on GET), upload
-validation, bounded payloads, timeout/retry controls and tests. Do not
-add unrelated integrations.
+C. ROADMAP SEPARATION
+51. Remove obsolete roadmap text from current-status claims.
+52. Create a README section named exactly ROADMAP.
+53. Roadmap is future-only.
+54. Roadmap items are not current capabilities.
+55. Add exactly the five future stages in Section 8.
+56. Roadmap stages are not release acceptance requirements.
+57. After freeze, roadmap work is prohibited in this release.
 
-FRONTEND QUALITY Audit authentication, AI, task, appointment flows,
-loading/error/empty states, accessibility, responsiveness, safe token
-handling, API errors, secret exposure and production assets. No cosmetic
-rewrite without justification.
+D. API / BACKEND
+58. Audit every route against frontend and docs.
+59. Remove/repair dead endpoints.
+60. Remove accidental GET side effects.
+61. Verify request/response schemas.
+62. Verify HTTP status consistency.
+63. Verify safe error messages.
+64. Prevent stack traces/internal DB details from leaking.
+65. Verify authentication on every protected endpoint.
+66. Verify object-level authorization.
+67. Verify user isolation on every query/mutation.
+68. Bound unbounded collections.
+69. Verify idempotency for consequential repeated actions.
+70. Verify timezone consistency.
+71. Verify transactions and rollback.
+72. Verify external-call timeouts.
+73. Verify bounded safe retries.
+74. Verify health/readiness semantics.
+75. Verify API documentation against actual behavior.
 
-OBSERVABILITY / RELIABILITY Maintain request IDs, structured/redacted
-logs, latency, error rates, AI/token metrics, quotas, retrieval latency,
-tool actions, automation failures and security events. Use
-health/readiness where appropriate, graceful failure, bounded retries,
-timeouts, worker-safe state and idempotency.
+E. AUTH / SECURITY
+76. Verify password hashing/credential handling.
+77. Verify token expiry, storage/hashing and revocation.
+78. Verify logout semantics.
+79. Verify brute-force/rate-limit protection.
+80. Verify quota cannot be bypassed with parallel requests.
+81. Verify rate-limit bypass resistance.
+82. Verify multi-worker/shared-state correctness.
+83. Verify restrictive configurable CORS.
+84. Verify security headers where appropriate.
+85. Verify CSRF posture for any cookie-based flow.
+86. Verify secrets come only from secret/env storage.
+87. Scan repository and Git history for accidental secrets.
+88. Verify prompt-injection boundaries for retrieval/tools.
+89. Treat retrieved code/data as untrusted content.
+90. Verify least-privilege tool permissions.
+91. Verify sensitive/destructive/external actions require approval.
+92. Verify audit logs avoid unnecessary sensitive content.
 
-TESTING Mandatory as appropriate: unit, integration, API, auth,
-authorization, user-isolation, DB, migration, AI mocked-service,
-retrieval, ranking, security, frontend, E2E, regression, failure-path
-and concurrency tests. Passing tests alone does not prove production
-readiness; inspect important paths.
+F. DATABASE / DATA INTEGRITY
+93. Verify deterministic safe migration chain.
+94. Verify existing production data against new constraints.
+95. Verify safe non-null FK migration paths.
+96. Verify indexes match real queries.
+97. Verify pool lifecycle and connection return.
+98. Verify commit/rollback.
+99. Verify atomic concurrent quota/usage updates.
+100. Verify strict user/project scoping for memory/workspace/retrieval.
+101. Verify deletion/retention semantics.
+102. Verify no request-time schema creation/DDL.
+103. Verify DB outage behavior cannot silently corrupt state.
+104. Document backup/restore readiness without claiming an untested guarantee.
 
-SECURITY No hardcoded/committed secrets; secure password hashing; token
-expiry/hashing; restrictive CORS; headers; parameterized SQL;
-authorization; isolation; rate limits; validation; safe errors; safe
-file handling; SSRF/prompt-injection awareness; tool policy; audit logs;
-dependency review.
+G. CODE RETRIEVAL / KNOWLEDGE
+105. Verify repository/user isolation.
+106. Verify file allowlist and size limits.
+107. Verify intelligent code chunking.
+108. Verify AST/symbol extraction.
+109. Verify function/class/method/module retrieval.
+110. Verify keyword retrieval.
+111. Verify symbol retrieval.
+112. Verify semantic/hybrid strategy matches the actual implementation.
+113. Verify deterministic relevance ranking.
+114. Verify dependency-aware retrieval where required.
+115. Verify incremental indexing.
+116. Verify cache invalidation after code changes.
+117. Verify context compression.
+118. Enforce Minimum Sufficient Context; never sacrifice correctness.
+119. Measure retrieval latency.
+120. Measure context size.
+121. Measure tokens before/after retrieval.
+122. Measure tokens saved.
+123. Evaluate retrieval quality with deterministic fixtures.
+124. Prevent cross-user/cross-repository leakage.
+125. Retrieved content must not directly trigger tools.
+126. Bound large-repository memory/token usage.
 
-SAAS User/workspace boundaries, quotas, cost controls, auth/authz,
-secure configuration, observability, scalable shared state and migration
-safety. Do not add billing/subscriptions unless explicitly approved.
+H. MEMORY ENGINE
+127. Verify layered memory semantics.
+128. Verify short-term expiration.
+129. Verify persistent memory ownership.
+130. Verify relevance/ranking.
+131. Verify deletion.
+132. Verify user isolation.
+133. Verify task/project scoping.
+134. Verify retention controls.
+135. Production DB errors must not silently degrade into unsafe local-only
+    state.
+136. Bound memory injection into AI context.
+137. Detect/handle conflicting memories instead of blindly overwriting them.
 
-CI/CD / DEPLOYMENT CI must verify dependencies, tests and relevant
-quality/migration/security checks. Render Manual Deploy remains
-intentional until release approval. Before release: clean main, green
-CI, reviewed migrations, configured env, backup/rollback plan, smoke
-tests and identified release commit.
+I. AGENTIC EXECUTION / TOOLS
+138. Verify plan → retrieve → analyze → propose → approve → execute → verify →
+    report.
+139. Sensitive/destructive/external actions require appropriate approval.
+140. No hidden destructive autonomy.
+141. Tool Gateway is the policy boundary.
+142. Verify least privilege.
+143. Verify read/write/destructive/external categories.
+144. Verify deterministic allow/deny/approval policy.
+145. Verify auditable tool calls.
+146. Failed execution cannot be reported as success.
+147. Verify post-action verification.
+148. Verify idempotency where applicable.
+149. Validate tool input/output.
+150. Prevent prompt injection from escalating tool permissions.
 
-LICENSE / IP Create a professional project-specific LICENSE based on
-verified legal ownership, entity/name, year, contact (if desired),
-permitted use, commercial use, redistribution, modification, derivative
-works, AI training/data-mining policy (if desired), warranty/liability
-and jurisdiction preference. Do not invent legal facts. Do not claim any
-license makes copying impossible. A custom proprietary license should be
-legally reviewed where appropriate.
+J. AI / COST / TOKENS
+151. Measure tokens for major AI calls.
+152. Track input/output tokens.
+153. Verify daily/monthly/user limits.
+154. Verify hard budget ceilings.
+155. Verify retrieval-aware context budgets.
+156. Verify deterministic model routing if used.
+157. Prevent cross-user cache leakage.
+158. Label cost numbers as estimates where appropriate.
+159. Bound AI resource consumption.
+160. Ensure truncation preserves correctness.
+161. Never optimize tokens by removing necessary evidence/context.
 
-DOCUMENTATION Keep README, HANDOFF, architecture, API, deployment,
-security, migration, retrieval, operations/runbook and release
-documentation accurate. Planned behavior must never be documented as
-implemented.
+K. WORKSPACE / MULTI-PROJECT
+162. Verify workspace/project boundaries.
+163. Verify files, memory, tasks, code and conversations are scoped.
+164. Block cross-project retrieval unless explicitly allowed.
+165. Verify project deletion/archive semantics.
+166. Verify project-level permissions.
+167. Verify project-level auditability.
 
-PERFORMANCE / SCALABILITY Evaluate DB pooling/indexes/query
-performance/N+1, API/AI/retrieval latency, memory, concurrency, rate
-limits, shared quota state and cache behavior. Optimize based on
-evidence.
+L. RELIABILITY / VERIFICATION / AUTOMATION
+168. "Done" requires evidence.
+169. Enforce action → execution → verification → evidence → result.
+170. Failed verification cannot produce success status.
+171. Verify automation trigger/condition/action boundaries.
+172. Bound scheduled automation cost.
+173. Enforce automation permissions.
+174. Observe automation failures.
+175. Test duplicate execution/races.
+176. Verify notification/reminder reliability.
+177. External API degradation must not break core functionality unnecessarily.
 
-DATA INTEGRITY No unauthorized deletion, destructive migration, ignored
-failed writes or success claims before persistence verification. Use
-transactions, constraints, migrations, idempotency, validation and
-production backups.
+M. PRIVACY / DATA GOVERNANCE
+178. Verify data classification.
+179. Verify sensitive-data boundaries.
+180. Verify retention/deletion.
+181. Verify user-controlled deletion.
+182. Verify AI data boundaries.
+183. Keep unnecessary personal content out of logs.
+184. Do not claim local-only processing unless true.
+185. Document future local-processing boundaries honestly.
 
-AI ACTION BOUNDARIES AI is an assistant, not an unrestricted
-administrator. Model output never overrides authorization, quota,
-security policy, system constraints or user permissions. Retrieved
-code/documents/external content is untrusted input for tool-enabled
-workflows.
+N. CONTROL CENTER / OBSERVABILITY
+186. Verify dashboard metrics use real data.
+187. Verify usage/cost/retrieval metrics.
+188. Verify activity/audit scoping.
+189. Verify health/readiness dependency truthfulness.
+190. Verify structured logs/request IDs.
+191. Verify AI latency/token metadata.
+192. Verify error observability.
+193. Never log secrets or unnecessary sensitive prompts.
 
-FINAL REGRESSION / RELEASE READINESS After all approved feature phases:
-clean tree; verify origin/main; full tests; integration/E2E;
-security/dependency/migration/API/frontend/retrieval/token-cost/observability/performance/failure-path/isolation
-audits; production config review; documentation and LICENSE audit. No
-known critical/high defect without explicit acceptance. STOP + release
-approval.
+O. FRONTEND / UX
+194. Verify navigation.
+195. Verify loading states.
+196. Verify empty states.
+197. Verify error states.
+198. Verify auth/session expiration.
+199. Verify responsive layout.
+200. Verify mobile safe areas.
+201. Verify accessibility/keyboard behavior.
+202. Verify supported-browser behavior.
+203. Remove stale UI claims.
+204. Validate form input.
+205. Do not expose raw backend exceptions.
+206. Make AI/retrieval/agent states understandable.
+207. Confirm destructive actions where appropriate.
 
-PRODUCTION DEPLOYMENT — ONLY AFTER RELEASE APPROVAL Confirm release
-commit, clean main, green CI, env vars, DB backup/rollback, obtain
-migration approval, safely migrate, manually deploy Render, verify
-deployment/health/auth/AI/tasks/appointments/reminders/usage/retrieval/logs,
-run smoke tests, document release. On failure, stop and report evidence;
-never conceal or blindly reset/rollback.
+P. PERFORMANCE / SCALABILITY
+208. Verify query efficiency.
+209. Check N+1 patterns.
+210. Bound payload sizes.
+211. Bound repository ingestion.
+212. Verify concurrency behavior.
+213. Verify multi-worker behavior.
+214. Externalize state that must be shared.
+215. Define cache invalidation.
+216. Bound scheduled/background growth.
+217. Never claim enterprise-scale/HA/SLA without evidence.
 
-FINAL ACCEPTANCE CHECKLIST [ ] Architecture coherent and no critical
-blocker [ ] Auth/authz/security/isolation/rate limiting verified [ ]
-DB/migrations safe [ ] AI bounded, cost-controlled and safe [ ] Code
-Retrieval operational, secure, measurable [ ] Memory operational and
-controllable [ ] Agentic execution gated and verified [ ] Tool
-permissions enforced [ ] Automation safe and cost-bounded [ ]
-Observability complete [ ] Unit/integration/security/E2E/regression
-coverage appropriate [ ] Frontend production quality [ ] SaaS boundaries
-correct [ ] CI green [ ] Render configuration/deployment verified [ ]
-Production smoke tests passed [ ] Documentation accurate [ ] LICENSE
-finalized from verified ownership Only then may the product be declared
-Production-Grade SaaS.
+Q. CI / TESTING
+218. Run full suite from clean state.
+219. Run security tests.
+220. Run API/integration tests.
+221. Run retrieval tests.
+222. Run memory-isolation tests.
+223. Run agent/tool permission tests.
+224. Run quota/cost concurrency tests.
+225. Run migration tests.
+226. Run frontend/static validation available.
+227. Run lint/type checks where configured.
+228. Run dependency/security audit where available.
+229. Add regression tests for every fixed defect.
+230. Tests must verify real behavior, not merely mock it away.
+231. Verify CI on the release commit.
 
-MANDATORY PHASE REPORT PHASE: STATUS: COMPLETE / BLOCKED OBJECTIVE:
-CHANGES: exact files/components TESTS: commands + results DEBUGGING:
-failures + fixes SECURITY: REGRESSION: GIT: commit hash/message REMOTE:
-push + remote HEAD verification REMAINING: BLOCKERS: NEXT: describe
-only; do not start APPROVAL REQUIRED: YES Then STOP.
+R. RELEASE / VERSIONING
+232. Establish one coherent release version.
+233. Update application version metadata.
+234. Update README version.
+235. Update changelog/release notes.
+236. Update HANDOFF.
+237. Update the directive only when needed to record final truth.
+238. Create an annotated Git tag.
+239. Create a GitHub Release matching the tag/version.
+240. Release notes contain verified claims only.
+241. Verify tag points to exact final commit.
+242. Verify GitHub Release points to exact tag.
+243. Verify main is clean.
+244. Never rewrite release history.
 
-AGENT MUST NOT Restart from scratch; repeat completed phases without
-evidence; reset/rebase/force-push/rewrite history; delete user data;
-invent requirements; claim failed tests passed; claim production
-readiness early; continue after a phase without approval; deploy without
-approval; expose secrets; add unrelated infrastructure/features; mix
-another project into this project; optimize by removing required
-context; create meaningless commits; leave completed verified phase only
-locally.
+S. RELEASE EVIDENCE
+245. Record final commit SHA.
+246. Record final test result.
+247. Record security test result.
+248. Record CI result.
+249. Record migration verification.
+250. Record API documentation verification.
+251. Record license verification.
+252. Record README verification.
+253. Record repository cleanliness.
+254. Record version/tag/release verification.
+255. Record real operational limitations honestly.
 
-AGENT MUST Verify first; work only in approved phase; test; debug;
-inspect diff; security/regression check; make meaningful commit(s);
-push; verify remote; report evidence; stop for approval.
+T. HANDOFF / TRACEABILITY
+256. Update HANDOFF with actual final architecture.
+257. Include final module/directory map.
+258. Include configuration map.
+259. Include DB/migration map.
+260. Include security model.
+261. Include testing model.
+262. Include release procedure.
+263. Include rollback guidance where supportable.
+264. Include troubleshooting.
+265. Include ownership/license notes.
+266. Every material claim must trace to code, tests, config, docs or evidence.
 
-CONTEXT / TOKEN EFFICIENCY For the product: targeted retrieval, hybrid
-code retrieval, context compression, safe caching, incremental indexing,
-measurable token savings, correctness first. For development agents:
-targeted inspection, repository docs, avoid rereading unchanged files,
-retrieve dependencies only when required; never load the entire
-repository unless genuinely necessary.
+U. REPOSITORY HYGIENE
+267. Remove only verified dead/orphan/duplicate artifacts.
+268. Never delete uncertain files merely for appearance.
+269. Verify .gitignore.
+270. Verify no venv/build artifacts/secrets are tracked.
+271. Verify personal/private data is not unintentionally committed.
+272. Verify dependency strategy.
+273. Remove debug endpoints/temporary bypasses.
+274. Remove test-only production behavior.
 
-CHANGE TRACEABILITY Requirement → Implementation → Test → Verification →
-Commit → Push → Remote Verification → Documentation. Code written alone
-is never completion.
+V. FINAL INDEPENDENT AUDIT
+275. Perform a fresh audit after all fixes.
+276. Do not reuse previous audit conclusions as proof.
+277. Search for stale MVP/prototype language.
+278. Search TODO/FIXME/temporary bypasses.
+279. Search duplicate auth/security logic.
+280. Search unsafe in-memory production fallbacks.
+281. Search unbounded external calls.
+282. Search undocumented endpoints.
+283. Search undocumented environment variables.
+284. Search inconsistent versions.
+285. Search license/attribution inconsistencies.
+286. Search unsupported production/enterprise/100%-secure claims.
+287. Search Git history for secrets.
+288. Run final regression.
+289. Verify release artifacts.
+290. Freeze.
 
-NO-ASSUMPTION RULE If docs conflict with code: inspect
-code/tests/history, determine reality, reconcile safely. If GitHub
-differs from documented baseline, preserve valid newer work. If external
-access is unavailable, never fabricate success; report the blocker and
-request minimum required action.
+========================================================
+4. FIVE NEW HIGH-VALUE IDEAS — FUTURE ONLY
+========================================================
 
-PRODUCT VISION A coherent Personal AI Assistant platform with secure
-auth, personal/project memory, intelligent code and knowledge retrieval,
-token/cost intelligence, agentic task execution, permission-controlled
-tools, verified AI actions, automation, tasks/appointments/reminders,
-voice where supported, reliable integrations, SaaS isolation, privacy
-boundaries, professional control center, observability, testing, CI/CD
-and secure production deployment. Feature count is not the goal;
-reliability, usefulness, security, maintainability, cost efficiency and
-commercial viability are.
+IDEA 1 — PERSONAL AI OPERATING MEMORY GRAPH
+A temporal, provenance-aware knowledge graph connecting person, preference,
+project, task, conversation, decision, document, code and outcome.
+Include confidence, timestamps, relationships and conflict handling.
 
-FINAL EXECUTION ORDER 1 Current State Audit 2 Rate Limiting 3 Shared
-Usage/Quota 4 External API Reliability 5 Migration Safety 6 Production
-Environment 7 Security Hardening 8 Code Retrieval & Token Efficiency 9
-Memory Engine 10 Agentic Task Execution 11 Tool Gateway & Permissions 12
-Cost/Token Intelligence 13 Workspace 14 Unified Knowledge Retrieval 15
-Reliability/Verification Engine 16 Automation 17 Privacy-First
-Architecture 18 Control Center 19 Final Regression/Release Readiness 20
-Production Deployment/Smoke Test
+IDEA 2 — PERSONAL AI DECISION & SIMULATION LAB
+Before consequential actions, create structured what-if scenarios:
+options, assumptions, expected effects, risks, dependencies, uncertainty and
+verification plans. It is decision support, not decision-making for the user.
 
-Every phase: TEST → DEBUG → VERIFY → MEANINGFUL COMMIT → PUSH → VERIFY
-REMOTE → REPORT → REQUEST APPROVAL → STOP.
+IDEA 3 — AI CONTEXT COMPILER
+A dedicated context compiler that assembles the minimum sufficient,
+permission-aware, evidence-backed context from memory, projects, code,
+documents, tasks and history, optimizing relevance, freshness, provenance,
+token budget and cost. Context packages should be inspectable.
 
-SHORT COMMAND FOR ANY FUTURE AGENT “Read Directive.txt in full. Verify
-the actual repository/GitHub state before changing anything. Do not
-repeat completed work. Execute only the current approved phase from the
-directive. For every phase: implement → test → debug → inspect diff →
-security/regression verify → meaningful commit → push → verify remote →
-report → request approval → STOP. Never reset/rebase/force-push/rewrite
-history, expose secrets, delete data, invent scope, or claim unverified
-success. Continue only after explicit approval. Goal: genuinely
-Production-Grade SaaS Personal AI Assistant.”
+IDEA 4 — CONTINUOUS AI QUALITY & EVALUATION LAB
+Versioned benchmarks for retrieval quality, memory relevance, tool safety,
+hallucination resistance, instruction following, latency, tokens, cost,
+security and regression.
 
-END OF DIRECTIVE
+IDEA 5 — PORTABLE PERSONAL AI RUNTIME
+Future hybrid cloud/local execution with encrypted local storage and explicit
+policy controlling what data may leave the device.
+
+These are NOT to be implemented in the current final release.
+
+========================================================
+5. README ROADMAP — EXACTLY FIVE FUTURE STAGES
+========================================================
+
+Create a clearly separated README section named exactly:
+
+# ROADMAP
+
+ROADMAP 01 — Cognitive Memory Graph
+Temporal/provenance/conflict-aware personal knowledge graph.
+
+ROADMAP 02 — Decision & Simulation Lab
+Evidence-based scenario modeling and decision-support workflows.
+
+ROADMAP 03 — AI Context Compiler
+Unified permission-aware context compilation across memory, code, documents,
+projects and tasks.
+
+ROADMAP 04 — Continuous AI Evaluation Lab
+Versioned benchmarks for retrieval, memory, safety, cost, latency and
+regression quality.
+
+ROADMAP 05 — Portable Personal AI Runtime
+Hybrid cloud/local execution with policy-controlled data boundaries.
+
+Each roadmap stage should document:
+- objective
+- user value
+- architectural impact
+- dependencies
+- security/privacy implications
+- measurable success criteria
+
+Do not implement roadmap stages during the final release freeze.
+
+========================================================
+6. README CINEMATIC STANDARD
+========================================================
+
+The README must be a professional product/engineering showcase while remaining
+technically honest and GitHub-compatible.
+
+Required order:
+1. Hero/banner
+2. title/subtitle
+3. status/version/license/live badges
+4. primary links
+5. product vision
+6. capability cards/matrix
+7. Screenshot Showcase
+8. architecture diagrams
+9. end-to-end flow
+10. technology stack
+11. security model
+12. AI/retrieval/token architecture
+13. testing/quality
+14. API documentation
+15. deployment architecture
+16. configuration
+17. license
+18. ROADMAP
+19. release/change log
+
+Screenshot Showcase should include verified assets for:
+- main application
+- AI interaction
+- dashboard/control center
+- Code Retrieval
+- workspace
+- memory
+- agent/tool permissions
+- Swagger/API
+- GitHub
+- Render/deployment
+- security/observability
+
+Use supported SVG/GIF/WebP/static assets for visual/animated presentation.
+Do not depend on JavaScript inside GitHub README.
+
+========================================================
+7. LICENSE STANDARD
+========================================================
+
+Goal: maximum practical developer freedom with a professional permissive
+license, while remaining legally honest.
+
+Default candidate: Apache License 2.0, PROVIDED ownership and dependency
+compatibility are verified.
+
+It is a strong permissive candidate because it permits use, modification,
+distribution and commercial use and contains an explicit patent grant.
+
+However:
+- it does not override third-party licenses;
+- it does not transfer ownership;
+- it does not guarantee legal outcomes;
+- third-party assets can remain separately governed;
+- copyright holder/year must be verified;
+- legal certainty must never be fabricated.
+
+If ownership is uncertain, document the blocker and do not publish a false
+license claim.
+
+========================================================
+8. FINAL RELEASE DEFINITION
+========================================================
+
+The release is complete only when:
+- all applicable gap-register items are verified/fixed;
+- completed foundation remains intact;
+- no unrelated scope exists;
+- full regression passes;
+- security regression passes;
+- CI passes;
+- migrations are verified;
+- API docs are accurate;
+- README is rebuilt;
+- Screenshot Showcase is real;
+- LICENSE is correct/compatible;
+- version/tag/release are coherent;
+- release evidence is recorded;
+- repository is clean;
+- final independent audit finds no release-blocking defect;
+- all claims are evidence-backed.
+
+Production-Grade does NOT automatically mean enterprise-scale, HA, SLA,
+disaster-recovery guarantee, regulatory certification, penetration-test
+certification, or legal certification. Such claims require evidence.
+
+========================================================
+9. GIT / CHANGE CONTROL
+========================================================
+
+For every coherent final phase:
+
+READ → PLAN → IMPLEMENT → TEST → DEBUG → DIFF INSPECTION →
+SECURITY CHECK → REGRESSION CHECK → VERIFY → MEANINGFUL COMMIT →
+PUSH → VERIFY REMOTE → REPORT.
+
+Rules:
+- meaningful commits only;
+- no fake/empty commits;
+- no reset/rebase/amend/squash/force-push/history rewrite;
+- no blind deletion;
+- no secret commits;
+- no unrelated project changes;
+- no unsupported success claims;
+- no verified work left only locally.
+
+The agent may continue autonomously through approved final phases and must not
+repeatedly stop for ordinary user approval when autonomous execution is already
+authorized.
+
+True blockers remain blockers:
+- destructive data action requiring consent;
+- uncertain legal ownership;
+- required credential/secret unavailable;
+- irreversible migration needing human approval;
+- inability to verify a critical security/release condition;
+- history rewrite/destructive action.
+
+========================================================
+10. FINAL EXECUTION ORDER
+========================================================
+
+PASS 1: Five-microscope review + consolidated gap register.
+PASS 2: Fix verified engineering/security/data/API/frontend/reliability gaps.
+PASS 3: Complete integration of all already-approved capabilities.
+PASS 4: README/API/OpenAPI/HANDOFF/documentation/screenshots/links.
+PASS 5: License/IP/dependency/attribution audit and implementation.
+PASS 6: Version/changelog/tag/GitHub Release preparation.
+PASS 7: Full regression/security/integration/migration/CI verification.
+PASS 8: Fresh independent release audit and stale-claim scan.
+PASS 9: Final evidence package.
+PASS 10: FREEZE.
+
+No new feature development after PASS 10.
+
+========================================================
+11. FINAL ACCEPTANCE CHECKLIST
+========================================================
+
+[ ] Five microscope reviews completed
+[ ] Consolidated gap register resolved
+[ ] No unrelated project content
+[ ] Architecture coherent
+[ ] Backend/API complete and documented
+[ ] Auth/security/isolation verified
+[ ] Rate limiting verified
+[ ] Quota/usage concurrency verified
+[ ] Database/migrations verified
+[ ] External APIs hardened
+[ ] Code Retrieval verified
+[ ] Memory verified
+[ ] Agentic execution verified
+[ ] Tool Gateway verified
+[ ] Cost/token intelligence verified
+[ ] Workspace verified
+[ ] Unified knowledge retrieval verified
+[ ] Verification engine verified
+[ ] Automation verified
+[ ] Privacy verified
+[ ] Control Center verified
+[ ] Frontend/UX verified
+[ ] Performance/scalability risks documented
+[ ] CI verified
+[ ] Full regression verified
+[ ] Security regression verified
+[ ] API/integration/E2E verified
+[ ] README rebuilt and truthful
+[ ] Screenshot Showcase completed
+[ ] Official links verified
+[ ] OpenAPI/Swagger synchronized
+[ ] HANDOFF synchronized
+[ ] Environment documentation synchronized
+[ ] LICENSE finalized and compatible
+[ ] Attribution verified
+[ ] Secret/history scan completed
+[ ] Version synchronized
+[ ] Changelog/release notes synchronized
+[ ] Git tag created
+[ ] GitHub Release created
+[ ] Release points to exact final commit
+[ ] Final independent audit passed
+[ ] Main branch clean
+[ ] No unsupported claims
+[ ] Final evidence package complete
+[ ] DEVELOPMENT FREEZE ACTIVATED
+
+========================================================
+12. FINAL FREEZE RULE
+========================================================
+
+After all acceptance items pass:
+
+1. Commit final coherent release state.
+2. Push origin/main.
+3. Verify remote HEAD.
+4. Create/verify final version tag.
+5. Create/verify GitHub Release.
+6. Perform final independent audit.
+7. Record final commit/tag/release/test evidence.
+8. Mark RELEASED.
+9. Mark DEVELOPMENT FROZEN.
+
+After FREEZE:
+- no new features;
+- no roadmap implementation in this release;
+- no style-only refactors;
+- no architecture changes without a new development program;
+- no license changes without formal ownership/legal review;
+- no history rewriting.
+
+Only critical security, legal, data-integrity or production-breaking defects
+may justify a post-freeze maintenance release.
+
+========================================================
+13. FINAL AGENT COMMAND
+========================================================
+
+Read this directive in full. Treat it as the final authoritative directive for
+Personal AI Assistant. Verify the actual repository before changing anything.
+Do not repeat completed work. Perform all five independent microscope reviews,
+build the consolidated gap register, resolve every applicable verified gap,
+complete the final README/License/API/Release documentation, run all final
+tests/security checks, version/tag/release the project, verify remote state,
+perform the final independent audit, and freeze the release.
+
+Render dashboard operations are outside coding scope and will be handled
+separately by the owner/assistant.
+
+Do not invent success. Do not invent legal ownership. Do not expose secrets.
+Do not reset/rebase/amend/squash/force-push/rewrite history. Do not delete
+uncertain data. Do not import anything from another project. Do not implement
+the five roadmap stages. Do not leave verified work only locally.
+
+The ONLY acceptable terminal state is:
+
+FINALIZED + TESTED + SECURITY-VERIFIED + DOCUMENTED + LICENSED +
+VERSIONED + RELEASED + REMOTE-VERIFIED + FROZEN.
+
+END OF FINAL DIRECTIVE

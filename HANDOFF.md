@@ -2,281 +2,231 @@
 
 ## Overview
 
-A secure, production-grade SaaS-ready personal AI assistant built on Flask.  
-Features: task management, appointment scheduling, reminders, voice transcription (OpenAI Whisper), conversational AI (GPT-4o-mini), exchange rates, and weather integration.
+A production-grade, security-hardened AI-native personal productivity platform built on Flask + PostgreSQL + OpenAI. Features task management, appointment scheduling, reminders, voice transcription, conversational AI, code retrieval, layered memory, agentic execution, tool gateway, cost intelligence, project workspace, unified knowledge retrieval, verification engine, automation, privacy controls, and a real-time control center.
+
+**Version:** 1.0.0 | **Tests:** 384/384 pass | **License:** Apache-2.0
 
 ---
 
 ## Architecture
 
 ```
-Browser/UI → Flask API → Auth (Bearer token) → Route Handlers
-                                              → AI Orchestration (ai_service)
-                                              → Domain Services (task/calendar/reminder)
-                                              → PostgreSQL (psycopg2 pool)
+Browser/UI → Flask API → Auth (Bearer token, SHA-256) → Rate Limiter → Route Handlers
+                                                → AI Orchestration (ai_service)
+                                                → Domain Services (task/calendar/reminder)
+                                                → Memory Engine (4-layer, user-isolated)
+                                                → Code Retrieval (AST, hybrid search)
+                                                → Knowledge Retrieval (typed sources)
+                                                → Agentic Execution (plan→execute→verify)
+                                                → Tool Gateway (policy, approval, audit)
+                                                → Cost Intelligence (routing, caching)
+                                                → Workspace (user-isolated projects)
+                                                → Control Center (real metrics)
+                                                → PostgreSQL (psycopg2 pool)
 ```
 
-**Layer layout:**
+### Module / Directory Map
 
 | Layer | Files |
-|-------|-------|
-| Entry point | `main.py` (app factory) |
-| Configuration | `config/settings.py` |
-| DB pool | `db/pool.py` |
-| DB models | `db/models.py` (Flask-Migrate) |
-| Migrations | `migrations/versions/` |
-| Auth service | `services/auth_service.py` |
-| AI service | `services/ai_service.py` |
-| Usage/quota | `services/usage_service.py` |
-| Domain services | `services/task_service.py`, `calendar_service.py`, `reminder_service.py` |
-| Routes | `routes/user_routes.py`, `task_routes.py`, `calendar_routes.py`, `reminder_routes.py`, `ai_routes.py` |
-| Frontend | `templates/index.html`, `static/js/app.js`, `static/css/style.css` |
-| Tests | `tests/` |
-| CI | `.github/workflows/ci.yml` |
-| Deployment | `Procfile`, `gunicorn.conf.py`, `render.yaml` |
+|---|---|
+| **Entry point** | `main.py` (app factory, middleware, error handlers) |
+| **Configuration** | `config/settings.py` (centralized, validated env) |
+| **DB pool** | `db/pool.py` (ThreadedConnectionPool) |
+| **DB models** | `db/models.py` (SQLAlchemy for Flask-Migrate) |
+| **Migrations** | `migrations/versions/001–004` (4 Alembic migrations) |
+| **Auth** | `services/auth_service.py` |
+| **AI** | `services/ai_service.py` |
+| **Usage/Quota** | `services/usage_service.py` |
+| **Rate limiting** | `services/rate_limiter.py` |
+| **External API** | `services/external_api.py` |
+| **Code retrieval** | `services/code_retrieval.py` |
+| **Memory engine** | `services/memory_engine.py` |
+| **Agentic execution** | `services/agentic_execution.py` |
+| **Tool gateway** | `services/tool_gateway.py` |
+| **Cost intelligence** | `services/cost_intelligence.py` |
+| **Workspace** | `services/workspace.py` |
+| **Knowledge retrieval** | `services/knowledge_retrieval.py` |
+| **Verification engine** | `services/verification_engine.py` |
+| **Automation** | `services/automation.py` |
+| **Privacy** | `services/privacy.py` |
+| **Control center** | `services/control_center.py` |
+| **Domain services** | `services/task_service.py`, `calendar_service.py`, `reminder_service.py` |
+| **Routes** | `routes/user_routes.py`, `task_routes.py`, `calendar_routes.py`, `reminder_routes.py`, `ai_routes.py` |
+| **Utils** | `utils/datetime_utils.py`, `utils/validators.py` |
+| **Frontend** | `templates/index.html`, `static/js/app.js`, `static/css/style.css` |
+| **Tests** | `tests/` (27 modules, 384 tests) |
+| **CI** | `.github/workflows/ci.yml` |
+| **Deployment** | `Procfile`, `gunicorn.conf.py`, `render.yaml` |
 
 ---
 
-## Required Environment Variables
+## Configuration Map
 
-See `.env.example` for the full list. Minimum required for production:
+All configuration is centralized in `config/settings.py` using `_require()`, `_get()`, and `_get_int()` helpers. See `.env.example` for the full list.
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `OPENAI_API_KEY` | OpenAI API key |
-| `SECRET_KEY` | Flask secret key (use `secrets.token_hex(32)`) |
-| `FLASK_ENV` | Set to `production` |
-| `CORS_ALLOWED_ORIGINS` | Comma-separated list of allowed origins (e.g. `https://yourdomain.com`) |
-
-Optional (have sensible defaults):
-
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `OPENAI_CHAT_MODEL` | `gpt-4o-mini` | OpenAI model to use |
-| `AUTH_TOKEN_EXPIRY_SECONDS` | `86400` (24h) | Token lifetime |
-| `AI_MAX_INPUT_CHARS` | `4000` | Max user message length |
-| `AI_DAILY_QUOTA_PER_USER` | `0` (unlimited) | Daily AI call limit per user |
-| `DB_POOL_MIN` | `1` | Min DB pool connections |
-| `DB_POOL_MAX` | `10` | Max DB pool connections |
-| `LOG_LEVEL` | `INFO` | Logging verbosity |
-
----
-
-## Deployment (Render)
-
-1. Fork/push to GitHub.
-2. Connect repo to Render using `render.yaml` (Infrastructure as Code).
-3. In Render dashboard set secrets: `OPENAI_API_KEY`, `CORS_ALLOWED_ORIGINS`.
-4. `SECRET_KEY` is auto-generated by `render.yaml`.
-5. On first deploy, run migrations:
-   ```bash
-   flask db upgrade
-   ```
-6. Render's health check uses `GET /health` (liveness) and `GET /ready` (DB readiness).
-
-### Manual deployment steps
-
-```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Set env vars (copy .env.example → .env and fill values)
-# Never commit .env
-
-# Run migrations
-flask db upgrade
-
-# Start production server
-gunicorn main:app --config gunicorn.conf.py
-```
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `DATABASE_URL` | Yes | — | PostgreSQL connection string |
+| `OPENAI_API_KEY` | Yes | — | OpenAI API key |
+| `SECRET_KEY` | No | `dev-insecure-change-in-production` | Flask secret key |
+| `FLASK_ENV` | No | `development` | `development` or `production` |
+| `CORS_ALLOWED_ORIGINS` | No | localhost (dev) | Comma-separated allowed origins |
+| `OPENAI_CHAT_MODEL` | No | `gpt-4o-mini` | OpenAI model |
+| `AUTH_TOKEN_EXPIRY_SECONDS` | No | `86400` (24h) | Token lifetime |
+| `RATE_LIMIT_LOGIN` | No | `10` | Login attempts/min per IP |
+| `RATE_LIMIT_AI` | No | `20` | AI requests/min per user |
+| `RATE_LIMIT_GENERAL` | No | `60` | General requests/min per IP |
+| `AI_DAILY_QUOTA_PER_USER` | No | `0` (unlimited) | Daily AI call limit per user |
+| `AI_MAX_TOKENS` | No | `1024` | Max output tokens per AI response |
+| `AI_MAX_TOKENS_EXTRACTION` | No | `512` | Max tokens for extraction |
+| `AI_MAX_INPUT_CHARS` | No | `4000` | Max input message length |
+| `AI_REQUEST_TIMEOUT` | No | `30` | OpenAI request timeout (seconds) |
+| `VOICE_MAX_UPLOAD_BYTES` | No | `10485760` (10 MB) | Max voice upload size |
+| `DB_POOL_MIN` | No | `1` | Min DB pool connections |
+| `DB_POOL_MAX` | No | `10` | Max DB pool connections |
+| `LOG_LEVEL` | No | `INFO` | Logging verbosity |
 
 ---
 
-## Database Migrations
+## DB / Migration Map
 
-Migrations are managed by Flask-Migrate (Alembic).
+Migrations are managed by Flask-Migrate (Alembic). 4 migrations total:
 
-```bash
-# Apply all pending migrations
-flask db upgrade
+| Migration | Description |
+|---|---|
+| `001_initial_schema.py` | Full schema for new deployments (users, tasks, appointments) |
+| `002_upgrade_existing_schema.py` | Safe additive upgrade for existing DBs |
+| `003_add_ai_usage_events.py` | AI usage tracking table (per-user daily quota) |
+| `004_add_memories.py` | Layered memory table (4 types, user-isolated) |
 
-# Create a new migration (after editing db/models.py)
-flask db migrate -m "description"
+**Tables:** `users`, `tasks`, `appointments`, `ai_usage_events`, `memories`
 
-# Downgrade one revision
-flask db downgrade
-```
-
-Migration files:
-- `001_initial_schema.py` — Full schema for new deployments
-- `002_upgrade_existing_schema.py` — Safe additive upgrade for existing production DBs
+**Key constraints:** FK with CASCADE on user deletion, check constraints on status/priority/type, unique constraints on email and memory (user_id, type, key), indexes on user_id and composite indexes for query patterns.
 
 ---
 
-## API Reference
-
-### Auth
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/signup` | No | Register new user |
-| POST | `/login` | No | Login, returns `token` |
-| POST | `/logout` | Yes | Revoke token |
-| GET | `/me` | Yes | Current user profile |
-| GET | `/me/usage` | Yes | Today's AI usage / quota |
-
-### Tasks
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/tasks` | Yes | List user's tasks |
-| POST | `/tasks` | Yes | Create task |
-| PUT | `/tasks/<id>` | Yes | Update task |
-| DELETE | `/tasks/<id>` | Yes | Delete task |
-
-### Appointments
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/appointments` | Yes | List user's appointments |
-| POST | `/appointments` | Yes | Create appointment |
-| PUT | `/appointments/<id>` | Yes | Update appointment |
-| DELETE | `/appointments/<id>` | Yes | Delete appointment |
-
-### Reminders
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/reminders` | Yes | Tasks/appointments due in next hour |
-
-### AI
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| POST | `/ai` | Yes | Conversational AI chat |
-| POST | `/smart-ai` | Yes | Smart AI: reply or create task |
-| POST | `/ai-to-task` | Yes | Extract task from natural language |
-| POST | `/transcribe-voice` | Yes | Voice → text (Whisper) |
-
-### Utilities
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| GET | `/health` | No | Liveness probe |
-| GET | `/ready` | No | Readiness probe (checks DB) |
-| GET | `/app-info` | No | App metadata |
-| GET | `/exchange-rates` | No | USD exchange rates |
-
----
-
-## Auth Flow
-
-1. Client calls `POST /signup` or `POST /login` → receives `token` in response body
-2. Client stores token (localStorage in browser)
-3. All authenticated requests include `Authorization: Bearer <token>`
-4. Token expires after `AUTH_TOKEN_EXPIRY_SECONDS` (default 24h)
-5. `POST /logout` nulls the token hash in DB (immediate revocation)
-
-Token security:
-- Raw token is 48-byte URL-safe random value (never stored in DB)
-- SHA-256 hash of token is stored in `users.auth_token_hash`
-- Token expiry enforced at query time
-- Legacy `auth_token` column supported for backward compatibility
-
----
-
-## Testing
-
-```bash
-# Run all tests (no real DB or OpenAI needed)
-pytest tests/ -v
-
-# Run specific test file
-pytest tests/test_api_routes.py -v
-
-# Run with coverage (if coverage installed)
-pytest tests/ --cov=. --cov-report=term-missing
-```
-
-Test coverage:
-- `test_config.py` — Configuration validation
-- `test_auth_service.py` — Token generation, hashing, password, email validation
-- `test_ai_service.py` — AI helpers, JSON extraction, mock OpenAI calls
-- `test_task_service.py` — Task payload building, serialization, validation
-- `test_api_routes.py` — Full route integration tests (auth, CORS, headers, errors, AI)
-- `test_user_isolation.py` — User data isolation (tasks, appointments scoped to user)
-
-All 86 tests pass. No real DB or OpenAI API calls in tests.
-
----
-
-## Security Controls
+## Security Model
 
 | Control | Implementation |
 |---------|----------------|
 | Authentication | Bearer token, SHA-256 hashed, expiry enforced |
 | Password storage | bcrypt (cost factor 12) |
-| SQL injection | Parameterized queries throughout |
-| XSS | Jinja2 autoescaping, no `\|safe` filter |
-| CORS | Restrictive — configured origins only |
+| SQL injection | Parameterized queries throughout (`%s` placeholders) |
+| XSS | Jinja2 autoescaping |
+| CORS | Restrictive — configured origins only, no wildcards |
 | Security headers | X-Content-Type-Options, X-Frame-Options, Referrer-Policy |
 | Error messages | Never expose raw exceptions or stack traces |
 | Anti-enumeration | Login returns same error for bad email/password |
-| File uploads | Size-limited (default 10 MB), MIME-type-aware |
+| File uploads | Size-limited (10 MB), MIME-type validated |
 | AI abuse | Per-user daily quota (configurable), input length limits |
-| Rate limiting | Config-ready (RATE_LIMIT_LOGIN, RATE_LIMIT_AI, RATE_LIMIT_GENERAL) |
-| Secrets | Never in git, validated at startup, no defaults in production |
-| Debug mode | Disabled (FLASK_ENV=production) |
+| Rate limiting | 3-tier: login (10/min), AI (20/min), general (60/min) |
+| Secrets | Environment variables only, validated at startup, no defaults in production |
+| Debug mode | Disabled in production |
+| User isolation | All queries scoped by `user_id` |
+| Tool permissions | Least-privilege registry, approval for destructive |
+| Prompt injection | Retrieved content treated as untrusted, query sanitized |
+| Quota safety | Fail-closed in production — denies when DB unavailable |
 
 ---
 
-## Observability
+## Testing Model
 
-- **Request logging**: Every request logs method, path, status, duration_ms, request_id
-- **Request IDs**: UUID per request injected into `X-Request-Id` response header
-- **AI metadata**: Model, duration_ms, prompt/completion/total tokens logged per AI call
-- **Health**: `GET /health` (always 200), `GET /ready` (checks DB connection)
-- **Error logging**: All exceptions logged with full traceback (never exposed to client)
-- **Log level**: Controlled by `LOG_LEVEL` env var (default INFO)
+```bash
+# Run all tests (no real DB or OpenAI needed)
+.venv/bin/python -m pytest tests/ -v --tb=short
+```
 
----
-
-## Known Limitations & Future Work
-
-| Item | Notes |
-|------|-------|
-| Rate limiting | Config values exist but Flask-Limiter not installed — add for production |
-| Usage quota | In-memory store resets on restart; replace with Redis/DB for multi-worker |
-| Weather integration | External geocoding/weather API calls need timeout hardening |
-| Email verification | No signup email verification — suitable for MVP |
-| Password reset | Not implemented — requires email integration |
-| Multi-tenancy | Foundation ready; user_id isolation in place; tenant/org layer not added |
-| Push notifications | Browser notification API used; web push not implemented |
-| Admin interface | No admin panel; manual DB access required for moderation |
+- **384 tests** across 27 modules
+- No real DB or OpenAI API calls in tests
+- Mock pool via `conftest.py`
+- Security, migration, isolation, API integration, and full regression covered
+- CI: GitHub Actions (test, secret scan, import smoke, migration parse)
 
 ---
 
-## CI/CD
+## Deployment (Render)
 
-GitHub Actions CI (`.github/workflows/ci.yml`) runs on every push to `main`/`develop` and every PR to `main`:
-1. Install dependencies
-2. Secret scan (detects API keys in tracked files)
-3. Run full test suite
-4. Import smoke check (all modules)
-5. Migration syntax validation
+1. Push to GitHub `main` branch
+2. Render uses `render.yaml` (Infrastructure as Code)
+3. Set secrets in Render dashboard: `OPENAI_API_KEY`, `CORS_ALLOWED_ORIGINS`
+4. `SECRET_KEY` is auto-generated by `render.yaml`
+5. Render health check uses `GET /health`
+6. Database: Render managed PostgreSQL
+
+### Manual deployment
+
+```bash
+pip install -r requirements.txt
+# Set env vars (copy .env.example → .env and fill values)
+# Never commit .env
+flask db upgrade
+gunicorn main:app --config gunicorn.conf.py
+```
+
+### Rollback
+
+- `flask db downgrade` reverts one migration revision
+- Each migration has a tested `downgrade()` function
+- Git revert to previous commit for code rollback
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|---|---|
+| DB connection refused | Check `DATABASE_URL`, ensure pool min/max are valid |
+| OpenAI timeout | Check `OPENAI_API_KEY`, increase `AI_REQUEST_TIMEOUT` |
+| 429 Too Many Requests | Rate limit hit — check `RATE_LIMIT_*` settings |
+| AI quota exceeded | `AI_DAILY_QUOTA_PER_USER` reached — wait for UTC midnight reset |
+| CORS error | Add origin to `CORS_ALLOWED_ORIGINS` |
+| Token expired | Re-login to get a new token |
+| Import error | Ensure `.venv/bin/python` is used (system Python lacks deps) |
+
+---
+
+## Ownership / License
+
+- **Copyright:** 2026 Amin Azimi
+- **License:** Apache License 2.0 — see `LICENSE` file
+- **Third-party:** Dependencies retain their own licenses (Flask, OpenAI SDK, psycopg2, bcrypt, etc.)
+- This license does not override third-party licenses or transfer ownership.
+
+---
+
+## Release Procedure
+
+1. Ensure all tests pass: `.venv/bin/python -m pytest tests/ -v`
+2. Verify CI passes on the release commit
+3. Create annotated git tag: `git tag -a v1.0.0 -m "Release v1.0.0"`
+4. Push tag: `git push origin v1.0.0`
+5. Create GitHub Release from the tag
+6. Verify tag points to exact final commit
+7. Verify main branch is clean
 
 ---
 
 ## Git History (since productionization)
 
 ```
-3470e81 chore: track test files, pytest.ini, updated requirements and user_service stub
-e05160c feat(saas): AI daily quota enforcement, usage accounting, /me/usage endpoint
-09d765e fix(performance): UTC-aware timestamps in reminder_service, gunicorn tuned
-a167157 feat(ci,deploy): Procfile, gunicorn config, render.yaml, GitHub Actions CI pipeline
-3dc246e feat(observability,tests): request IDs, latency logging, AI token metadata, fix all 86 tests
-557d503 feat(frontend): add task/appointment create forms, fix token field, POST smart-ai, move inline CSS to stylesheet
-3b622b3 feat(auth,ai,routes): centralize auth, token expiry+hashing, remove duplicate helpers, auth AI endpoints, bounded tokens, single-call smart-ai, safe errors
-605ab2e feat(db): add connection pool, Flask-Migrate, FK constraints, indexes, remove DDL-on-request
-fa49d0c feat(hygiene): add .gitignore, .env.example, centralized config, remove orphaned services/services/
+94fc97a feat(phase20): production deployment smoke tests — 18 E2E tests
+a3102d9 feat(phase19): final regression / release readiness audit
+8140aa2 feat(phase18): personal AI control center — real metrics dashboard
+1be3f3a feat(phase14-17): unified knowledge retrieval, verification, automation, privacy
+fac3fe3 feat(phase10-13): agentic execution, tool gateway, cost intelligence, workspace
+f5810d8 feat(phase9): personal AI memory engine — layered, user-isolated
+f277d8a feat(phase8): code retrieval & token efficiency engine
+fdf08a4 feat(phase7): final security hardening audit + 27 security tests
+aa12fe7 feat(phase6): production environment/Render audit + tests
+5dd825f feat(phase5): database migration safety audit + tests
+8048eab fix(phase2-4): production-grade rate limiting, fail-closed quota, browser timeouts
+4273d1d feat(phase4): external API reliability — timeouts, bounded retries
+bdc63c2 feat(phase3): DB-backed shared AI usage quota with atomic UPSERT
+32b997c feat(phase2): production rate limiting via Flask-Limiter
+132cea9 docs(phase1): update PROJECT_DIRECTIVE to final engineering directive
 ```
 
-> **Push status**: Remote `origin` is configured (https://github.com/aminazimi42-coder/Personal-ai-assistent.git). Local `main` is up to date with `origin/main` at `9b58e33`. All commits have been pushed and remote-verified.
+> **Remote status:** `origin` → `https://github.com/aminazimi42-coder/Personal-ai-assistent.git`. Local `main` is up to date with `origin/main`.
 
 ---
 
@@ -303,24 +253,27 @@ fa49d0c feat(hygiene): add .gitignore, .env.example, centralized config, remove 
 - [x] Single-call smart-ai (no duplicate LLM calls)
 - [x] Bounded token output (max_tokens on all AI calls)
 - [x] Input length limits on AI messages
-- [x] Per-user daily AI quota (configurable)
+- [x] Per-user daily AI quota (configurable, fail-closed in production)
 - [x] Voice upload size-limited and MIME-validated
 - [x] Exchange rates fix (TRY and AED included)
 - [x] UTC-aware timestamps throughout
 - [x] Request IDs and latency logging
 - [x] AI operation metadata logging (no prompt content logged)
 - [x] Health (`/health`) and readiness (`/ready`) endpoints
-- [x] Gunicorn configured (workers, timeout, binding)
+- [x] Gunicorn configured (workers, timeout, binding, security limits)
 - [x] Procfile for Render deployment
 - [x] render.yaml Infrastructure as Code
 - [x] GitHub Actions CI pipeline
-- [x] 86 tests — 86/86 pass
+- [x] 384 tests — 384/384 pass
 - [x] No real DB or OpenAI calls in tests
 - [x] All modules import cleanly
 - [x] All migration files parse as valid Python
 - [x] Clean git working tree
-- [x] Git remote configured (origin → https://github.com/aminazimi42-coder/Personal-ai-assistent.git); local main up to date with origin/main at 9b58e33
-- [ ] Flask-Limiter installed for rate limiting
-- [ ] Usage quota backed by Redis for multi-worker deployments
-- [ ] Weather API timeout hardening
-- [ ] Email verification flow
+- [x] Git remote configured and up to date
+- [x] Flask-Limiter installed and configured (3-tier rate limiting)
+- [x] DB-backed usage quota (atomic UPSERT, fail-closed in production)
+- [x] External API timeout hardening (retries, backoff, URL redaction)
+- [x] LICENSE finalized (Apache 2.0)
+- [x] CHANGELOG.md
+- [x] README rebuilt with full capability matrix
+- [x] HANDOFF synchronized with actual state

@@ -1,414 +1,608 @@
 <div align="center">
 
-<img src="docs/personal-ai-assistant-hero.png" alt="Personal AI Assistant — intelligent productivity platform" width="100%" />
-
 # 🧠 Personal AI Assistant
 
 ### An AI-assisted productivity workspace for tasks, appointments, reminders, voice interaction, and real-time daily context.
 
 [![Live App](https://img.shields.io/badge/🌐_Live_App-Open-00C7B7?style=for-the-badge)](https://personal-ai-assistent.onrender.com)
 [![Python](https://img.shields.io/badge/Python-3.11.9-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Flask-3.0.3-111827?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
+[![Flask](https://img.shields.io/badge/Flask-3.0.3-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Ready-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![OpenAI](https://img.shields.io/badge/OpenAI-Integration-412991?style=for-the-badge&logo=openai&logoColor=white)](https://platform.openai.com/)
 [![Render](https://img.shields.io/badge/Render-Deployed-46E3B7?style=for-the-badge&logo=render&logoColor=111827)](https://render.com/)
+[![License](https://img.shields.io/badge/Apache-2.0-blue?style=for-the-badge)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-384%20pass-brightgreen?style=for-the-badge)](#testing--quality)
+[![Version](https://img.shields.io/badge/Version-1.0.0-orange?style=for-the-badge)](#release--change-log)
 
-**Deployed Advanced MVP · Responsive Web Application · REST API · AI Workflow**
+**Production-Grade · Security-Hardened · AI-Native · REST API · 20-Phase Engineered**
 
 [🌐 Live Demo](https://personal-ai-assistent.onrender.com) ·
-[✨ Features](#-product-capabilities) ·
-[🏗️ Architecture](#️-architecture) ·
-[🚀 Quick Start](#-quick-start) ·
-[🗺️ Roadmap](#️-roadmap)
+[📦 GitHub](https://github.com/aminazimi42-coder/Personal-ai-assistent) ·
+[📖 API Docs](#api-documentation) ·
+[🔒 Security Model](#security-model) ·
+[🚀 Quick Start](#quick-start) ·
+[🗺️ Roadmap](#roadmap)
 
 </div>
 
 ---
 
-## 🌟 Product Vision
+## 📋 Table of Contents
 
-> **Reduce daily cognitive load by bringing planning, contextual information, reminders, and AI-assisted actions into one focused workspace.**
-
-Personal AI Assistant is a mobile-friendly productivity application built as a deployed, full-stack MVP. It combines structured task and appointment workflows with browser capabilities, live contextual data, authentication, and an AI command layer.
-
-The project demonstrates product thinking across the complete delivery path: frontend interaction design, Flask API architecture, PostgreSQL persistence, external-service integration, browser APIs, authentication, and cloud deployment.
-
----
-
-## 🚦 Current Release
-
-| 🧭 Area | 📊 Status | 📝 Current scope |
-|---|---|---|
-| 🏠 Home dashboard | ✅ Operational | Time-aware greeting, date and time, weather, live location, exchange-rate summary, and application information |
-| 📍 Live location | ✅ Operational | Browser permission flow, coordinates, and resolved location context |
-| 🌦️ Weather | ✅ Operational | Location-aware weather information in the Home workspace |
-| 💱 Exchange rates | 🟡 Demonstration scope | A deliberately limited set of currencies is connected for demonstration; additional visible options are placeholders |
-| 🔐 User accounts | ✅ Implemented | Signup, login, logout, hashed passwords, and bearer-token access |
-| 🎙️ Voice capture | 🟡 Partially operational | Recording and playback work; the complete voice-to-AI response path is not currently reliable |
-| ✅ Task management | 🟡 Incomplete in current deployment | CRUD foundations and UI are implemented; end-to-end behavior is not considered release-complete |
-| 🤖 AI assistant | 🟡 Incomplete in current deployment | The workflow previously produced AI replies and AI-created tasks; final submission currently encounters backend/database connectivity errors |
-| 👤 Account view | ✅ Operational | Application name, version, author, and product description |
-
-> [!IMPORTANT]
-> This repository represents a **deployed advanced MVP / functional prototype**. It is intentionally documented without claiming production, enterprise, or end-to-end readiness for incomplete flows.
+1. [Product Vision](#product-vision)
+2. [Capability Matrix](#capability-matrix)
+3. [Screenshot Showcase](#screenshot-showcase)
+4. [Architecture](#architecture)
+5. [End-to-End Flow](#end-to-end-flow)
+6. [Technology Stack](#technology-stack)
+7. [Security Model](#security-model)
+8. [AI / Retrieval / Token Architecture](#ai--retrieval--token-architecture)
+9. [Testing & Quality](#testing--quality)
+10. [API Documentation](#api-documentation)
+11. [Deployment Architecture](#deployment-architecture)
+12. [Configuration](#configuration)
+13. [License](#license)
+14. [Roadmap](#roadmap)
+15. [Release & Change Log](#release--change-log)
 
 ---
 
-## ✨ Product Capabilities
+## Product Vision
 
-### 🏠 Context-aware Home
+> **Reduce daily cognitive load by bringing planning, contextual information, reminders, AI-assisted actions, and intelligent retrieval into one focused, secure workspace.**
 
-- 🕒 Live clock, date, and time-sensitive welcome message
-- 🌦️ Weather details based on the user’s loaded location
-- 📍 Browser-powered live geolocation with permission handling
-- 💱 USD-based exchange-rate information for supported demonstration currencies
-- 🔎 Custom supported-currency lookup
-- ℹ️ Runtime application metadata
-- 🎭 Interactive ALINA companion/avatar presentation
-
-### 📋 Productivity Workspace
-
-- ✅ Create, retrieve, update, complete, and delete task foundations
-- 🎯 Task priority, description, status, and optional due date
-- 📅 Appointment creation and lifecycle foundations
-- ⏰ Reminder aggregation for tasks and appointments
-- 🔔 Browser notification and reminder-sound foundations
-- 👤 User-scoped records through authenticated API access
-
-### 🤖 AI & Voice Experience
-
-- 🎙️ Browser microphone recording controls
-- ▶️ Recorded-audio playback
-- 💬 Text command input
-- 🧠 AI intent flow designed to choose between a direct reply and task creation
-- 📆 Optional due-date and due-time enrichment
-- ⚠️ Transparent documentation of the currently interrupted end-to-end AI response stage
-
-### 🔐 Identity & Access
-
-- 🧾 User registration
-- 🔑 Login and logout flows
-- 🛡️ Password hashing with `bcrypt`
-- 🎟️ Bearer-token authentication
-- 🗂️ User-isolated task and appointment queries
+Personal AI Assistant is a production-grade, security-hardened AI-native productivity platform. It combines structured task and appointment workflows with conversational AI, voice transcription, code retrieval, layered memory, agentic task execution, tool-gated automation, and a real-time control center — all built on Flask + PostgreSQL with 384 passing tests and deployed on Render.
 
 ---
 
-## 🧭 Application Experience
+## Capability Matrix
 
-| 🧩 Navigation | 🎯 Purpose |
-|---|---|
-| 🏠 **Home** | Daily context, ALINA interaction, weather, location, currency data, and product information |
-| ✅ **Tasks** | Task, appointment, and reminder workflows |
-| 🤖 **AI** | Voice capture, text input, AI reply, and AI-to-task experience |
-| 👤 **Account** | Authentication controls and application metadata |
-
-The interface is implemented as a responsive single-page experience using server-rendered HTML plus modular CSS and browser-side JavaScript.
+| # | Capability | Status | Description |
+|---|---|---|---|
+| 1 | **Task Management** | ✅ Complete | CRUD with user isolation, priority, due dates, status validation |
+| 2 | **Appointment Scheduling** | ✅ Complete | CRUD with user isolation, location, status, time validation |
+| 3 | **Reminder Aggregation** | ✅ Complete | Tasks + appointments due within 1-hour window (UTC-aware) |
+| 4 | **AI Chat** | ✅ Complete | GPT-4o-mini conversational AI with bounded tokens |
+| 5 | **Smart AI** | ✅ Complete | Single-LLM-call decision: reply vs. task creation |
+| 6 | **AI-to-Task** | ✅ Complete | Natural-language task extraction with structured output |
+| 7 | **Voice Transcription** | ✅ Complete | OpenAI Whisper integration with upload validation |
+| 8 | **Authentication** | ✅ Complete | bcrypt, SHA-256 token hashing, expiry, revocation |
+| 9 | **Rate Limiting** | ✅ Complete | 3-tier Flask-Limiter (login, AI, general) |
+| 10 | **AI Quota** | ✅ Complete | Per-user daily quota, atomic UPSERT, fail-closed in prod |
+| 11 | **External API Reliability** | ✅ Complete | Bounded retries, exponential backoff, timeouts, URL redaction |
+| 12 | **Code Retrieval** | ✅ Complete | AST symbol extraction, hybrid search, context compression, token counting |
+| 13 | **Memory Engine** | ✅ Complete | 4-layer memory (short_term, task, preference, project), user-isolated |
+| 14 | **Agentic Execution** | ✅ Complete | Plan → Execute → Verify pipeline with approval gates |
+| 15 | **Tool Gateway** | ✅ Complete | Policy-based tool access, least privilege, audit logging |
+| 16 | **Cost & Token Intelligence** | ✅ Complete | Model routing, token budgets, response caching, cost estimation |
+| 17 | **Project Workspace** | ✅ Complete | User-owned workspaces with project hierarchy and isolation |
+| 18 | **Unified Knowledge Retrieval** | ✅ Complete | Typed sources, ranking, token-budgeted context assembly |
+| 19 | **Verification Engine** | ✅ Complete | Evidence-based verification, no-fabricated-success guard |
+| 20 | **Automation** | ✅ Complete | Triggers, idempotency, daily limits, execution logging |
+| 21 | **Privacy Controls** | ✅ Complete | Data classification, retention policies, audit logging |
+| 22 | **Control Center** | ✅ Complete | Real metrics dashboard from live service state |
+| 23 | **Exchange Rates** | ✅ Complete | Frankfurter API integration with graceful degradation |
+| 24 | **Weather & Location** | ✅ Complete | Browser geolocation, Open-Meteo weather, Nominatim geocoding |
 
 ---
 
-## 🏗️ Architecture
+## Screenshot Showcase
+
+> Real screenshots from the deployed application on Render.
+
+<div align="center">
+
+### 🏠 Home Dashboard
+
+<img src="docs/screenshots/app-home.jpeg" alt="Home Dashboard — time-aware greeting, weather, location, exchange rates" width="400" />
+
+*Time-aware greeting, weather, live location, and exchange-rate summary*
+
+---
+
+### ✅ Tasks & Productivity
+
+<img src="docs/screenshots/app-tasks.jpeg" alt="Task management — create, track, and manage tasks with priority and due dates" width="400" />
+
+*Task management with priority, status, and due-date controls*
+
+---
+
+### 🤖 AI Interaction
+
+<img src="docs/screenshots/app-ai.jpeg" alt="AI chat — conversational AI, voice transcription, and smart task creation" width="400" />
+
+*Conversational AI, voice transcription, and smart task creation*
+
+---
+
+### 🎨 App Icon
+
+<img src="docs/screenshots/app-icon.png" alt="Personal AI Assistant app icon" width="200" />
+
+*Application icon — LILA / ALINA companion avatar*
+
+</div>
+
+---
+
+## Architecture
 
 ```mermaid
 flowchart TD
-    U["👤 User / Mobile Browser"] --> UI["🎨 Responsive Web UI"]
+    U["👤 User / Browser"] --> UI["🎨 Responsive Web UI"]
     UI --> API["⚡ Flask REST API"]
-    API --> AUTH["🔐 Authentication"]
-    API --> CORE["📋 Tasks · Appointments · Reminders"]
-    API --> AI["🧠 OpenAI Workflow"]
-    API --> EXT["🌍 Context APIs"]
-    AUTH --> DB[("🐘 PostgreSQL")]
+
+    API --> AUTH["🔐 Auth Service\nbcrypt · SHA-256 · Token Expiry"]
+    API --> RL["🚦 Rate Limiter\n3-tier · per-IP · per-user"]
+    API --> QUOTA["📊 Usage Service\nAtomic UPSERT · Fail-closed"]
+
+    API --> CORE["📋 Task / Calendar / Reminder Services"]
+    API --> AI["🧠 AI Service\nGPT-4o-mini · Bounded Tokens"]
+    API --> AGENT["🤖 Agentic Execution\nPlan → Execute → Verify"]
+    API --> GATEWAY["🛡️ Tool Gateway\nPolicy · Approval · Audit"]
+    API --> COST["💰 Cost Intelligence\nModel routing · Caching"]
+    API --> WS["📁 Workspace\nUser-isolated projects"]
+
+    AUTH --> DB[("🐘 PostgreSQL\nConnection Pool")]
     CORE --> DB
-    AI --> DB
-    EXT --> WX["🌦️ Weather / Location"]
-    EXT --> FX["💱 Frankfurter Rates"]
+    QUOTA --> DB
+    AI --> MEM["🧩 Memory Engine\n4-layer · User-isolated"]
+    AI --> RET["🔍 Code Retrieval\nAST · Hybrid Search"]
+    AI --> KR["📚 Knowledge Retrieval\nTyped sources · Ranking"]
+    MEM --> DB
+    RET --> KR
+    KR --> AI
+
+    API --> EXT["🌍 External APIs\nFrankfurter · Weather · Geocoding"]
+    EXT --> RT["⏱️ Retry + Timeout\nExponential backoff"]
+
+    API --> CC["🎛️ Control Center\nReal metrics dashboard"]
+    CC --> DB
+
+    API --> OBS["📊 Observability\nRequest IDs · Latency · Structured Logs"]
 ```
 
-### 🧱 Architectural Layers
+### Architectural Layers
 
-| 🧩 Layer | 🛠️ Responsibility |
+| Layer | Files | Responsibility |
+|---|---|---|
+| **Entry Point** | `main.py` | Flask app factory, middleware, error handlers |
+| **Configuration** | `config/settings.py` | Centralized, validated environment config |
+| **DB Pool** | `db/pool.py` | ThreadedConnectionPool (psycopg2) |
+| **DB Models** | `db/models.py` | SQLAlchemy schema (Flask-Migrate) |
+| **Migrations** | `migrations/versions/` | 4 Alembic migrations |
+| **Routes** | `routes/*.py` | HTTP endpoints, auth checks, response orchestration |
+| **Services** | `services/*.py` | Domain logic, AI, memory, retrieval, tools, security |
+| **Utils** | `utils/datetime_utils.py`, `utils/validators.py` | Shared helpers |
+| **Frontend** | `templates/index.html`, `static/` | Responsive SPA, CSS, JS |
+| **Tests** | `tests/` | 384 tests across 27 modules |
+| **CI** | `.github/workflows/ci.yml` | GitHub Actions pipeline |
+| **Deploy** | `Procfile`, `gunicorn.conf.py`, `render.yaml` | Render deployment |
+
+---
+
+## End-to-End Flow
+
+```mermaid
+sequenceDiagram
+    participant U as 👤 User
+    participant B as 🌐 Browser
+    participant F as ⚡ Flask API
+    participant L as 🚦 Rate Limiter
+    participant A as 🔐 Auth Service
+    participant Q as 📊 Quota
+    participant AI as 🧠 OpenAI
+    participant DB as 🐘 PostgreSQL
+
+    U->>B: Enter message / Start voice
+    B->>F: POST /smart-ai (Bearer token)
+    F->>L: Rate limit check (per-user)
+    F->>A: Validate token (SHA-256 + expiry)
+    A->>DB: SELECT user WHERE token_hash = ?
+    A-->>F: User authenticated
+    F->>Q: check_and_increment(user_id)
+    Q->>DB: UPSERT ai_usage_events (atomic)
+    Q-->>F: Allowed + count
+    F->>AI: chat.completions.create (bounded tokens)
+    AI-->>F: Reply or task decision
+    alt Action = task
+        F->>DB: INSERT task (user_id scoped)
+    end
+    F-->>B: JSON response
+    B-->>U: Display result
+```
+
+---
+
+## Technology Stack
+
+| Category | Technology | Version | Role |
+|---|---|---|---|
+| **Runtime** | Python | 3.11.9 | Application runtime |
+| **Backend** | Flask | 3.0.3 | HTTP routing, REST API, app factory |
+| **ORM/Migrations** | Flask-SQLAlchemy + Flask-Migrate | 3.1.1 + 4.0.7 | Schema management (Alembic) |
+| **Rate Limiting** | Flask-Limiter | 3.5.1 | 3-tier rate limiting |
+| **Database** | PostgreSQL | — | Persistent relational storage |
+| **DB Driver** | psycopg2-binary | 2.9.9 | ThreadedConnectionPool |
+| **AI** | OpenAI Python SDK | 1.30.1 | GPT-4o-mini, Whisper |
+| **Security** | bcrypt | 4.1.2 | Password hashing |
+| **HTTP** | requests | 2.31.0 | External API calls |
+| **Server** | Gunicorn | 21.2.0 | WSGI production server |
+| **Frontend** | HTML5 + CSS3 + Vanilla JS | — | Responsive SPA |
+| **Browser APIs** | Geolocation · MediaRecorder · Notifications | — | Location, voice, reminders |
+| **CI/CD** | GitHub Actions | — | Test + secret scan + import smoke |
+| **Deployment** | Render | — | Cloud hosting |
+
+---
+
+## Security Model
+
+| Control | Implementation | Verified By |
+|---|---|---|
+| **Password Storage** | bcrypt (cost factor 12) | `test_security_hardening.py` |
+| **Token Storage** | SHA-256 hash, raw token never persisted | `test_auth_service.py` |
+| **Token Expiry** | Enforced at query time (`token_expires_at > NOW()`) | `test_auth_service.py` |
+| **Token Revocation** | Immediate — nulls hash on logout | `test_api_routes.py` |
+| **Anti-Enumeration** | Same error for bad email / bad password | `test_security_hardening.py` |
+| **SQL Injection** | Parameterized queries throughout (`%s` placeholders) | `test_security_hardening.py` |
+| **CORS** | Restrictive — configured origins only, no wildcards | `test_production_env.py` |
+| **Security Headers** | X-Content-Type-Options, X-Frame-Options, Referrer-Policy | `test_security_hardening.py` |
+| **Error Handling** | Global JSON handlers — never expose stack traces | `test_api_routes.py` |
+| **Rate Limiting** | 3-tier: login (10/min), AI (20/min), general (60/min) | `test_rate_limiter.py` |
+| **AI Quota** | Per-user daily, atomic UPSERT, fail-closed in production | `test_usage_service.py` |
+| **Upload Limits** | Voice: 10 MB max, MIME-type validated | `test_api_routes.py` |
+| **Input Limits** | AI messages: 4000 chars max, output tokens bounded | `test_ai_service.py` |
+| **Secrets** | Environment variables only, validated at startup | `test_config.py` |
+| **Debug Mode** | Disabled in production (`FLASK_ENV=production`) | `test_production_env.py` |
+| **User Isolation** | All queries scoped by `user_id` | `test_user_isolation.py` |
+| **Tool Permissions** | Least-privilege registry, approval for destructive | `test_tool_gateway.py` |
+| **Prompt Injection** | Retrieved content treated as untrusted, query sanitized | `test_code_retrieval.py` |
+
+### Security Architecture
+
+```mermaid
+flowchart LR
+    R["🌐 Request"] --> RL["🚦 Rate Limiter"]
+    RL --> AUTH["🔐 Auth Check\nSHA-256 + Expiry"]
+    AUTH -->|Invalid| ERR["❌ 401 JSON Error"]
+    AUTH -->|Valid| QUOTA["📊 Quota Check\nAtomic UPSERT"]
+    QUOTA -->|Exceeded| ERR429["❌ 429 Quota Exceeded"]
+    QUOTA -->|Allowed| ROUTE["⚡ Route Handler"]
+    ROUTE --> DB["🐘 DB Query\nParameterized + user_id scoped"]
+    ROUTE --> AI["🧠 AI Call\nBounded tokens + timeout"]
+    ROUTE --> ERR500["❌ 500 Safe Error\nNo stack trace"]
+```
+
+---
+
+## AI / Retrieval / Token Architecture
+
+### AI Pipeline
+
+| Stage | Component | Behavior |
+|---|---|---|
+| **Input Validation** | Route handlers | Length check, message required, JSON required |
+| **Quota Check** | `usage_service.check_and_increment()` | Atomic UPSERT, fail-closed in prod |
+| **Model Selection** | `cost_intelligence.select_model()` | Simple → gpt-4o-mini, complex → gpt-4o |
+| **Token Budget** | `cost_intelligence.compute_token_budget()` | Context budget minus output reservation |
+| **AI Call** | `ai_service.generate_ai_reply()` | Bounded `max_tokens`, timeout, structured logging |
+| **Output Validation** | `_clean_text()`, `_extract_json()` | Safe fallback on parse failure |
+| **Metadata Logging** | `logger.info()` | Model, tokens, duration — no prompt content |
+
+### Retrieval Pipeline
+
+```
+USER REQUEST → QUERY SANITIZATION → REPOSITORY INGESTION →
+AST SYMBOL EXTRACTION → HYBRID SEARCH (keyword + symbol) →
+RELEVANCE RANKING (type-weighted) → CONTEXT COMPRESSION →
+TOKEN-BUDGET GUARD → LLM → RESPONSE
+```
+
+| Component | Key Features |
 |---|---|
-| 🎨 `templates/` + `static/` | Responsive UI, navigation, voice controls, browser integrations, and API consumption |
-| 🛣️ `routes/` | HTTP endpoints, request validation, authentication checks, and response orchestration |
-| ⚙️ `services/` | Domain payload construction, parsing, serialization, AI logic, and user operations |
-| 🐘 PostgreSQL | Persistent users, tasks, and appointments |
-| 🚀 Gunicorn + Render | Production-style WSGI serving and cloud deployment |
+| **Code Retrieval** | AST parsing, hybrid search, context compression, tiktoken counting |
+| **Memory Engine** | 4-layer (short_term/task/preference/project), user-isolated, TTL |
+| **Knowledge Retrieval** | Typed sources (code/memory/task/note/project), ranked, token-budgeted |
+| **Cost Intelligence** | Model routing, response caching with TTL, cost estimation |
+| **Tool Gateway** | Policy registry (read_only/write/destructive/communication), approval gates |
 
 ---
 
-## 🛠️ Technology Stack
+## Testing & Quality
 
-| 🧭 Category | ⚙️ Technology | 🎯 Role |
-|---|---|---|
-| 🐍 Runtime | Python `3.11.9` | Application runtime |
-| ⚡ Backend | Flask `3.0.3` | HTTP routing, rendering, and REST API |
-| 🦄 Server | Gunicorn `21.2.0` | WSGI application server |
-| 🐘 Database | PostgreSQL | Persistent relational storage |
-| 🔌 DB driver | psycopg2-binary `2.9.9` | PostgreSQL connectivity |
-| 🧠 AI | OpenAI Python SDK `1.30.1` | AI response and intent workflow |
-| 🔐 Security | bcrypt `4.1.2` | Password hashing |
-| 🌐 HTTP | Requests `2.31.0` + HTTPX `0.27.2` | External API communication |
-| 🎨 Frontend | HTML5 · CSS3 · Vanilla JavaScript | Responsive application experience |
-| 📍 Browser APIs | Geolocation · MediaRecorder · Notifications | Location, voice, and reminder capabilities |
-| 💱 External data | Frankfurter API | Demonstration exchange rates |
-| ☁️ Deployment | Render | Hosted web service |
-
----
-
-## 🔌 API Surface
-
-### 🩺 Platform
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `GET` | `/` | Serve the application |
-| `GET` | `/health` | Lightweight service health response |
-| `GET` | `/app-info` | Return version and author metadata |
-| `GET` | `/db-check` | Check database connectivity |
-| `POST` | `/init-db` | Initialize application tables |
-| `GET` | `/exchange-rates` | Return supported demonstration rates |
-
-### 👤 Authentication
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `POST` | `/signup` | Create a user account |
-| `POST` | `/login` | Authenticate and return an access token |
-| `POST` | `/logout` | End the active token session |
-
-### ✅ Tasks & Scheduling
-
-| Method | Endpoint | Purpose |
-|---|---|---|
-| `GET` | `/tasks` | List authenticated user tasks |
-| `POST` | `/tasks` | Create a task |
-| `PUT` | `/tasks/{task_id}` | Update a task |
-| `DELETE` | `/tasks/{task_id}` | Delete a task |
-| `GET` | `/appointments` | List authenticated user appointments |
-| `POST` | `/appointments` | Create an appointment |
-| `PUT` | `/appointments/{appointment_id}` | Update an appointment |
-| `DELETE` | `/appointments/{appointment_id}` | Delete an appointment |
-| `GET` | `/reminders` | Aggregate due tasks and appointments |
-
-### 🤖 AI Commands
-
-The backend includes AI reply, quick-add, AI-to-task, and smart intent routes, including browser-friendly variants. These endpoints are part of the active development surface and should be treated as partially operational in the current deployment.
-
----
-
-## 📁 Project Structure
-
-```text
-Personal-ai-assistent/
-├── main.py                   # Flask application entry point
-├── requirements.txt          # Python dependencies
-├── runtime.txt               # Runtime declaration
-├── .python-version           # Python version pin
-├── routes/
-│   ├── ai_routes.py          # AI and intent endpoints
-│   ├── calendar_routes.py    # Appointment API
-│   ├── reminder_routes.py    # Reminder aggregation
-│   ├── task_routes.py        # Task API
-│   └── user_routes.py        # Authentication API
-├── services/
-│   ├── ai_service.py         # AI-domain logic
-│   ├── calendar_service.py   # Appointment parsing and serialization
-│   ├── task_service.py       # Task parsing and serialization
-│   └── user_service.py       # User persistence and authentication
-├── templates/
-│   └── index.html            # Application shell
-└── static/
-    ├── css/style.css         # Responsive visual system
-    ├── js/app.js             # Client-side application logic
-    └── ...                   # Application imagery and icons
-```
-
----
-
-## 🚀 Quick Start
-
-### 1️⃣ Clone the repository
-
-```bash
-git clone https://github.com/aminazimi42-coder/Personal-ai-assistent.git
-cd Personal-ai-assistent
-```
-
-### 2️⃣ Create and activate a virtual environment
-
-```bash
-python -m venv .venv
-source .venv/bin/activate
-```
-
-> 🪟 On Windows, activate with `.venv\Scripts\activate`.
-
-### 3️⃣ Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-### 4️⃣ Configure environment variables
-
-```bash
-export DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE"
-export OPENAI_API_KEY="your-openai-api-key"
-```
-
-> 🔒 Never commit production credentials or local `.env` files.
-
-### 5️⃣ Start the application
-
-```bash
-gunicorn main:app
-```
-
-Open:
-
-```text
-http://127.0.0.1:8000
-```
-
-### 6️⃣ Confirm service health
-
-```text
-http://127.0.0.1:8000/health
-```
-
-Expected response:
-
-```json
-{
-  "status": "ok"
-}
-```
-
----
-
-## ☁️ Deployment
-
-The current application is deployed as a Render web service.
-
-| ⚙️ Setting | 📌 Value |
+| Metric | Value |
 |---|---|
-| 🐍 Runtime | Python `3.11.9` |
-| 📦 Build command | `pip install -r requirements.txt` |
-| 🚀 Start command | `gunicorn main:app` |
-| 🐘 Required database variable | `DATABASE_URL` |
-| 🧠 Required AI variable | `OPENAI_API_KEY` |
+| **Total Tests** | 384 |
+| **Test Modules** | 27 |
+| **Pass Rate** | 100% (384/384) |
+| **External Dependencies** | None (no real DB or OpenAI calls) |
+| **Test Framework** | pytest 8.2.2 + pytest-mock 3.14.0 |
 
-🌐 Live application:
+### Test Matrix
 
-```text
-https://personal-ai-assistent.onrender.com
+| Module | Tests | Coverage Area |
+|---|---|---|
+| `test_code_retrieval.py` | 28 | AST extraction, hybrid search, compression, tokens |
+| `test_security_hardening.py` | 27 | Token hashing, bcrypt, CORS, headers, SQL injection |
+| `test_api_routes.py` | 25 | Route integration, auth, errors, CORS, upload limits |
+| `test_memory_engine.py` | 19 | 4-layer memory, CRUD, search, expiry, isolation |
+| `test_final_regression.py` | 19 | Full regression across all modules |
+| `test_ai_service.py` | 19 | AI reply, JSON extraction, smart action, fallbacks |
+| `test_production_deployment.py` | 18 | E2E smoke tests, deployment config |
+| `test_auth_service.py` | 18 | Token gen, hashing, validation, email/password |
+| `test_task_service.py` | 17 | Task payload, serialization, validation |
+| `test_agentic_execution.py` | 17 | Action registry, approval, execution, status |
+| `test_workspace.py` | 16 | Workspace CRUD, project CRUD, isolation |
+| `test_privacy.py` | 16 | Data classification, policies, audit, anonymization |
+| `test_tool_gateway.py` | 15 | Tool registry, policy enforcement, approval |
+| `test_cost_intelligence.py` | 15 | Model routing, caching, cost estimation |
+| `test_production_env.py` | 14 | Config validation, gunicorn, render.yaml |
+| `test_automation.py` | 14 | Triggers, idempotency, daily limits, logging |
+| `test_migration_safety.py` | 13 | Chain, syntax, additive upgrade, FK, downgrade |
+| `test_control_center.py` | 13 | Dashboard metrics, health summary |
+| `test_verification_engine.py` | 11 | Verification states, evidence, no-fabricated-success |
+| `test_knowledge_retrieval.py` | 10 | Typed sources, ranking, token budget |
+| `test_phase2_4_fixes.py` | 9 | Per-user rate limit, fail-closed quota, browser timeout |
+| `test_external_api.py` | 9 | Retry, backoff, timeout, URL redaction |
+| `test_usage_service.py` | 8 | Quota, increment, reset, concurrency |
+| `test_rate_limiter.py` | 7 | 3-tier limits, 429 semantics, configurable |
+| `test_config.py` | 4 | Environment config validation |
+| `test_user_isolation.py` | 3 | Cross-user access prevention |
+
+### CI Pipeline
+
+GitHub Actions CI runs on every push to `main`/`develop` and every PR to `main`:
+
+1. **Dependency install** — `pip install -r requirements.txt`
+2. **Secret scan** — scans tracked files for API keys
+3. **Full test suite** — `pytest tests/ -v --tb=short`
+4. **Import smoke check** — verifies all modules import cleanly
+5. **Migration validation** — all migration files parse as valid Python
+
+---
+
+## API Documentation
+
+### Platform Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/` | No | Serve the application |
+| `GET` | `/health` | No | Liveness probe (`{"status":"ok"}`) |
+| `GET` | `/ready` | No | Readiness probe (checks DB connectivity) |
+| `GET` | `/app-info` | No | App metadata (name, version, author) |
+| `GET` | `/exchange-rates` | No | USD exchange rates (Frankfurter API) |
+
+### Authentication
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/signup` | No | Create account → returns `token` |
+| `POST` | `/login` | No | Authenticate → returns `token` |
+| `POST` | `/logout` | Yes | Revoke current token |
+| `GET` | `/me` | Yes | Current user profile |
+| `GET` | `/me/usage` | Yes | Today's AI usage and quota |
+
+### Tasks
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/tasks` | Yes | List user's tasks |
+| `POST` | `/tasks` | Yes | Create a task |
+| `PUT` | `/tasks/{id}` | Yes | Update a task |
+| `DELETE` | `/tasks/{id}` | Yes | Delete a task |
+
+### Appointments
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/appointments` | Yes | List user's appointments |
+| `POST` | `/appointments` | Yes | Create an appointment |
+| `PUT` | `/appointments/{id}` | Yes | Update an appointment |
+| `DELETE` | `/appointments/{id}` | Yes | Delete an appointment |
+
+### Reminders & AI
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/reminders` | Yes | Tasks/appointments due in next hour |
+| `POST` | `/ai` | Yes | Conversational AI chat |
+| `POST` | `/smart-ai` | Yes | Smart AI: reply or create task |
+| `POST` | `/ai-to-task` | Yes | Extract task from natural language |
+| `POST` | `/transcribe-voice` | Yes | Voice → text (OpenAI Whisper) |
+
+> **Auth:** All protected endpoints require `Authorization: Bearer <token>` header.
+> Tokens are 48-byte URL-safe random values, stored as SHA-256 hashes, with configurable expiry (default 24h).
+
+---
+
+## Deployment Architecture
+
+```mermaid
+flowchart TD
+    G["📦 GitHub\nmain branch"] --> CI["🔄 GitHub Actions\nTest + Scan + Import"]
+    CI --> R["☁️ Render\nWeb Service"]
+    R --> DB["🐘 PostgreSQL\nRender managed DB"]
+    R --> ENV["🔐 Environment\nDATABASE_URL · OPENAI_API_KEY · SECRET_KEY"]
+    R --> GUN["🦄 Gunicorn\nworkers = 2×CPU+1\nthreads = 2\ntimeout = 120s"]
+    GUN --> APP["⚡ Flask App\nmain:app"]
+    APP --> HC["🏥 Health Check\nGET /health"]
 ```
 
-> [!NOTE]
+| Setting | Value |
+|---|---|
+| **Runtime** | Python 3.11.9 |
+| **Build** | `pip install -r requirements.txt` |
+| **Start** | `gunicorn main:app --config gunicorn.conf.py` |
+| **Health check** | `GET /health` |
+| **DB** | Render managed PostgreSQL (free tier) |
+| **Secrets** | `OPENAI_API_KEY`, `CORS_ALLOWED_ORIGINS` set in dashboard |
+
+🌐 **Live application:** https://personal-ai-assistent.onrender.com
+
 > Free-tier cloud instances may require a short warm-up period after inactivity.
 
 ---
 
-## ⚠️ Known Limitations
+## Configuration
 
-### 🤖 AI Assistant & Voice Workflow
+All configuration is centralized in `config/settings.py` and read from environment variables. See `.env.example` for the complete list.
 
-- 🎙️ Voice recording and playback remain available.
-- 🧠 The workflow previously supported speech-to-text followed by an AI-generated reply or AI-created task.
-- ⚠️ In the current deployment, final message submission and response generation encounter a backend/database connectivity error.
-- 🛠️ The complete AI interaction is therefore classified as **partially implemented**, not currently end-to-end operational.
+### Required
 
-### ✅ Task Management
+| Variable | Description |
+|---|---|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `OPENAI_API_KEY` | OpenAI API key |
 
-- 🧱 The authenticated API, database schema, CRUD logic, and interface components are implemented.
-- ⚠️ The complete user workflow is not considered release-complete in the current deployment.
-- 🛠️ Task management remains inside the active stabilization scope.
+### Important
 
-### 💱 Exchange-rate Scope
-
-- ✅ EUR, GBP, CAD, AUD, and JPY are requested by the backend for functional demonstration.
-- 🧪 Additional currencies visible in the interface are placeholders unless returned by the configured data source.
-- 📌 The limited scope is intentional and is not presented as comprehensive market-data coverage.
-
-### 🏢 Production Readiness
-
-- 🧪 Automated test coverage is not yet documented.
-- 🔐 Token lifecycle, CORS policy, secrets management, observability, and rate limiting require production hardening.
-- 📱 Responsive behavior is implemented, with further mobile safe-area and navigation refinement planned.
-- 📄 A formal project license has not yet been published.
-
----
-
-## 🗺️ Roadmap
-
-### 🔧 Phase 1 — Stabilization
-
-- 🐘 Restore reliable database connectivity across task and AI workflows
-- 🤖 Revalidate AI reply and AI-to-task execution
-- 🎙️ Revalidate complete voice-to-text-to-AI behavior
-- ✅ Add backend and browser-flow tests
-- 📱 Refine mobile safe-area behavior
-
-### 🛡️ Phase 2 — Production Hardening
-
-- 🔑 Replace persistent raw auth tokens with expiring, revocable sessions
-- 🌐 Restrict CORS to approved origins
-- 🚦 Add rate limiting and abuse protection
-- 📊 Add structured logs, metrics, tracing, and alerting
-- 🧬 Introduce managed database migrations
-- 🔄 Add CI quality gates and deployment checks
-
-### 🧠 Phase 3 — Intelligent Productivity
-
-- 🗓️ Calendar-provider integrations
-- 🔔 Multi-channel reminders and notifications
-- 🎯 AI prioritization and workload analysis
-- 🧩 Tool-based AI actions with explicit user confirmation
-- 🗣️ More reliable multilingual speech workflows
-- 📱 Installable PWA and native-mobile exploration
+| Variable | Default | Description |
+|---|---|---|
+| `SECRET_KEY` | `dev-insecure-change-in-production` | Flask secret key |
+| `FLASK_ENV` | `development` | `development` or `production` |
+| `CORS_ALLOWED_ORIGINS` | localhost (dev) | Comma-separated allowed origins |
+| `OPENAI_CHAT_MODEL` | `gpt-4o-mini` | OpenAI model |
+| `AUTH_TOKEN_EXPIRY_SECONDS` | `86400` (24h) | Token lifetime |
+| `RATE_LIMIT_LOGIN` | `10` | Login attempts per minute per IP |
+| `RATE_LIMIT_AI` | `20` | AI requests per minute per user |
+| `RATE_LIMIT_GENERAL` | `60` | General requests per minute per IP |
+| `AI_DAILY_QUOTA_PER_USER` | `0` (unlimited) | Daily AI call limit per user |
+| `AI_MAX_TOKENS` | `1024` | Max output tokens per AI response |
+| `AI_MAX_INPUT_CHARS` | `4000` | Max input message length |
+| `AI_REQUEST_TIMEOUT` | `30` | OpenAI request timeout (seconds) |
+| `VOICE_MAX_UPLOAD_BYTES` | `10485760` (10 MB) | Max voice upload size |
+| `DB_POOL_MIN` | `1` | Min DB pool connections |
+| `DB_POOL_MAX` | `10` | Max DB pool connections |
+| `LOG_LEVEL` | `INFO` | Logging verbosity |
 
 ---
 
-## 🔒 Security Notes
+## License
 
-- 🔐 Passwords are hashed with `bcrypt`.
-- 🎟️ Protected data routes require a bearer token.
-- 👤 Task and appointment queries are scoped to the authenticated user.
-- 🗝️ Secrets are expected through environment variables.
-- 🚫 Credentials, private database URLs, and real user location data must never be committed.
+This project is licensed under the **Apache License 2.0**.
 
-> [!WARNING]
-> The current authentication and CORS design is suitable for MVP development, not for an internet-scale production system without the hardening work listed above.
+- ✅ Commercial use
+- ✅ Modification
+- ✅ Distribution
+- ✅ Patent grant
+- ❌ Trademark use
+- ❌ Liability / warranty
 
----
+See [LICENSE](LICENSE) for the full text.
 
-## 🤝 Contributing
-
-1. 🍴 Fork the repository.
-2. 🌿 Create a focused feature branch.
-3. 🧪 Add or update tests for behavioral changes.
-4. 📝 Keep documentation aligned with real behavior.
-5. 🔀 Open a pull request with a clear problem statement and verification notes.
+> Third-party dependencies retain their own licenses. This license does not
+> override third-party licenses or transfer ownership.
 
 ---
 
-## 👨‍💻 Author
+## Roadmap
 
-**Amin Azimi**  
-AI Architect & AI Product Engineer  
+> The following stages are **future-only** — not part of the current release.
+> After the development freeze, no roadmap work is implemented in this release.
+
+### ROADMAP 01 — Cognitive Memory Graph
+
+- **Objective:** Temporal, provenance-aware personal knowledge graph connecting person, preference, project, task, conversation, decision, document, code, and outcome
+- **User Value:** The assistant remembers not just facts but relationships — how a task connects to a project, how a decision connects to an outcome, and when information becomes stale
+- **Architectural Impact:** New graph data model extending the current 4-layer memory engine; relationship traversal and conflict detection
+- **Dependencies:** PostgreSQL graph capabilities or dedicated graph store; provenance metadata schema
+- **Security/Privacy:** Provenance must respect user isolation; relationship data classified as confidential; retention policies per edge type
+- **Success Criteria:** 95% recall on temporal queries; <100ms relationship traversal; user-controlled provenance deletion
+
+### ROADMAP 02 — Decision & Simulation Lab
+
+- **Objective:** Structured what-if scenario modeling before consequential actions — options, assumptions, expected effects, risks, dependencies, uncertainty, and verification plans
+- **User Value:** Users can evaluate decisions (e.g., "what if I reschedule this project?") with AI-generated scenarios before committing
+- **Architectural Impact:** New scenario engine with Monte-Carlo-style outcome projection; integration with task and appointment systems
+- **Dependencies:** Cost intelligence (for AI budget per scenario); verification engine (for outcome validation)
+- **Security/Privacy:** Scenario data is user-isolated; no external data leaves the system without consent; simulation results may contain sensitive projections
+- **Success Criteria:** Scenario generation < 5s; outcome accuracy > 70% on retrospective validation; user can compare ≥ 3 scenarios side-by-side
+
+### ROADMAP 03 — AI Context Compiler
+
+- **Objective:** Dedicated context compiler assembling minimum-sufficient, permission-aware, evidence-backed context from memory, projects, code, documents, tasks, and history — optimizing relevance, freshness, provenance, token budget, and cost
+- **User Value:** AI responses are grounded in the right context — not too much (expensive, slow) and not too little (incomplete, wrong)
+- **Architectural Impact:** Unified context assembly layer above existing knowledge retrieval; inspectable context packages; provenance tracking
+- **Dependencies:** Code retrieval, memory engine, knowledge retrieval, cost intelligence (token budgeting)
+- **Security/Privacy:** Context packages respect user isolation; retrieved content treated as untrusted; provenance visible to user
+- **Success Criteria:** Context assembly < 200ms; ≥ 30% token reduction vs. full-context baseline; zero provenance gaps
+
+### ROADMAP 04 — Continuous AI Evaluation Lab
+
+- **Objective:** Versioned benchmarks for retrieval quality, memory relevance, tool safety, hallucination resistance, instruction following, latency, tokens, cost, security, and regression
+- **User Value:** Quality is measured, not assumed — every model change is evaluated against deterministic fixtures before deployment
+- **Architectural Impact:** Benchmark suite integrated with CI; versioned evaluation datasets; regression detection on retrieval/memory/tool metrics
+- **Dependencies:** Verification engine; existing test infrastructure; cost intelligence (for cost benchmarks)
+- **Security/Privacy:** Benchmark datasets contain no real user data; evaluation results are internal
+- **Success Criteria:** ≥ 20 benchmark categories; CI runs full suite < 60s; regression detection with < 5% false positive rate
+
+### ROADMAP 05 — Portable Personal AI Runtime
+
+- **Objective:** Hybrid cloud/local execution with encrypted local storage and explicit policy controlling what data may leave the device
+- **User Value:** Users gain control over where their data is processed — sensitive data stays on-device, compute-heavy tasks run in the cloud
+- **Architectural Impact:** Dual-runtime architecture; encrypted local persistence; policy engine for data boundary decisions; sync protocol
+- **Dependencies:** Privacy service (data classification); memory engine (local storage); cost intelligence (cloud vs. local routing)
+- **Security/Privacy:** Local storage encrypted at rest; policy engine enforces data boundary; user explicitly consents to cloud processing per data category
+- **Success Criteria:** 100% of restricted data stays on-device; < 50ms policy decision latency; zero data boundary violations in tests
+
+---
+
+## Release & Change Log
+
+### v1.0.0 — 2026-09-22 — Final Release (Development Freeze)
+
+This is the first stable release. All 20 development phases are complete, tested (384/384), and deployed.
+
+**Completed phases:**
+
+| Phase | Commit | Description |
+|---|---|---|
+| P1 | `132cea9` | State audit / document reconciliation |
+| P2 | `32b997c` | Production rate limiting |
+| P3 | `bdc63c2` | DB-backed shared AI usage quota |
+| P4 | `4273ad1` | External API reliability — timeouts, retries |
+| P5 | `5dd825f` | Migration safety audit |
+| P6 | `aa12fe7` | Production environment / Render configuration |
+| P7 | `fdf08a4` | Final security hardening |
+| P8 | `f277d8a` | Code retrieval & token efficiency |
+| P9 | `f5810d8` | Memory engine — layered, user-isolated |
+| P10–13 | `fac3fe3` | Agentic execution, tool gateway, cost intelligence, workspace |
+| P14–17 | `1be3f3a` | Knowledge retrieval, verification, automation, privacy |
+| P18 | `8140aa2` | Control center — real metrics dashboard |
+| P19 | `a3102d9` | Final regression / release readiness |
+| P20 | `94fc97a` | Production deployment smoke tests |
+
+See [CHANGELOG.md](CHANGELOG.md) for the full release notes.
+
+---
+
+## Contributing
+
+1. Fork the repository
+2. Create a focused feature branch
+3. Add or update tests for behavioral changes
+4. Keep documentation aligned with real behavior
+5. Open a pull request with a clear problem statement and verification notes
+
+---
+
+## Author
+
+**Amin Azimi**
+AI Architect & AI Product Engineer
 Azimi Innovation Lab
 
-🔗 Repository:
-
-```text
-https://github.com/aminazimi42-coder/Personal-ai-assistent
-```
+🔗 Repository: https://github.com/aminazimi42-coder/Personal-ai-assistent
 
 ---
 
 <div align="center">
 
 ### 🧠 Built to turn daily context into focused action.
+
+**FINALIZED · TESTED · SECURITY-VERIFIED · DOCUMENTED · LICENSED · VERSIONED · RELEASED · FROZEN**
 
 ⭐ If this project is useful or interesting, consider starring the repository.
 
