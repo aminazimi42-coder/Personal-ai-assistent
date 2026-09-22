@@ -1,6 +1,8 @@
 Flask==3.0.3
 Flask-Migrate==4.0.7
 Flask-SQLAlchemy==3.1.1
+Flask-Limiter==3.5.1
+limits==3.12.0
 psycopg2-binary==2.9.9
 gunicorn==21.2.0
 openai==1.30.1

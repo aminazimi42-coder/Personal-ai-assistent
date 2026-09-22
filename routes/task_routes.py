@@ -55,8 +55,10 @@ def insert_task(get_connection, title, description="", status="pending",
 
 def init_task_routes(app, get_connection):
     task_routes = Blueprint("task_routes", __name__)
+    from services.rate_limiter import general_limit
 
     @task_routes.route("/tasks", methods=["GET"])
+    @general_limit()
     def get_tasks():
         try:
             user, error, code = get_current_user(get_connection)
@@ -87,6 +89,7 @@ def init_task_routes(app, get_connection):
             return jsonify({"status": "error", "message": "Could not retrieve tasks"}), 500
 
     @task_routes.route("/tasks", methods=["POST"])
+    @general_limit()
     def create_task():
         try:
             user, error, code = get_current_user(get_connection)
@@ -117,6 +120,7 @@ def init_task_routes(app, get_connection):
             return jsonify({"status": "error", "message": "Could not create task"}), 500
 
     @task_routes.route("/tasks/<int:task_id>", methods=["PUT"])
+    @general_limit()
     def update_task(task_id):
         try:
             user, error, code = get_current_user(get_connection)
@@ -181,6 +185,7 @@ def init_task_routes(app, get_connection):
             return jsonify({"status": "error", "message": "Could not update task"}), 500
 
     @task_routes.route("/tasks/<int:task_id>", methods=["DELETE"])
+    @general_limit()
     def delete_task(task_id):
         try:
             user, error, code = get_current_user(get_connection)

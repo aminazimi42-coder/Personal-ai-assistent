@@ -38,6 +38,12 @@ services:
         value: "26214400"   # 25 MB
       - key: LOG_LEVEL
         value: INFO
+      - key: RATE_LIMIT_LOGIN
+        value: "10"
+      - key: RATE_LIMIT_AI
+        value: "20"
+      - key: RATE_LIMIT_GENERAL
+        value: "60"
 
 databases:
   - name: personal-ai-assistant-db

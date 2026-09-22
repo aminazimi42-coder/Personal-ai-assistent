@@ -59,8 +59,10 @@ def insert_appointment(get_connection, title, appointment_time,
 
 def init_calendar_routes(app, get_connection):
     calendar_routes = Blueprint("calendar_routes", __name__)
+    from services.rate_limiter import general_limit
 
     @calendar_routes.route("/appointments", methods=["GET"])
+    @general_limit()
     def get_appointments():
         try:
             user, error, code = get_current_user(get_connection)
@@ -91,6 +93,7 @@ def init_calendar_routes(app, get_connection):
             return jsonify({"status": "error", "message": "Could not retrieve appointments"}), 500
 
     @calendar_routes.route("/appointments", methods=["POST"])
+    @general_limit()
     def create_appointment():
         try:
             user, error, code = get_current_user(get_connection)
@@ -121,6 +124,7 @@ def init_calendar_routes(app, get_connection):
             return jsonify({"status": "error", "message": "Could not create appointment"}), 500
 
     @calendar_routes.route("/appointments/<int:appointment_id>", methods=["PUT"])
+    @general_limit()
     def update_appointment(appointment_id):
         try:
             user, error, code = get_current_user(get_connection)
@@ -186,6 +190,7 @@ def init_calendar_routes(app, get_connection):
             return jsonify({"status": "error", "message": "Could not update appointment"}), 500
 
     @calendar_routes.route("/appointments/<int:appointment_id>", methods=["DELETE"])
+    @general_limit()
     def delete_appointment(appointment_id):
         try:
             user, error, code = get_current_user(get_connection)

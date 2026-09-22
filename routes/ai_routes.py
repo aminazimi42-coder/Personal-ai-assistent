@@ -26,8 +26,10 @@ logger = logging.getLogger(__name__)
 
 def init_ai_routes(app, get_connection):
     ai_routes = Blueprint("ai_routes", __name__)
+    from services.rate_limiter import ai_limit
 
     @ai_routes.route("/ai", methods=["POST"])
+    @ai_limit()
     def ai_chat():
         """Authenticated AI chat."""
         try:
@@ -64,6 +66,7 @@ def init_ai_routes(app, get_connection):
             return jsonify({"status": "error", "message": "AI service unavailable"}), 503
 
     @ai_routes.route("/ai-to-task", methods=["POST"])
+    @ai_limit()
     def ai_to_task():
         """Extract a task from natural language and create it."""
         try:
@@ -108,6 +111,7 @@ def init_ai_routes(app, get_connection):
             return jsonify({"status": "error", "message": "AI service unavailable"}), 503
 
     @ai_routes.route("/smart-ai", methods=["POST"])
+    @ai_limit()
     def smart_ai():
         """Authenticated smart AI: decides reply vs task creation."""
         try:
@@ -170,6 +174,7 @@ def init_ai_routes(app, get_connection):
             return jsonify({"status": "error", "message": "AI service unavailable"}), 503
 
     @ai_routes.route("/transcribe-voice", methods=["POST"])
+    @ai_limit()
     def transcribe_voice():
         """Authenticated voice transcription via OpenAI Whisper."""
         temp_path = None

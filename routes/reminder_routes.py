@@ -17,8 +17,10 @@ logger = logging.getLogger(__name__)
 
 def init_reminder_routes(app, get_connection):
     reminder_routes = Blueprint("reminder_routes", __name__)
+    from services.rate_limiter import general_limit
 
     @reminder_routes.route("/reminders", methods=["GET"])
+    @general_limit()
     def get_reminders():
         try:
             current_user, error, code = get_current_user(get_connection)

@@ -22,14 +22,17 @@ from services.auth_service import (
 )
 from services.usage_service import get_usage
 from db.pool import return_connection
+from services.rate_limiter import general_limit
 
 logger = logging.getLogger(__name__)
 
 
 def init_user_routes(app, get_connection):
     user_routes = Blueprint("user_routes", __name__)
+    from services.rate_limiter import login_limit
 
     @user_routes.route("/signup", methods=["POST"])
+    @login_limit()
     def signup():
         try:
             data = request.get_json(silent=True)
@@ -93,6 +96,7 @@ def init_user_routes(app, get_connection):
             return jsonify({"status": "error", "message": "Signup failed"}), 500
 
     @user_routes.route("/login", methods=["POST"])
+    @login_limit()
     def login():
         try:
             data = request.get_json(silent=True)
@@ -158,6 +162,7 @@ def init_user_routes(app, get_connection):
             return jsonify({"status": "error", "message": "Login failed"}), 500
 
     @user_routes.route("/logout", methods=["POST"])
+    @general_limit()
     def logout():
         try:
             raw_token = get_bearer_token()
@@ -192,6 +197,7 @@ def init_user_routes(app, get_connection):
             return jsonify({"status": "error", "message": "Logout failed"}), 500
 
     @user_routes.route("/me", methods=["GET"])
+    @general_limit()
     def me():
         try:
             user, error, code = get_current_user(get_connection)
@@ -216,6 +222,7 @@ def init_user_routes(app, get_connection):
             return jsonify({"status": "error", "message": "Could not retrieve user"}), 500
 
     @user_routes.route("/me/usage", methods=["GET"])
+    @general_limit()
     def me_usage():
         """Return the authenticated user's AI usage for today."""
         try:

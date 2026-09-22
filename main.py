@@ -13,6 +13,7 @@ from flask import Flask, jsonify, g, request
 from config import settings
 from db.models import db
 from db.pool import init_pool, close_pool, get_connection
+from services.rate_limiter import init_limiter, limiter
 
 
 def create_app() -> Flask:
@@ -51,6 +52,14 @@ def create_app() -> Flask:
         init_pool()
     except Exception:
         logger.warning("DB pool init deferred — DATABASE_URL may not be reachable yet")
+
+    # ------------------------------------------------------------------ #
+    # Rate limiter
+    # ------------------------------------------------------------------ #
+    try:
+        init_limiter(app)
+    except Exception:
+        logger.warning("Rate limiter init deferred")
 
     @app.teardown_appcontext
     def _return_db_conn(exc):
@@ -148,7 +157,11 @@ def create_app() -> Flask:
 
     @app.errorhandler(429)
     def _too_many_requests(e):
-        return jsonify({"status": "error", "message": "Too many requests"}), 429
+        logger.warning("Rate limit exceeded: %s", e)
+        resp = jsonify({"status": "error", "message": "Too many requests. Please slow down."})
+        resp.status_code = 429
+        resp.headers["Retry-After"] = "60"
+        return resp
 
     @app.errorhandler(500)
     def _internal_error(e):
