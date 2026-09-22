@@ -276,8 +276,7 @@ a167157 feat(ci,deploy): Procfile, gunicorn config, render.yaml, GitHub Actions 
 fa49d0c feat(hygiene): add .gitignore, .env.example, centralized config, remove orphaned services/services/
 ```
 
-> **Push status**: No git remote is configured. All commits are local.  
-> To publish: `git remote add origin <your-repo-url> && git push -u origin main`
+> **Push status**: Remote `origin` is configured (https://github.com/aminazimi42-coder/Personal-ai-assistent.git). Local `main` is up to date with `origin/main` at `9b58e33`. All commits have been pushed and remote-verified.
 
 ---
 
@@ -320,7 +319,7 @@ fa49d0c feat(hygiene): add .gitignore, .env.example, centralized config, remove 
 - [x] All modules import cleanly
 - [x] All migration files parse as valid Python
 - [x] Clean git working tree
-- [ ] Git remote configured (push pending — no remote set)
+- [x] Git remote configured (origin → https://github.com/aminazimi42-coder/Personal-ai-assistent.git); local main up to date with origin/main at 9b58e33
 - [ ] Flask-Limiter installed for rate limiting
 - [ ] Usage quota backed by Redis for multi-worker deployments
 - [ ] Weather API timeout hardening

@@ -1,284 +1,366 @@
-PROJECT DIRECTIVE — PERSONAL AI ASSISTANT
-FULL END-TO-END SaaS PRODUCTIONIZATION DIRECTIVE
+PERSONAL AI ASSISTANT — FINAL ENGINEERING DIRECTIVE Production-Grade
+SaaS Completion, Product Evolution, Verification & Release
 
-MISSION
-Transform the existing Personal AI Assistant MVP into a secure, reliable, testable, observable, scalable, token/cost-efficient, production-ready SaaS-grade AI assistant suitable for real-world release and professional development-team handoff.
+STATUS / SCOPE This is the authoritative execution directive for
+Personal AI Assistant. Scope is ONLY this project. Do not import
+requirements, terminology, architecture, files, or roadmap from any
+other project. Goal: a genuinely Production-Grade SaaS product, not
+merely a production-oriented prototype.
 
-ABSOLUTE RULES
-1. Read this entire directive before acting.
-2. Execute the complete program continuously; do not wait for a new phase command.
-3. Do not invent unrelated features or expand scope.
-4. Inspect before changing.
-5. Never blindly delete, move, rename, or replace files/data.
-6. Never delete user/production data.
-7. Never expose secrets, API keys, tokens, passwords, DATABASE_URL values, or private credentials.
-8. Never commit .env, secrets, credentials, local venvs, caches, or sensitive generated files.
-9. Do not weaken security or disable tests to make something pass.
-10. Do not add dependencies/frameworks without clear architectural justification.
-11. Prefer small, reversible, evidence-based changes.
-12. Preserve working functionality where technically sound.
-13. After each coherent subsystem: implement → test → inspect diff → verify → commit → push when safe → continue.
-14. Stop only for a genuine human decision, destructive operation that cannot be safely handled, missing required credential/service, unresolvable blocker, or directive conflict.
-15. Do not repeatedly rediscover the same repository information; reuse verified findings to minimize Bob credit/token consumption.
-16. Never claim success without evidence.
+REPOSITORY GitHub: aminazimi42-coder/Personal-ai-assistent Branch: main
+Repository: https://github.com/aminazimi42-coder/Personal-ai-assistent
+Render: https://personal-ai-assistent.onrender.com Last directly
+verified baseline: 9b58e3318c13b300c179a7e909b067698b64a493 Previous
+baseline: 840e8938fb14934ba123b1d2b56319cca5ba611b The documented
+baseline had 12 commits ahead and 0 behind. This is historical evidence,
+not a substitute for current verification.
 
-CURRENT D01 BASELINE
-Repository: aminazimi42-coder/Personal-ai-assistent
-Branch: main
-HEAD: 636a124
-D01 inspection is complete.
+MANDATORY FIRST ACTION — READ ONLY Before changing anything,
+run/inspect: 1. git remote -v 2. git status –short –branch 3. git log
+–oneline -20 4. git ls-remote origin HEAD main 5. current
+Directive/PROJECT_DIRECTIVE.txt 6. HANDOFF.md 7. repository tree 8.
+tests/CI/migrations/dependencies Never reset, rebase, amend, squash,
+force-push, rewrite history, or delete anything during baseline
+verification. Actual repository state overrides stale documentation;
+reconcile discrepancies safely.
 
-Known critical/high findings to address:
-- /ai and /ai-browser lack authentication.
-- No .gitignore; venv/local artifacts have been tracked.
-- No token expiration/lifecycle hardening.
-- No rate limiting.
-- No automated tests or CI quality gates.
-- DDL/schema initialization occurs on requests.
-- No DB connection pooling.
-- Missing important FK constraints/indexes.
-- No migration strategy.
-- Raw exceptions are returned to clients.
-- CORS is wildcard.
-- AI calls lack explicit token budgets/timeouts/cost guards.
-- smart-ai can make duplicate LLM calls for one message.
-- Voice upload lacks robust size/type limits.
-- Deployment configuration is incomplete in HEAD.
-- No structured logging/observability.
-- Side-effecting GET endpoints exist.
-- Auth/schema helpers are duplicated.
-- Frontend task/appointment creation UX is incomplete.
-- Exchange-rate frontend/backend contract is inconsistent.
-- Dead/orphaned code/config exists.
-- No formal lint/type/test setup.
+COMPLETED FOUNDATION — DO NOT REPEAT BLINDLY Previously implemented
+areas include: - .gitignore, .env.example, centralized configuration,
+orphan-service cleanup - connection pooling, Flask-Migrate/Alembic, FKs,
+indexes, removal of DDL-on-request - centralized authentication, token
+expiry/hashing, duplicate auth cleanup - authenticated AI endpoints,
+bounded AI tokens, single-call smart-ai behavior where implemented -
+task/appointment frontend forms, token-field correction, POST /smart-ai,
+stylesheet extraction, exchange-rate correction - request IDs, latency
+logging, AI token metadata, user-isolation tests, pytest configuration;
+previous report: 86 tests passing - Procfile, Gunicorn, render.yaml,
+GitHub Actions CI - UTC-aware reminder timestamps and deployment
+hardening already documented - AI daily quota/usage accounting and
+/me/usage - PROJECT_DIRECTIVE.txt, HANDOFF.md, API/release documentation
+Do not recreate these unless inspection proves a defect, missing
+integration, security problem, or required evolution.
 
-Known working areas to preserve when valid:
-bcrypt password hashing; cryptographic token generation; user-scoped task/appointment access; parameterized SQL; task CRUD; appointment CRUD; browser voice recording/playback; environment-based OpenAI/DATABASE configuration; basic Render capability; safe HTML escaping.
+NON-NEGOTIABLE ENGINEERING RULES Inspect before changing. Never guess
+when the repository can answer. Preserve data and secrets. No
+unauthorized destructive changes. No blind dependency/architecture
+changes. No unrelated features. No fake tests or unsupported completion
+claims. No production deployment without approval. No token optimization
+that removes required context. Use simple, maintainable, evidence-driven
+engineering.
 
-TARGET ARCHITECTURE
-Keep Flask as a modular monolith unless evidence requires otherwise.
-Target layers:
-Browser/UI → API → Auth/AuthZ → Application/Domain Services → AI Orchestration/Tools → Persistence/PostgreSQL.
-Cross-cutting: configuration, validation, errors, logging, metrics/tracing hooks, rate limiting, security, testing, migrations, safe caching.
-Keep routes thin. Centralize auth, validation, config, DB access, AI client/orchestration, and errors. Avoid duplicate logic.
+MANDATORY PHASE LOOP READ → PLAN → IMPLEMENT → TEST → DEBUG/FIX →
+INSPECT DIFF → SECURITY CHECK → REGRESSION CHECK → VERIFY → MEANINGFUL
+COMMIT → PUSH → VERIFY REMOTE → REPORT → REQUEST APPROVAL → STOP. After
+EVERY phase, stop and obtain explicit approval before starting the next
+phase. A phase may contain multiple coherent changes. Commits must be
+meaningful, not artificial. Every verified phase must be pushed to
+origin/main and remote-verified. A local commit without successful push
+is not completion.
 
-1. REPOSITORY HYGIENE
-Create a professional .gitignore covering .env/secrets, venv, caches, __pycache__, local DBs, logs, editor/OS artifacts, temporary files and generated sensitive files.
-Audit tracked files for secrets/private artifacts.
-Safely remove local/generated venv from Git tracking only after confirming it is not required by the application; do not blindly delete the user's environment.
-Review personal/private images and orphaned artifacts; preserve required assets and replace references before removal.
-Use semantic commit messages.
+APPROVAL REQUIRED FOR Next phase; destructive migrations/data actions;
+production DB migration; deployment behavior changes; major/new paid
+infrastructure; material auth/security/API changes; licensing/ownership
+changes; scope changes. Ordinary reversible implementation inside an
+approved phase may proceed without separate approval.
 
-2. CONFIGURATION
-Create safe .env.example with variable names only.
-Centralize validated environment configuration, including DATABASE_URL, OPENAI_API_KEY, OPENAI_CHAT_MODEL, environment, allowed CORS origins, token lifetime, rate limits, AI budgets and logging level.
-No secrets in repository.
-Remove or properly integrate unused configuration only when justified.
+PHASE 1 — CURRENT STATE AUDIT / DOCUMENT RECONCILIATION Verify actual
+GitHub state, tests, CI, dependencies, migrations, Render configuration,
+security-sensitive configuration, HANDOFF and Directive. Correct stale
+documentation. Known stale item: HANDOFF previously described
+push/remote as unresolved although origin/main was later directly
+verified at 9b58e33. Acceptance: documented state matches reality;
+tests/status verified; meaningful commit/push if needed. STOP +
+approval.
 
-3. DATABASE/PERSISTENCE
-Replace request-time DDL with a professional migration system.
-Implement deterministic migrations, transactions, connection pooling, correct connection lifecycle, foreign keys, indexes, UTC/timezone-safe timestamps, domain constraints, consistent schemas and safe upgrade paths.
-Do not destroy existing user data.
-Do not keep duplicate CREATE TABLE/schema definitions.
-Do not depend on a public /init-db endpoint for production initialization.
+PHASE 2 — RATE LIMITING Implement/verify production rate limiting,
+likely flask-limiter if justified. Support configurable
+RATE_LIMIT_LOGIN, RATE_LIMIT_AI, RATE_LIMIT_GENERAL. Protect
+login/AI/general API, use safe client identity, correct 429 semantics,
+tests, observability, no obvious bypass. STOP + approval.
 
-4. AUTHENTICATION/AUTHORIZATION
-Centralize authentication.
-Implement secure signup validation, normalized emails, strong password policy, bcrypt, secure token lifecycle, expiration, revocation, consistent 401/403 responses, anti-enumeration login behavior, logout, ownership checks and authenticated private AI operations.
-Design token storage so a database compromise does not unnecessarily expose reusable bearer credentials.
-No anonymous costly OpenAI operations by default.
+PHASE 3 — SHARED QUOTA / MULTI-WORKER CORRECTNESS Audit
+services/usage_service.py. Replace in-memory quota state if it remains
+non-shared. Evaluate Redis (or a simpler justified alternative) before
+adding infrastructure. Prefer atomic increment + daily TTL, correct
+concurrency, bounded failure behavior, cost protection, tests. STOP +
+approval.
 
-5. API
-Use HTTP semantics correctly.
-GET only retrieves; POST creates/actions; PATCH/PUT updates; DELETE removes.
-Remove side-effecting GET appointment creation.
-Move primary AI interaction from query strings to POST JSON.
-Define consistent success/error structures.
-Add centralized 400/401/403/404/409/429/500 handling.
-Never return raw exception strings.
-Validate types, lengths, enums, timestamps, IDs, request sizes and AI-generated values.
+PHASE 4 — EXTERNAL API RELIABILITY Audit all existing external HTTP
+calls (including weather/geocoding if present). Add deliberate timeouts,
+bounded safe retries, graceful degradation, structured logs, secret
+protection and failure-path tests. No unrelated integrations. STOP +
+approval.
 
-6. AI/OPENAI
-Build one centralized AI orchestration layer separating:
-conversation understanding; response generation; intent/action classification; tool selection; tool execution; validation; confirmation; persistence; final response.
-Do not allow raw LLM output to mutate DB directly.
-Validate all structured AI output against explicit schemas.
-Centralize OpenAI client configuration.
-Use explicit timeouts, bounded output tokens, bounded context, safe retries for transient errors, graceful failures and configurable models.
-Never expose SDK exceptions or API keys.
+PHASE 5 — DATABASE MIGRATION SAFETY Audit 001_initial_schema.py,
+002_upgrade_existing_schema.py, models, constraints, indexes and
+existing-data compatibility. Pay special attention to Task.user_id and
+Appointment.user_id becoming non-null/FK fields and whether existing
+rows can be safely migrated. No production flask db upgrade without
+explicit approval. Document backup/rollback strategy. STOP + approval.
 
-7. TOKEN/COST OPTIMIZATION — FIRST-CLASS
-Minimize token usage and cost without degrading required quality.
-Use, where justified:
-- concise system prompts
-- context minimization
-- bounded conversation history
-- summarization for long histories
-- structured outputs
-- strict output limits
-- model routing by task complexity
-- cheaper model for simple classification where appropriate
-- stronger model only when justified
-- elimination of duplicate LLM calls
-- safe caching/deduplication
-- relevant-context filtering
-- tool calls instead of invented state
-- message length limits
-- per-user/request AI budgets
-- usage accounting
-- abuse protection
-- no retry for non-transient failures
-Never share private cached data between users.
-Measure token/cost metadata without unnecessarily storing sensitive prompt content.
-AI cost must never be unbounded.
+PHASE 6 — PRODUCTION ENVIRONMENT / RENDER Verify, without exposing
+secrets: OPENAI_API_KEY, SECRET_KEY, DATABASE_URL, CORS_ALLOWED_ORIGINS
+and quota/rate-limit/Redis configuration as applicable. Restrictive
+CORS, secure settings, Gunicorn, health/readiness. Render remains Manual
+Deploy during development. Production-impacting actions require
+approval. STOP + approval.
 
-8. AI ACTION SAFETY
-Task/appointment/reminder actions must pass authentication, authorization, schema validation and business validation.
-Require confirmation for consequential actions where appropriate.
-The model must never execute arbitrary SQL, shell, filesystem or deployment commands.
-Use narrow application tools/services only.
+PHASE 7 — FINAL SECURITY HARDENING Audit authentication/authorization,
+token lifecycle, password handling, anti-enumeration, CORS, CSRF where
+relevant, headers, SQL/command/path injection, file uploads, prompt
+injection, tool permissions, SSRF, external APIs, secrets, logs, errors,
+rate limits, tenant/user isolation and dependency vulnerabilities.
+Resolve critical/high findings or explicitly document accepted risk.
+STOP + approval.
 
-9. TASKS/APPOINTMENTS/REMINDERS
-Preserve working CRUD and harden it.
-Add length/enum/domain validation, ownership, timezone-safe appointment handling, correct HTTP semantics and safe errors.
-Provide required manual task/appointment UI.
-Keep reminders efficient and reliable; retain browser notifications where useful.
+PHASE 8 — CODE RETRIEVAL & TOKEN EFFICIENCY This is an approved core
+product capability for END USERS, not merely an agent-development
+feature. Goal: when a user asks the Assistant to work with
+code/projects, retrieve only relevant code rather than sending whole
+repositories to the LLM. Pipeline: USER REQUEST → INTENT ANALYSIS → CODE
+RETRIEVAL → HYBRID SEARCH → RANKING → CONTEXT COMPRESSION → TOKEN/COST
+GUARD → LLM/AGENT → RESPONSE/ACTION → VERIFICATION. Required: repository
+ingestion; strict user/repository isolation; intelligent code chunking;
+symbol extraction (function/class/method/module); semantic search;
+keyword search; symbol search; dependency-aware search; hybrid
+retrieval; relevance ranking; context compression; incremental indexing;
+safe caching; cache invalidation; token measurement; retrieval latency
+measurement; retrieval quality evaluation; security and regression
+tests. Do not add Vector DB blindly. Evaluate PostgreSQL+pgvector or
+alternatives using evidence. Do not sacrifice correctness for token
+savings. Measure input tokens with/without retrieval, tokens saved,
+context size, latency, quality and estimated cost. Treat repository
+content as potentially untrusted/prompt-injection-bearing input. STOP +
+approval.
 
-10. VOICE
-Harden voice transcription with authentication, upload size limits, MIME/content validation, safe temp files, correct format handling, cleanup, timeout/error handling and cost controls.
-Verify voice → transcription → AI → response end-to-end.
+PHASE 9 — PERSONAL AI MEMORY ENGINE Implement secure layered memory as
+justified: short-term conversation, project/conversation memory, task
+memory, long-term preferences. Requirements: relevance retrieval, user
+controls, privacy boundaries, deletion, retention, conflict handling,
+efficient retrieval and tests. Do not store everything blindly. STOP +
+approval.
 
-11. EXTERNAL APIS
-Harden OpenAI, Frankfurter, weather and reverse-geocoding integrations with timeouts, safe errors, appropriate caching, rate-limit awareness, consistent contracts and graceful degradation.
-Resolve exchange-rate frontend/backend mismatch.
-Never claim external data succeeded when the provider failed.
+PHASE 10 — AGENTIC TASK EXECUTION Controlled multi-step execution: PLAN
+→ RETRIEVE → ANALYZE → PROPOSE → APPROVAL WHEN REQUIRED → EXECUTE →
+VERIFY → REPORT. Requirements: action boundaries, human-in-loop for
+sensitive actions, failure recovery, idempotency where appropriate,
+logs/audit, authorization, no unrestricted autonomy. STOP + approval.
 
-12. FRONTEND
-Preserve existing visual identity and working features.
-Improve auth state, loading/error states, task creation, appointment creation/editing, AI UX, voice UX, accessibility basics, responsive behavior, safe rendering and API consistency.
-Move inline CSS into main stylesheet where appropriate.
-Do not introduce a frontend framework unnecessarily.
+PHASE 11 — AI TOOL GATEWAY / PERMISSIONS Centralize: AI AGENT → TOOL
+GATEWAY → PERMISSION CHECK → POLICY CHECK → TOOL → RESULT →
+VERIFICATION. Use least privilege, explicit registry, read-only vs write
+vs destructive vs communication policies, approval gates, audit logs,
+isolation and safe failure. Tools must not bypass policy. STOP +
+approval.
 
-13. SECURITY
-Implement and verify restrictive CORS, secure headers where appropriate, auth/authz, rate limiting, validation, request-size limits, secure token lifecycle, secret management, safe errors, SQL parameterization, XSS safety, appropriate CSRF strategy, safe file uploads, AI abuse controls and production-safe debug settings.
-Do a final security review.
+PHASE 12 — COST & TOKEN INTELLIGENCE Centralize model routing where
+justified, token/context budgets, retrieval-aware budgets, caching,
+usage accounting, daily/monthly limits and cost estimates. Do not choose
+solely by cheapest model; consider correctness, latency and complexity.
+STOP + approval.
 
-14. OBSERVABILITY/RELIABILITY
-Implement structured logging, request IDs where useful, safe error logging, AI operation metadata, latency measurements, DB/external-service failure visibility, health/readiness checks and graceful failure.
-Never log passwords, keys, tokens, DATABASE_URL or unnecessary private prompt/response content.
+PHASE 13 — PROJECT WORKSPACE If compatible with the architecture,
+introduce structured workspaces: Workspace → Projects / Files / Code /
+Documents / Tasks / Conversations / Memories / AI Context. Requirements:
+ownership, isolation, access control, scalable model, retrieval
+boundaries, migration safety, tests. STOP + approval.
 
-15. TESTING/QUALITY
-Create automated tests covering configuration, auth, token lifecycle, authorization/user isolation, task CRUD, appointment CRUD, reminders, validation, error handling, migrations, AI orchestration with mocked OpenAI, AI action validation, token/cost guards, voice upload validation and external-service failures.
-Never spend real OpenAI money in automated tests.
-Add justified lint/type checks.
-Run tests, quality checks, import checks, migration checks, security checks and deployment sanity checks.
-No subsystem is complete until its relevant checks pass.
+PHASE 14 — UNIFIED KNOWLEDGE RETRIEVAL Extend the retrieval architecture
+coherently to Code, Documents, Memory, Tasks, Notes and Project
+information where justified. Typed sources, ranking, authorization,
+context assembly, source attribution internally, token budgets and
+tests. Do not create unrelated duplicate search systems. STOP +
+approval.
 
-16. CI/CD/DEPLOYMENT
-Restore reproducible Render/deployment configuration, startup command, runtime, worker/timeout settings, environment variables, migration strategy, health/readiness checks and CI quality gates.
-No secrets in CI.
-Production must not rely on manually calling unsafe public schema-init endpoints.
+PHASE 15 — AI RELIABILITY / VERIFICATION ENGINE Never claim success
+without evidence: ACTION → EXECUTION → VERIFICATION → EVIDENCE → RESULT.
+Examples: code changes require tests/diff checks; DB actions require
+result validation; file operations require existence/content
+verification; external actions require response validation. Support
+structured result states, failure/partial-success reporting and no
+fabricated success. STOP + approval.
 
-17. PERFORMANCE/SCALABILITY
-Optimize DB pooling, indexes, queries, bounded external calls, bounded AI calls, safe caching, duplicate-call elimination, reminder queries and Gunicorn configuration.
-Do not prematurely introduce microservices.
-Keep a scalable modular monolith.
-Design isolation so future tenant/organization support can be added cleanly.
+PHASE 16 — PERSONAL AUTOMATION Controlled: TRIGGER → CONDITION → AI
+PROCESSING → ACTION → VERIFICATION. Potential examples: daily summaries,
+overdue notifications, file/project analysis triggers. Requirements:
+scheduling, idempotency, retries, failure handling, permissions,
+auditability, cost/resource limits and user control. No uncontrolled
+background AI spend. STOP + approval.
 
-18. SAAS READINESS
-Prepare foundations for multiple users, tenant isolation, usage accounting, AI quotas, plan limits, feature flags, subscriptions/billing integration, auditability and admin controls.
-Do not add payment providers merely for appearance.
-Implement clean boundaries for future commercial capabilities.
+PHASE 17 — PRIVACY-FIRST / LOCAL-AWARE ARCHITECTURE Define data
+classification, encryption where appropriate, secrets isolation,
+user/tenant isolation, retention/deletion, audit logs and AI data
+boundaries. Local processing may be future capability only; never claim
+it exists unless implemented and verified. STOP + approval.
 
-19. CLEANUP
-After behavior is protected by tests, safely address duplicate auth helpers, duplicate schemas, orphaned directories, unused utilities/config, unused dependency httpx if confirmed, unused notification service if confirmed, obsolete handlers and dead code.
-Search all references before removal.
-Run tests after cleanup.
+PHASE 18 — PERSONAL AI CONTROL CENTER Professional dashboard for real
+data: usage, cost, tokens, retrieval savings, memories, projects, tasks,
+automations, connected tools, security and activity/audit. No fabricated
+metrics; secure access; responsive/error/loading states; frontend tests.
+STOP + approval.
 
-20. RELEASE ENGINEERING
-Before completion run:
-- full test suite
-- lint/type/quality checks
-- migration validation
-- API smoke tests
-- auth/security checks
-- mocked AI workflows
-- token/cost guard verification
-- frontend/backend contract checks
-- production configuration checks
-- health/readiness checks
-- secret/local-artifact scan
-- Git status/diff review
-- deployment sanity checks
-- critical end-to-end journeys
+EXISTING DOMAIN AUDIT Productionize existing tasks, appointments,
+reminders, voice and external integrations. Ensure
+authentication/authorization, validation, time-zone correctness,
+idempotency, safe HTTP semantics (no side effects on GET), upload
+validation, bounded payloads, timeout/retry controls and tests. Do not
+add unrelated integrations.
 
-Critical journeys:
-signup, login, logout, authenticated AI chat, AI task creation, task CRUD, appointment CRUD, reminders, voice transcription, voice→AI, weather/location, exchange rates and failure/recovery paths.
+FRONTEND QUALITY Audit authentication, AI, task, appointment flows,
+loading/error/empty states, accessibility, responsiveness, safe token
+handling, API errors, secret exposure and production assets. No cosmetic
+rewrite without justification.
 
-21. GIT POLICY
-After each coherent verified subsystem:
-test → inspect diff → commit semantically → push when safe.
-Never commit secrets, .env, tokens, passwords, venv, caches or sensitive logs.
-Do not create meaningless commits for tiny edits.
-If push is unavailable, continue safely and report why.
+OBSERVABILITY / RELIABILITY Maintain request IDs, structured/redacted
+logs, latency, error rates, AI/token metrics, quotas, retrieval latency,
+tool actions, automation failures and security events. Use
+health/readiness where appropriate, graceful failure, bounded retries,
+timeouts, worker-safe state and idempotency.
 
-22. CONTINUOUS EXECUTION ORDER
-Execute automatically in this order without waiting for new user commands:
-A repository hygiene/configuration
-B database/migrations/persistence
-C authentication/authorization
-D API/error/security hardening
-E tasks/appointments/reminders
-F centralized AI orchestration
-G token/cost optimization and budgets
-H safe AI tools/actions
-I voice/external integrations
-J frontend completion
-K observability/reliability
-L automated testing/quality
-M CI/CD/deployment
-N performance/scalability
-O SaaS-ready boundaries
-P final security/reliability review
-Q full regression/E2E
-R release/handoff documentation
+TESTING Mandatory as appropriate: unit, integration, API, auth,
+authorization, user-isolation, DB, migration, AI mocked-service,
+retrieval, ranking, security, frontend, E2E, regression, failure-path
+and concurrency tests. Passing tests alone does not prove production
+readiness; inspect important paths.
 
-Do not stop merely because one item is complete. Continue automatically.
+SECURITY No hardcoded/committed secrets; secure password hashing; token
+expiry/hashing; restrictive CORS; headers; parameterized SQL;
+authorization; isolation; rate limits; validation; safe errors; safe
+file handling; SSRF/prompt-injection awareness; tool policy; audit logs;
+dependency review.
 
-23. VERIFICATION LOOP
-For every meaningful change:
-READ → PLAN → IMPLEMENT → TEST → INSPECT DIFF → SECURITY CHECK → REGRESSION CHECK → VERIFY → COMMIT → PUSH → CONTINUE.
-If tests fail, diagnose and fix the root cause; never bypass the test.
-If conflicts arise, preserve user data, security and working behavior; choose the smallest safe correction.
+SAAS User/workspace boundaries, quotas, cost controls, auth/authz,
+secure configuration, observability, scalable shared state and migration
+safety. Do not add billing/subscriptions unless explicitly approved.
 
-24. NO-ASSUMPTION RULE
-Never assume an endpoint is secure, AI JSON is valid, migration is safe, deployment works, a test is unnecessary, a dependency is required, a file is unused, or an optimization is beneficial without evidence.
+CI/CD / DEPLOYMENT CI must verify dependencies, tests and relevant
+quality/migration/security checks. Render Manual Deploy remains
+intentional until release approval. Before release: clean main, green
+CI, reviewed migrations, configured env, backup/rollback plan, smoke
+tests and identified release commit.
 
-25. FINAL ACCEPTANCE
-Complete only when core flows work; auth is hardened; private AI is protected; user isolation is verified; migrations are reliable; DB lifecycle is correct; API contracts are clean; errors are safe; AI orchestration is centralized; AI actions are validated/authorized; token usage is bounded/optimized; cost abuse is controlled; voice and integrations are hardened; frontend workflows are complete; tests pass; CI exists; deployment is reproducible; observability exists; secrets are protected; repository hygiene is professional; smoke/E2E checks pass; documentation is accurate; semantic verified commits exist; and the system is ready for professional team handoff.
+LICENSE / IP Create a professional project-specific LICENSE based on
+verified legal ownership, entity/name, year, contact (if desired),
+permitted use, commercial use, redistribution, modification, derivative
+works, AI training/data-mining policy (if desired), warranty/liability
+and jurisdiction preference. Do not invent legal facts. Do not claim any
+license makes copying impossible. A custom proprietary license should be
+legally reviewed where appropriate.
 
-26. FINAL REPORT
-At completion provide one consolidated report:
-- changes
-- preserved functionality
-- final architecture
-- security controls
-- DB/migrations
-- AI/OpenAI design
-- token/cost optimization
-- SaaS readiness
-- tests/results
-- CI/CD/deployment
-- observability/reliability
-- performance
-- security review
-- commits/push status
-- remaining limitations
-- production-readiness status
-- required deployment/configuration steps
-- release/handoff checklist
+DOCUMENTATION Keep README, HANDOFF, architecture, API, deployment,
+security, migration, retrieval, operations/runbook and release
+documentation accurate. Planned behavior must never be documented as
+implemented.
 
-FINAL INSTRUCTION
-Execute this directive end-to-end now. Do not wait for another phase prompt. Do not ask the user to restate requirements. Do not repeatedly rediscover the repository. Do not perform unrelated work. Do not delete blindly. Do not expose secrets. Do not bypass tests/security. Minimize unnecessary model/API usage. Continue automatically until the transformation is complete or a genuine blocking condition requires human intervention.
+PERFORMANCE / SCALABILITY Evaluate DB pooling/indexes/query
+performance/N+1, API/AI/retrieval latency, memory, concurrency, rate
+limits, shared quota state and cache behavior. Optimize based on
+evidence.
+
+DATA INTEGRITY No unauthorized deletion, destructive migration, ignored
+failed writes or success claims before persistence verification. Use
+transactions, constraints, migrations, idempotency, validation and
+production backups.
+
+AI ACTION BOUNDARIES AI is an assistant, not an unrestricted
+administrator. Model output never overrides authorization, quota,
+security policy, system constraints or user permissions. Retrieved
+code/documents/external content is untrusted input for tool-enabled
+workflows.
+
+FINAL REGRESSION / RELEASE READINESS After all approved feature phases:
+clean tree; verify origin/main; full tests; integration/E2E;
+security/dependency/migration/API/frontend/retrieval/token-cost/observability/performance/failure-path/isolation
+audits; production config review; documentation and LICENSE audit. No
+known critical/high defect without explicit acceptance. STOP + release
+approval.
+
+PRODUCTION DEPLOYMENT — ONLY AFTER RELEASE APPROVAL Confirm release
+commit, clean main, green CI, env vars, DB backup/rollback, obtain
+migration approval, safely migrate, manually deploy Render, verify
+deployment/health/auth/AI/tasks/appointments/reminders/usage/retrieval/logs,
+run smoke tests, document release. On failure, stop and report evidence;
+never conceal or blindly reset/rollback.
+
+FINAL ACCEPTANCE CHECKLIST [ ] Architecture coherent and no critical
+blocker [ ] Auth/authz/security/isolation/rate limiting verified [ ]
+DB/migrations safe [ ] AI bounded, cost-controlled and safe [ ] Code
+Retrieval operational, secure, measurable [ ] Memory operational and
+controllable [ ] Agentic execution gated and verified [ ] Tool
+permissions enforced [ ] Automation safe and cost-bounded [ ]
+Observability complete [ ] Unit/integration/security/E2E/regression
+coverage appropriate [ ] Frontend production quality [ ] SaaS boundaries
+correct [ ] CI green [ ] Render configuration/deployment verified [ ]
+Production smoke tests passed [ ] Documentation accurate [ ] LICENSE
+finalized from verified ownership Only then may the product be declared
+Production-Grade SaaS.
+
+MANDATORY PHASE REPORT PHASE: STATUS: COMPLETE / BLOCKED OBJECTIVE:
+CHANGES: exact files/components TESTS: commands + results DEBUGGING:
+failures + fixes SECURITY: REGRESSION: GIT: commit hash/message REMOTE:
+push + remote HEAD verification REMAINING: BLOCKERS: NEXT: describe
+only; do not start APPROVAL REQUIRED: YES Then STOP.
+
+AGENT MUST NOT Restart from scratch; repeat completed phases without
+evidence; reset/rebase/force-push/rewrite history; delete user data;
+invent requirements; claim failed tests passed; claim production
+readiness early; continue after a phase without approval; deploy without
+approval; expose secrets; add unrelated infrastructure/features; mix
+another project into this project; optimize by removing required
+context; create meaningless commits; leave completed verified phase only
+locally.
+
+AGENT MUST Verify first; work only in approved phase; test; debug;
+inspect diff; security/regression check; make meaningful commit(s);
+push; verify remote; report evidence; stop for approval.
+
+CONTEXT / TOKEN EFFICIENCY For the product: targeted retrieval, hybrid
+code retrieval, context compression, safe caching, incremental indexing,
+measurable token savings, correctness first. For development agents:
+targeted inspection, repository docs, avoid rereading unchanged files,
+retrieve dependencies only when required; never load the entire
+repository unless genuinely necessary.
+
+CHANGE TRACEABILITY Requirement → Implementation → Test → Verification →
+Commit → Push → Remote Verification → Documentation. Code written alone
+is never completion.
+
+NO-ASSUMPTION RULE If docs conflict with code: inspect
+code/tests/history, determine reality, reconcile safely. If GitHub
+differs from documented baseline, preserve valid newer work. If external
+access is unavailable, never fabricate success; report the blocker and
+request minimum required action.
+
+PRODUCT VISION A coherent Personal AI Assistant platform with secure
+auth, personal/project memory, intelligent code and knowledge retrieval,
+token/cost intelligence, agentic task execution, permission-controlled
+tools, verified AI actions, automation, tasks/appointments/reminders,
+voice where supported, reliable integrations, SaaS isolation, privacy
+boundaries, professional control center, observability, testing, CI/CD
+and secure production deployment. Feature count is not the goal;
+reliability, usefulness, security, maintainability, cost efficiency and
+commercial viability are.
+
+FINAL EXECUTION ORDER 1 Current State Audit 2 Rate Limiting 3 Shared
+Usage/Quota 4 External API Reliability 5 Migration Safety 6 Production
+Environment 7 Security Hardening 8 Code Retrieval & Token Efficiency 9
+Memory Engine 10 Agentic Task Execution 11 Tool Gateway & Permissions 12
+Cost/Token Intelligence 13 Workspace 14 Unified Knowledge Retrieval 15
+Reliability/Verification Engine 16 Automation 17 Privacy-First
+Architecture 18 Control Center 19 Final Regression/Release Readiness 20
+Production Deployment/Smoke Test
+
+Every phase: TEST → DEBUG → VERIFY → MEANINGFUL COMMIT → PUSH → VERIFY
+REMOTE → REPORT → REQUEST APPROVAL → STOP.
+
+SHORT COMMAND FOR ANY FUTURE AGENT “Read Directive.txt in full. Verify
+the actual repository/GitHub state before changing anything. Do not
+repeat completed work. Execute only the current approved phase from the
+directive. For every phase: implement → test → debug → inspect diff →
+security/regression verify → meaningful commit → push → verify remote →
+report → request approval → STOP. Never reset/rebase/force-push/rewrite
+history, expose secrets, delete data, invent scope, or claim unverified
+success. Continue only after explicit approval. Goal: genuinely
+Production-Grade SaaS Personal AI Assistant.”
 
 END OF DIRECTIVE
