@@ -13,8 +13,8 @@ Adds:
 from alembic import op
 import sqlalchemy as sa
 
-revision = "009_automation_jobs_voice_to_task"
-down_revision = "008_add_workspaces"
+revision = "008_automation_jobs"
+down_revision = "007_add_workspaces"
 branch_labels = None
 depends_on = None
 

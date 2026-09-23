@@ -15,8 +15,8 @@ This migration adds the agent_runs table for DB-backed agentic execution:
 from alembic import op
 import sqlalchemy as sa
 
-revision = "007_add_agent_runs"
-down_revision = "006_add_tenant_billing"
+revision = "006_add_agent_runs"
+down_revision = "005_add_tenant_billing"
 branch_labels = None
 depends_on = None
 

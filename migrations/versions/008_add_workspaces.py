@@ -12,8 +12,8 @@ user-scoped. Cascade deletes ensure cleanup on workspace removal.
 from alembic import op
 import sqlalchemy as sa
 
-revision = "008_add_workspaces"
-down_revision = "007_add_agent_runs"
+revision = "007_add_workspaces"
+down_revision = "006_add_agent_runs"
 branch_labels = None
 depends_on = None
 
