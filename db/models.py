@@ -107,6 +107,64 @@ class Appointment(db.Model):
 
 
 # ------------------------------------------------------------------ #
+# AI Usage Events (migration 003_add_ai_usage_events)
+# ------------------------------------------------------------------ #
+
+class AiUsageEvent(db.Model):
+    """Daily AI usage per user (atomic UPSERT for multi-worker safety)."""
+    __tablename__ = "ai_usage_events"
+
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    usage_date = db.Column(db.Date, primary_key=True)
+    ai_calls = db.Column(db.Integer, nullable=False, default=0)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=utcnow
+    )
+
+    __table_args__ = (
+        db.Index("ix_ai_usage_events_user_date", "user_id", "usage_date", unique=True),
+    )
+
+
+# ------------------------------------------------------------------ #
+# Memories (migration 004_add_memories)
+# ------------------------------------------------------------------ #
+
+class Memory(db.Model):
+    """Layered memory: short_term, task, preference, project."""
+    __tablename__ = "memories"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    memory_type = db.Column(db.Text, nullable=False)
+    key = db.Column(db.Text, nullable=False)
+    value = db.Column(db.Text, nullable=False)
+    relevance_score = db.Column(db.Float, nullable=False, default=1.0)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=utcnow
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=utcnow
+    )
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "memory_type IN ('short_term', 'task', 'preference', 'project')",
+            name="ck_memories_type",
+        ),
+        db.UniqueConstraint("user_id", "memory_type", "key",
+                            name="uq_memories_user_type_key"),
+        db.Index("ix_memories_user_type", "user_id", "memory_type"),
+    )
+
+
+# ------------------------------------------------------------------ #
 # Multi-Tenant / SaaS models (migration 005_add_tenant_billing)
 # ------------------------------------------------------------------ #
 
@@ -222,7 +280,100 @@ class BillingEvent(db.Model):
 
 
 # ------------------------------------------------------------------ #
-# Automations, AutomationRuns, Jobs (migration 006)
+# Agent Runs (migration 006_add_agent_runs)
+# ------------------------------------------------------------------ #
+
+class AgentRun(db.Model):
+    """Durable agentic execution with explicit state machine."""
+    __tablename__ = "agent_runs"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    action_name = db.Column(db.Text, nullable=False)
+    status = db.Column(db.Text, nullable=False, default="pending")
+    params = db.Column(db.JSON, nullable=True)
+    result = db.Column(db.JSON, nullable=True)
+    error = db.Column(db.Text, nullable=True)
+    action_id = db.Column(db.Text, nullable=False, unique=True)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=utcnow
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=utcnow
+    )
+    completed_at = db.Column(db.DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        db.CheckConstraint(
+            "status IN ('pending', 'approved', 'executing', 'completed', "
+            "'failed', 'denied', 'canceled')",
+            name="ck_agent_runs_status",
+        ),
+        db.Index("ix_agent_runs_status", "status"),
+        db.Index("ix_agent_runs_action_id", "action_id"),
+    )
+
+
+# ------------------------------------------------------------------ #
+# Workspaces + Projects (migration 007_add_workspaces)
+# ------------------------------------------------------------------ #
+
+class Workspace(db.Model):
+    """User-owned workspace for projects and knowledge."""
+    __tablename__ = "workspaces"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.Text, nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    description = db.Column(db.Text, nullable=False, default="")
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=utcnow
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=utcnow
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "name", name="uq_workspaces_user_name"),
+    )
+
+
+class Project(db.Model):
+    """A project within a workspace, user-scoped."""
+    __tablename__ = "projects"
+
+    id = db.Column(db.Integer, primary_key=True)
+    workspace_id = db.Column(
+        db.Integer, db.ForeignKey("workspaces.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    name = db.Column(db.Text, nullable=False)
+    description = db.Column(db.Text, nullable=False, default="")
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=utcnow
+    )
+    updated_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=utcnow
+    )
+
+    __table_args__ = (
+        db.UniqueConstraint("workspace_id", "name",
+                            name="uq_projects_workspace_name"),
+    )
+
+
+# ------------------------------------------------------------------ #
+# Automations, AutomationRuns, Jobs (migration 008_automation_jobs)
 # ------------------------------------------------------------------ #
 
 class Automation(db.Model):

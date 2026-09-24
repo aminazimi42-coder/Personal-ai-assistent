@@ -1,7 +1,7 @@
 """add agent_runs table for durable agentic task execution
 
 Revision ID: 006_add_agent_runs
-Revises: 005_remove_legacy_auth_token
+Revises: 005_add_tenant_billing
 Create Date: 2026-09-22
 
 This migration adds the agent_runs table for DB-backed agentic execution:

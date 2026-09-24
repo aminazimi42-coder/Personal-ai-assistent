@@ -33,14 +33,14 @@ and production-grade SaaS capabilities. v1.0.0 remains immutable history.
 - `services/tenant_service.py`: tenants, memberships, roles (owner/admin/member)
 - `services/billing_service.py`: plan model (free/pro), subscription lifecycle, idempotent webhooks
 - `routes/api_v1.py`: versioned `/api/v1/` API with generated OpenAPI spec
-- Migration `006_add_tenant_billing`: tenants, tenant_memberships, subscriptions, billing_events
+- Migration `005_add_tenant_billing`: tenants, tenant_memberships, subscriptions, billing_events
 
 ### Durable Agent Execution
 
 - `agent_runs` table with state machine (PENDING → APPROVED → EXECUTING → COMPLETED/FAILED/DENIED/CANCELED)
 - Idempotency via unique `action_id`, cancellation, retry, approval gates
 - `routes/agent_routes.py`: execute, approve, cancel, retry, list, get
-- Migration `007_add_agent_runs`
+- Migration `006_add_agent_runs`
 
 ### Context Compiler
 
@@ -53,7 +53,7 @@ and production-grade SaaS capabilities. v1.0.0 remains immutable history.
 - `services/background_jobs.py`: job queue with enqueue, process, status, idempotency, retries
 - `services/voice_to_task.py`: voice → transcription → task extraction → user confirmation
 - `services/automation.py` refactored to DB-backed with pause/resume
-- Migrations `008_add_workspaces`, `009_automation_jobs_voice_to_task`
+- Migrations `007_add_workspaces`, `008_automation_jobs_voice_to_task`
 
 ### AI Evaluation + MCP-Compatible Tools
 
@@ -72,7 +72,7 @@ and production-grade SaaS capabilities. v1.0.0 remains immutable history.
 
 - `services/workspace.py` refactored to DB-backed with in-memory fallback for tests
 - `routes/workspace_routes.py`: workspace and project CRUD API routes
-- Migration `008_add_workspaces`
+- Migration `007_add_workspaces`
 
 ### Cinematic README
 

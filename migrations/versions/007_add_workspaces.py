@@ -1,7 +1,7 @@
 """add workspaces and projects tables for durable project workspace system
 
-Revision ID: 006_add_workspaces
-Revises: 005_remove_legacy_auth_token
+Revision ID: 007_add_workspaces
+Revises: 006_add_agent_runs
 Create Date: 2026-09-22
 
 Workspaces table stores user-owned workspaces with strict ownership

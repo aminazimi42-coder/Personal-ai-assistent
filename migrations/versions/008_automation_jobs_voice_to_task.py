@@ -1,7 +1,7 @@
 """add automations, automation_runs, and jobs tables
 
-Revision ID: 006_automation_jobs_voice_to_task
-Revises: 005_remove_legacy_auth_token
+Revision ID: 008_automation_jobs
+Revises: 007_add_workspaces
 Create Date: 2026-09-22
 
 Adds:
