@@ -88,10 +88,109 @@ def test_login_missing_body(client):
     assert res.status_code == 400
 
 
-def test_login_invalid_email(client):
-    res = client.post("/login",
-        json={"email": "bad", "password": "anything"})
+def test_login_missing_identifier(client):
+    """Login must require an identifier (email or username)."""
+    res = client.post("/login", json={"password": "password123"})
     assert res.status_code == 400
+    data = res.get_json()
+    assert data["status"] == "error"
+    assert "required" in data["message"].lower()
+
+
+def test_login_missing_password(client):
+    """Login must require a password."""
+    res = client.post("/login", json={"identifier": "test@example.com"})
+    assert res.status_code == 400
+    data = res.get_json()
+    assert data["status"] == "error"
+    assert "password" in data["message"].lower()
+
+
+def test_login_accepts_username_identifier(mocker, client):
+    """Login should accept a username (non-email) as the identifier, not just email."""
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_cur.fetchone.return_value = {
+        "id": 1, "name": "testuser", "email": "test@example.com",
+        "password": "$2b$12$validhash", "created_at": None,
+    }
+    mock_conn.cursor.return_value = mock_cur
+
+    mocker.patch("db.pool._pool", MagicMock(getconn=MagicMock(return_value=mock_conn)), create=True)
+    mocker.patch("routes.user_routes.verify_password", return_value=True)
+
+    res = client.post("/login", json={
+        "identifier": "testuser",
+        "password": "password123",
+    })
+
+    assert res.status_code == 200, f"Login by username failed: {res.get_json()}"
+    data = res.get_json()
+    assert data["status"] == "success"
+    assert data["user"]["token"]
+
+
+def test_login_accepts_email_identifier(mocker, client):
+    """Login should still accept an email address as the identifier."""
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_cur.fetchone.return_value = {
+        "id": 1, "name": "Test", "email": "test@example.com",
+        "password": "$2b$12$validhash", "created_at": None,
+    }
+    mock_conn.cursor.return_value = mock_cur
+
+    mocker.patch("db.pool._pool", MagicMock(getconn=MagicMock(return_value=mock_conn)), create=True)
+    mocker.patch("routes.user_routes.verify_password", return_value=True)
+
+    res = client.post("/login", json={
+        "identifier": "test@example.com",
+        "password": "password123",
+    })
+
+    assert res.status_code == 200, f"Login by email failed: {res.get_json()}"
+    data = res.get_json()
+    assert data["status"] == "success"
+    assert data["user"]["token"]
+
+
+def test_login_invalid_credentials_returns_401(mocker, client):
+    """Login with wrong password should return 401 with a server message."""
+    mock_conn = MagicMock()
+    mock_cur = MagicMock()
+    mock_cur.fetchone.return_value = {
+        "id": 1, "name": "testuser", "email": "test@example.com",
+        "password": "$2b$12$validhash", "created_at": None,
+    }
+    mock_conn.cursor.return_value = mock_cur
+
+    mocker.patch("db.pool._pool", MagicMock(getconn=MagicMock(return_value=mock_conn)), create=True)
+    mocker.patch("routes.user_routes.verify_password", return_value=False)
+
+    res = client.post("/login", json={
+        "identifier": "testuser",
+        "password": "wrongpassword",
+    })
+
+    assert res.status_code == 401
+    data = res.get_json()
+    assert data["status"] == "error"
+    assert data["message"]  # must have a real server message, not empty
+
+
+def test_login_no_password_logs_no_password(mocker, client, caplog):
+    """Login route must never log the password value."""
+    import logging
+    caplog.set_level(logging.DEBUG)
+    res = client.post("/login", json={
+        "identifier": "test@example.com",
+        "password": "secretpass123",
+    })
+    # This will be 401/500 (DB mocked), but the password must never appear in logs
+    for record in caplog.records:
+        assert "secretpass123" not in record.getMessage(), (
+            "Password was logged — security violation"
+        )
 
 
 # ------------------------------------------------------------------ #

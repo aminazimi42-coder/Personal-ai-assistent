@@ -219,7 +219,11 @@ function showLoginPanelForAuth() {
     const activeTab = document.querySelector(".bottom-nav-item.active");
     pendingReturnTab = activeTab ? activeTab.dataset.tab : null;
 
-    updateAuthStatus("Session expired — please log in again.");
+    // updateAuthStatus is already called by authorizedFetch with the real
+    // server message + HTTP 401; only set a fallback if nothing was set.
+    if (!authStatusText || !authStatusText.textContent) {
+        updateAuthStatus("Session expired — please log in again.");
+    }
 
     if (typeof showAppTab === "function") {
         showAppTab("account");
@@ -245,6 +249,14 @@ async function authorizedFetch(url, options = {}) {
     const response = await fetch(url, finalOptions);
 
     if (response.status === 401) {
+        // Try to surface the real server message instead of a generic string.
+        try {
+            const body = await response.clone().json();
+            const srvMsg = (body && body.message) ? body.message : "Session expired";
+            updateAuthStatus(`${srvMsg} (HTTP 401) — please log in again.`);
+        } catch (e) {
+            updateAuthStatus("Session expired (HTTP 401) — please log in again.");
+        }
         clearAuthToken();
         stopReminderAutoRefresh();
         shownReminderIds = new Set();
@@ -1588,11 +1600,16 @@ async function signup() {
 }
 
 async function login() {
-    const email = emailInput ? emailInput.value.trim() : "";
+    // Login identifier = email OR username (one field).
+    // Prefer nameInput ("Name / Username"), fall back to emailInput for compat.
+    const identifier = (nameInput ? nameInput.value.trim() : "") ||
+                       (emailInput ? emailInput.value.trim() : "");
     const password = passwordInput ? passwordInput.value.trim() : "";
 
-    if (!email || !password) {
-        updateAuthStatus("Email and password required");
+    // Password must be non-empty AND identifier must be a valid email OR a
+    // username of length >= 2.  Stop rejecting because a second field is blank.
+    if (!password || (!identifier.includes("@") && identifier.length < 2)) {
+        updateAuthStatus("Enter a valid email or username, and a password.");
         return;
     }
 
@@ -1602,12 +1619,13 @@ async function login() {
         const res = await fetch("/login", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ identifier, password })
         });
 
-        const data = await res.json();
+        let data = null;
+        try { data = await res.json(); } catch (e) { /* non-JSON body */ }
 
-        if (data.status === "success" && data.user && data.user.token) {
+        if (res.ok && data && data.status === "success" && data.user && data.user.token) {
             setAuthToken(data.user.token);
             updateAuthStatus("Logged in");
             updateLoggedInUiState();
@@ -1620,10 +1638,12 @@ async function login() {
             return;
         }
 
-        updateAuthStatus(data.message || "Login failed");
+        // Surface the real server message + status on 4xx/5xx.
+        const serverMsg = (data && data.message) ? data.message : `Login failed (HTTP ${res.status})`;
+        updateAuthStatus(`${serverMsg} (HTTP ${res.status})`);
     } catch (error) {
-        updateAuthStatus("Login failed");
-        console.error("Login failed:", error);
+        updateAuthStatus("Login failed — network error");
+        console.error("Login failed:", error.message || error);
     }
 }
 

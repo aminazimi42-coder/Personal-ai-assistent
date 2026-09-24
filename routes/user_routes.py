@@ -103,10 +103,14 @@ def init_user_routes(app, get_connection):
             if not data:
                 return jsonify({"status": "error", "message": "Request body must be JSON"}), 400
 
-            try:
-                email = validate_email(str(data.get("email", "")))
-            except ValueError as ve:
-                return jsonify({"status": "error", "message": str(ve)}), 400
+            # Login identifier: email OR username (one field, trimmed).
+            # Accept "identifier" (preferred) or legacy "email" key for compat.
+            identifier = str(data.get("identifier", data.get("email", ""))).strip()
+            if not identifier:
+                return jsonify({
+                    "status": "error",
+                    "message": "Email or username is required",
+                }), 400
 
             password = str(data.get("password", ""))
             if not password:
@@ -116,8 +120,9 @@ def init_user_routes(app, get_connection):
             cur = conn.cursor(cursor_factory=RealDictCursor)
             try:
                 cur.execute(
-                    "SELECT id, name, email, password, created_at FROM users WHERE email = %s",
-                    (email,),
+                    "SELECT id, name, email, password, created_at "
+                    "FROM users WHERE email = %s OR name = %s",
+                    (identifier, identifier),
                 )
                 user = cur.fetchone()
 
@@ -125,7 +130,7 @@ def init_user_routes(app, get_connection):
                 if not user or not verify_password(password, user["password"]):
                     return jsonify({
                         "status": "error",
-                        "message": "Invalid email or password",
+                        "message": "Invalid email/username or password",
                     }), 401
 
                 raw_token = generate_raw_token()

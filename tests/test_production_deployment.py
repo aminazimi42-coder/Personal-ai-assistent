@@ -108,8 +108,13 @@ def test_signup_validation(client):
 
 
 def test_login_validation(client):
-    """Login must validate input."""
-    res = client.post("/login", json={"email": "bad", "password": "x"})
+    """Login must validate input — missing identifier and missing password."""
+    # Missing identifier entirely
+    res = client.post("/login", json={"password": "x"})
+    assert res.status_code == 400
+
+    # Missing password
+    res = client.post("/login", json={"identifier": "someone"})
     assert res.status_code == 400
 
 
