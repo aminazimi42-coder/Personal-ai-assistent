@@ -1251,15 +1251,33 @@ async function loadTasks() {
 
     tasksList.innerHTML = `<div class="loading">Loading tasks...</div>`;
 
-    const res = await authorizedFetch("/tasks");
-    const data = await res.json();
+    try {
+        const res = await authorizedFetch("/tasks");
 
-    if (!data.tasks || !Array.isArray(data.tasks)) {
-        tasksList.innerHTML = `<div class="loading">Could not load tasks.</div>`;
-        return;
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            tasksList.innerHTML = `<div class="loading">Could not load tasks (HTTP ${res.status}: invalid server response).</div>`;
+            return;
+        }
+
+        if (!res.ok || data.status !== "success") {
+            const serverMsg = (data && (data.message || data.error)) || "Unknown error";
+            tasksList.innerHTML = `<div class="loading">Could not load tasks (HTTP ${res.status}: ${serverMsg}).</div>`;
+            return;
+        }
+
+        if (!data.tasks || !Array.isArray(data.tasks)) {
+            tasksList.innerHTML = `<div class="loading">No tasks yet.</div>`;
+            return;
+        }
+
+        renderTasks(data.tasks);
+    } catch (error) {
+        console.error("loadTasks error:", error);
+        tasksList.innerHTML = `<div class="loading">Could not load tasks (${error.message || "network error"}).</div>`;
     }
-
-    renderTasks(data.tasks);
 }
 
 async function loadAppointments() {
@@ -1269,15 +1287,33 @@ async function loadAppointments() {
 
     appointmentsList.innerHTML = `<div class="loading">Loading appointments...</div>`;
 
-    const res = await authorizedFetch("/appointments");
-    const data = await res.json();
+    try {
+        const res = await authorizedFetch("/appointments");
 
-    if (!data.appointments || !Array.isArray(data.appointments)) {
-        appointmentsList.innerHTML = `<div class="loading">Could not load appointments.</div>`;
-        return;
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            appointmentsList.innerHTML = `<div class="loading">Could not load appointments (HTTP ${res.status}: invalid server response).</div>`;
+            return;
+        }
+
+        if (!res.ok || data.status !== "success") {
+            const serverMsg = (data && (data.message || data.error)) || "Unknown error";
+            appointmentsList.innerHTML = `<div class="loading">Could not load appointments (HTTP ${res.status}: ${serverMsg}).</div>`;
+            return;
+        }
+
+        if (!data.appointments || !Array.isArray(data.appointments)) {
+            appointmentsList.innerHTML = `<div class="loading">No appointments yet.</div>`;
+            return;
+        }
+
+        renderAppointments(data.appointments);
+    } catch (error) {
+        console.error("loadAppointments error:", error);
+        appointmentsList.innerHTML = `<div class="loading">Could not load appointments (${error.message || "network error"}).</div>`;
     }
-
-    renderAppointments(data.appointments);
 }
 
 async function loadReminders(options = {}) {
@@ -1304,10 +1340,22 @@ async function loadReminders(options = {}) {
 
     try {
         const res = await authorizedFetch("/reminders");
-        const data = await res.json();
 
-        if (data.status !== "success") {
-            remindersList.innerHTML = `<div class="loading">Could not load reminders.</div>`;
+        let data;
+        try {
+            data = await res.json();
+        } catch (e) {
+            if (!silent) {
+                remindersList.innerHTML = `<div class="loading">Could not load reminders (HTTP ${res.status}: invalid server response).</div>`;
+            }
+            return;
+        }
+
+        if (!res.ok || data.status !== "success") {
+            const serverMsg = (data && (data.message || data.error)) || "Unknown error";
+            if (!silent) {
+                remindersList.innerHTML = `<div class="loading">Could not load reminders (HTTP ${res.status}: ${serverMsg}).</div>`;
+            }
             return;
         }
 
@@ -1323,7 +1371,9 @@ async function loadReminders(options = {}) {
         renderReminders(tasks, appointments);
     } catch (error) {
         console.error("Failed to load reminders:", error);
-        remindersList.innerHTML = `<div class="loading">Could not load reminders.</div>`;
+        if (!silent) {
+            remindersList.innerHTML = `<div class="loading">Could not load reminders (${error.message || "network error"}).</div>`;
+        }
     } finally {
         isLoadingReminders = false;
     }
@@ -1712,9 +1762,10 @@ async function sendMessage(isAuto = false) {
         }
 
         if (!res.ok || data.status !== "success") {
-            const errMsg = data.message || data.error || "Request failed";
-            if (statusText) statusText.textContent = errMsg;
-            if (resultBox) resultBox.textContent = "Error: " + errMsg;
+            const errMsg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+            const fullMsg = `HTTP ${res.status}: ${errMsg}`;
+            if (statusText) statusText.textContent = fullMsg;
+            if (resultBox) resultBox.textContent = "Error: " + fullMsg;
             return;
         }
 
@@ -1839,16 +1890,18 @@ async function createTaskManual() {
         });
         const data = await res.json();
 
-        if (data.status === "success") {
-            if (statusEl) statusEl.textContent = "Task created!";
-            if (titleEl) titleEl.value = "";
-            if (descEl) descEl.value = "";
-            if (dueDateEl) dueDateEl.value = "";
-            loadTasks();
-            loadReminders();
-        } else {
-            if (statusEl) statusEl.textContent = data.message || "Failed to create task";
+        if (!res.ok || data.status !== "success") {
+            const serverMsg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+            if (statusEl) statusEl.textContent = `Could not create task (HTTP ${res.status}: ${serverMsg})`;
+            return;
         }
+
+        if (statusEl) statusEl.textContent = "Task created!";
+        if (titleEl) titleEl.value = "";
+        if (descEl) descEl.value = "";
+        if (dueDateEl) dueDateEl.value = "";
+        loadTasks();
+        loadReminders();
     } catch (e) {
         if (statusEl) statusEl.textContent = "Error creating task: " + (e.message || "network error");
     }
@@ -1902,7 +1955,8 @@ async function createAppointmentManual() {
             loadAppointments();
             loadReminders();
         } else {
-            if (statusEl) statusEl.textContent = data.message || "Failed to create appointment";
+            const serverMsg = (data && (data.message || data.error)) || `HTTP ${res.status}`;
+            if (statusEl) statusEl.textContent = `Could not create appointment (HTTP ${res.status}: ${serverMsg})`;
         }
     } catch (e) {
         if (statusEl) statusEl.textContent = "Error creating appointment: " + (e.message || "network error");

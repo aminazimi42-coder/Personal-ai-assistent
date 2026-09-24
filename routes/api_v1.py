@@ -896,7 +896,9 @@ def init_api_v1_routes(app, get_connection):
             from services.billing_service import get_user_plan, Plan
             from services.usage_service import get_usage
             plan_name = get_user_plan(user["id"], get_connection)
-            plan_def = Plan.get(plan_name) or Plan.get("free")
+            plan_def = Plan.get(plan_name)
+            if plan_def is None:
+                plan_def = Plan.get("free")
             usage = get_usage(user["id"], get_connection)
             daily_limit = plan_def.get("ai_daily_limit", 0)
             used = usage.get("ai_calls_today", 0)

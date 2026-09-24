@@ -147,3 +147,26 @@ def test_migration_003_has_fk_to_users():
     assert "ForeignKeyConstraint" in content
     assert "users.id" in content
     assert "CASCADE" in content or "ondelete" in content.lower()
+
+
+def test_migration_010_allows_pro_plus_plan():
+    """010 must add 'pro_plus' to the subscriptions CHECK constraint.
+
+    Root cause of /api/v1/account/quota 500 (H3): the subscriptions
+    table had a CHECK constraint allowing only ('free', 'pro') but M1.1
+    added a 'pro_plus' plan to the Plan model. When get_user_plan()
+    resolved a pro_plus subscriber, PostgreSQL rejected the row and
+    the exception bubbled up as a 500. This migration drops and recreates
+    the constraint to include 'pro_plus'.
+    """
+    content = _load_migration_file("010_allow_pro_plus_plan.py")
+    assert content is not None
+    assert "pro_plus" in content
+    assert "ck_subscriptions_plan" in content
+    assert "DROP CONSTRAINT" in content
+    assert "ADD CONSTRAINT" in content
+    # The new constraint must include all three plans
+    upgrade_section = content.split("def downgrade")[0]
+    assert "'free'" in upgrade_section
+    assert "'pro'" in upgrade_section
+    assert "'pro_plus'" in upgrade_section

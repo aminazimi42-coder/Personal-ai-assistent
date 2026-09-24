@@ -25,6 +25,23 @@ from config import settings
 logger = logging.getLogger(__name__)
 
 
+def _ai_provider_configured() -> bool:
+    """Return True if an OpenAI API key is configured (non-empty).
+
+    Returns False only when the key is empty or unset, so AI routes can
+    return an explicit 'AI provider not configured' error instead of a
+    generic 'unavailable'. Does not reject test keys — validation of the
+    key's authenticity is the provider's job, not ours.
+    """
+    key = (settings.OPENAI_API_KEY or "").strip()
+    return bool(key)
+
+
+def _ai_error_response(message: str, status: int = 503) -> tuple:
+    """Build a standard AI error JSON response."""
+    return jsonify({"status": "error", "message": message}), status
+
+
 def init_ai_routes(app, get_connection):
     ai_routes = Blueprint("ai_routes", __name__)
     from services.rate_limiter import ai_limit
@@ -65,7 +82,16 @@ def init_ai_routes(app, get_connection):
                     "message": "Daily AI request limit reached. Please try again tomorrow.",
                 }), 429
 
-            reply = generate_ai_reply(message)
+            if not _ai_provider_configured():
+                return _ai_error_response("AI provider not configured", 503)
+
+            try:
+                reply = generate_ai_reply(message)
+            except Exception as ai_exc:
+                logger.error("AI chat provider error", exc_info=True)
+                return _ai_error_response(
+                    f"AI service error: {ai_exc}", 503
+                )
             return jsonify({"status": "success", "reply": reply})
 
         except Exception:
@@ -109,7 +135,16 @@ def init_ai_routes(app, get_connection):
                     "message": "Daily AI request limit reached. Please try again tomorrow.",
                 }), 429
 
-            extracted = extract_task_from_message(message)
+            if not _ai_provider_configured():
+                return _ai_error_response("AI provider not configured", 503)
+
+            try:
+                extracted = extract_task_from_message(message)
+            except Exception as ai_exc:
+                logger.error("AI-to-task provider error", exc_info=True)
+                return _ai_error_response(
+                    f"AI service error: {ai_exc}", 503
+                )
             task = insert_task(
                 get_connection=get_connection,
                 title=extracted["title"],
@@ -167,7 +202,16 @@ def init_ai_routes(app, get_connection):
                     "message": "Daily AI request limit reached. Please try again tomorrow.",
                 }), 429
 
-            decision = decide_smart_action(message)
+            if not _ai_provider_configured():
+                return _ai_error_response("AI provider not configured", 503)
+
+            try:
+                decision = decide_smart_action(message)
+            except Exception as ai_exc:
+                logger.error("Smart AI provider error", exc_info=True)
+                return _ai_error_response(
+                    f"AI service error: {ai_exc}", 503
+                )
 
             if decision["action"] == "task":
                 try:
@@ -250,6 +294,10 @@ def init_ai_routes(app, get_connection):
                     "message": f"Unsupported audio type: {content_type}. Allowed: {', '.join(settings.ALLOWED_AUDIO_MIME_TYPES)}",
                 }), 415
 
+            # Provider check — after input validation, before the AI call
+            if not _ai_provider_configured():
+                return _ai_error_response("AI provider not configured", 503)
+
             # Sanitize filename to prevent path traversal
             safe_name = os.path.basename(audio_file.filename)
 
@@ -282,9 +330,12 @@ def init_ai_routes(app, get_connection):
 
             return jsonify({"status": "success", "text": transcript_text})
 
-        except Exception:
+        except Exception as exc:
             logger.error("Voice transcription error", exc_info=True)
-            return jsonify({"status": "error", "message": "Voice processing failed"}), 503
+            return jsonify({
+                "status": "error",
+                "message": f"Voice processing failed: {exc}",
+            }), 503
 
         finally:
             if temp_path:
@@ -340,6 +391,10 @@ def init_ai_routes(app, get_connection):
                     "message": f"Unsupported audio type: {content_type}. Allowed: {', '.join(settings.ALLOWED_AUDIO_MIME_TYPES)}",
                 }), 415
 
+            # Provider check — after input validation, before the AI call
+            if not _ai_provider_configured():
+                return _ai_error_response("AI provider not configured", 503)
+
             from services.voice_to_task import process_voice_to_task
 
             result = process_voice_to_task(
@@ -352,9 +407,12 @@ def init_ai_routes(app, get_connection):
 
         except ValueError as ve:
             return jsonify({"status": "error", "message": str(ve)}), 400
-        except Exception:
+        except Exception as exc:
             logger.error("Voice-to-task error", exc_info=True)
-            return jsonify({"status": "error", "message": "Voice processing failed"}), 503
+            return jsonify({
+                "status": "error",
+                "message": f"Voice processing failed: {exc}",
+            }), 503
 
     @ai_routes.route("/voice-to-task/confirm", methods=["POST"])
     @ai_limit()
