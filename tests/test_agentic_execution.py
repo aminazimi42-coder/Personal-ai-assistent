@@ -401,3 +401,63 @@ def test_inmemory_simulate_still_works():
     result = execute_action("create_task", 1, {"title": "test"})
     assert result.status == ActionStatus.COMPLETED
     assert result.result == {"simulated": True, "action": "create_task", "params": {"title": "test"}}
+
+
+# ------------------------------------------------------------------ #
+# B3: Real executors for allowlisted write actions on live routes
+# ------------------------------------------------------------------ #
+
+def test_live_route_create_task_with_executor():
+    """B3: create_task on a live route (get_connection_fn) must use a real
+    executor and COMPLETED — never simulated or PENDING."""
+    from unittest.mock import MagicMock
+    mock_conn = MagicMock()
+
+    def fake_executor(user_id, **params):
+        return {"id": 1, "title": params.get("title"), "user_id": user_id}
+
+    result = execute_action(
+        "create_task", 1, {"title": "real task"},
+        executor=fake_executor,
+        get_connection_fn=lambda: mock_conn,
+    )
+    assert result.status == ActionStatus.COMPLETED
+    assert result.result == {"id": 1, "title": "real task", "user_id": 1}
+    assert not (isinstance(result.result, dict) and result.result.get("simulated"))
+
+
+def test_live_route_create_appointment_with_executor():
+    """B3: create_appointment on a live route with a real executor COMPLETED."""
+    from unittest.mock import MagicMock
+    mock_conn = MagicMock()
+
+    def fake_executor(user_id, **params):
+        return {"id": 5, "title": params.get("title"), "user_id": user_id}
+
+    result = execute_action(
+        "create_appointment", 7, {"title": "dentist"},
+        executor=fake_executor,
+        get_connection_fn=lambda: mock_conn,
+    )
+    assert result.status == ActionStatus.COMPLETED
+    assert result.result["id"] == 5
+
+
+def test_agent_route_executor_helper_returns_none_for_unknown():
+    """B3: _get_executor returns None for actions not in the allowlist."""
+    from routes.agent_routes import _get_executor
+    from unittest.mock import MagicMock
+    mock_conn = MagicMock()
+    assert _get_executor("send_ai_reply", mock_conn) is None
+    assert _get_executor("search_memory", mock_conn) is None
+    assert _get_executor("delete_task", mock_conn) is None
+
+
+def test_agent_route_executor_helper_returns_callable_for_writes():
+    """B3: _get_executor returns a callable for create_task/create_appointment/update_task."""
+    from routes.agent_routes import _get_executor
+    from unittest.mock import MagicMock
+    mock_conn = MagicMock()
+    for action in ("create_task", "update_task", "create_appointment"):
+        ex = _get_executor(action, mock_conn)
+        assert callable(ex), f"_get_executor({action!r}) must return a callable"

@@ -24,6 +24,90 @@ from db.pool import return_connection
 logger = logging.getLogger(__name__)
 
 
+# ------------------------------------------------------------------ #
+# Real executors for allowlisted write actions.
+# Each executor receives user_id and the action params, performs the
+# real DB write, and returns a result dict — never a simulated value.
+# ------------------------------------------------------------------ #
+
+def _make_task_executor(get_connection):
+    """Return an executor that creates a task in the DB."""
+    from routes.task_routes import insert_task
+
+    def _exec(user_id, **params):
+        return insert_task(
+            get_connection=get_connection,
+            title=params.get("title", ""),
+            description=params.get("description", ""),
+            status=params.get("status", "pending"),
+            priority=params.get("priority", "medium"),
+            due_date=params.get("due_date"),
+            user_id=user_id,
+        )
+    return _exec
+
+
+def _make_update_task_executor(get_connection):
+    """Return an executor that updates a task in the DB (user-scoped)."""
+    from psycopg2.extras import RealDictCursor
+
+    def _exec(user_id, **params):
+        task_id = params.get("task_id")
+        if not task_id:
+            raise ValueError("task_id is required for update_task")
+        conn = get_connection()
+        cur = conn.cursor(cursor_factory=RealDictCursor)
+        try:
+            cur.execute("""
+                UPDATE tasks SET title = %s, description = %s, status = %s,
+                    priority = %s, due_date = %s
+                WHERE id = %s AND user_id = %s
+                RETURNING id, title, description, status, priority,
+                          due_date, created_at, user_id
+            """, (
+                params.get("title"), params.get("description"),
+                params.get("status"), params.get("priority"),
+                params.get("due_date"), task_id, user_id,
+            ))
+            row = cur.fetchone()
+            conn.commit()
+        finally:
+            cur.close()
+            return_connection(conn)
+        if not row:
+            raise ValueError("Task not found or not owned by user")
+        return dict(row)
+    return _exec
+
+
+def _make_appointment_executor(get_connection):
+    """Return an executor that creates an appointment in the DB."""
+    from routes.calendar_routes import insert_appointment
+
+    def _exec(user_id, **params):
+        return insert_appointment(
+            get_connection=get_connection,
+            title=params.get("title", ""),
+            appointment_time=params.get("appointment_time"),
+            description=params.get("description", ""),
+            location=params.get("location", ""),
+            status=params.get("status", "scheduled"),
+            user_id=user_id,
+        )
+    return _exec
+
+
+def _get_executor(action_name, get_connection):
+    """Return a real executor for an allowlisted write action, or None."""
+    if action_name == "create_task":
+        return _make_task_executor(get_connection)
+    if action_name == "update_task":
+        return _make_update_task_executor(get_connection)
+    if action_name == "create_appointment":
+        return _make_appointment_executor(get_connection)
+    return None
+
+
 def init_agent_routes(app, get_connection):
     agent_routes = Blueprint("agent_routes", __name__)
     from services.rate_limiter import general_limit
@@ -55,11 +139,16 @@ def init_agent_routes(app, get_connection):
             action_id = data.get("action_id")
             approved = bool(data.get("approved", False))
 
+            # B3: pass a real executor for allowlisted write actions so the
+            # live path does not fall back to PENDING or simulated COMPLETE.
+            executor = _get_executor(action_name, get_connection)
+
             result = execute_action(
                 action_name=action_name,
                 user_id=current_user["id"],
                 params=params,
                 approved=approved,
+                executor=executor,
                 action_id=action_id,
                 get_connection_fn=get_connection,
             )
@@ -77,9 +166,15 @@ def init_agent_routes(app, get_connection):
             if error:
                 return jsonify(error), code
 
+            # B3: pass a real executor for allowlisted write actions.
+            run_for_exec = get_agent_run(action_id, current_user["id"], get_connection)
+            action_name_for_exec = run_for_exec.get("action_name") if run_for_exec else None
+            executor = _get_executor(action_name_for_exec, get_connection) if action_name_for_exec else None
+
             result = approve_action(
                 action_id=action_id,
                 user_id=current_user["id"],
+                executor=executor,
                 get_connection_fn=get_connection,
             )
             if result.status.value in ("denied",) and "not found" in (result.error or "").lower():
@@ -122,9 +217,15 @@ def init_agent_routes(app, get_connection):
             if error:
                 return jsonify(error), code
 
+            # B3: pass a real executor for allowlisted write actions.
+            run_for_exec = get_agent_run(action_id, current_user["id"], get_connection)
+            action_name_for_exec = run_for_exec.get("action_name") if run_for_exec else None
+            executor = _get_executor(action_name_for_exec, get_connection) if action_name_for_exec else None
+
             result = retry_action(
                 action_id=action_id,
                 user_id=current_user["id"],
+                executor=executor,
                 get_connection_fn=get_connection,
             )
             if result.status == ActionStatus.DENIED and "not found" in (result.error or "").lower():

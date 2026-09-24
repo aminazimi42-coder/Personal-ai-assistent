@@ -2,13 +2,17 @@
 services/workspace.py
 Project Workspace — structured workspaces with ownership and isolation.
 
-Workspace → Projects / Files / Code / Documents / Tasks / Conversations /
-Memories / AI Context
+Boundary (Tenant vs Workspace):
+  Tenant    = billing/membership entity (subscription, plan, features).
+  Workspace = knowledge/projects under a single user_id.
+  The workspaces table has NO tenant_id — workspaces are user-scoped.
+  If a tenant_id is ever added, workspace access must additionally
+  require tenant membership (check_tenant_access).
 
 Features:
-- Ownership: each workspace belongs to a user
-- Isolation: users can only access their own workspaces
-- Access control: user-scoped queries
+- Ownership: each workspace belongs to a user (user_id)
+- Isolation: users can only access their own workspaces (user_id always)
+- Access control: user-scoped queries on every CRUD path
 - DB-backed in production; in-memory fallback when get_connection is None
 - Durable: state persists across restarts when DB is available
 """

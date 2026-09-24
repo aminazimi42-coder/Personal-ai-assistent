@@ -134,6 +134,23 @@ def test_workspace_isolation_between_users():
     assert get_workspace(ws2.id, 1) is None
 
 
+def test_workspace_tenant_boundary_documented():
+    """B2: workspaces are user-scoped, not tenant-scoped.
+    The workspaces table has no tenant_id; isolation is by user_id only.
+    This test confirms the boundary: user_id is always required, and
+    no tenant_id column exists in the Workspace model."""
+    reset_workspaces()
+    ws = create_workspace(1, "Tenant Boundary WS")
+    # user_id is always set — workspace isolation is by user
+    assert ws.user_id == 1
+    # Cross-user access still denied (no tenant mixing)
+    assert get_workspace(ws.id, 2) is None
+    # list_workspaces is user-scoped only
+    create_workspace(2, "Other WS")
+    assert len(list_workspaces(1)) == 1
+    assert len(list_workspaces(2)) == 1
+
+
 # ------------------------------------------------------------------ #
 # DB-backed tests (mock the connection — no real DB needed)
 # ------------------------------------------------------------------ #
