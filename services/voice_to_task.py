@@ -19,7 +19,6 @@ import tempfile
 from typing import Any, Optional
 
 from config import settings
-from services.usage_service import check_and_increment
 
 logger = logging.getLogger(__name__)
 
@@ -146,10 +145,9 @@ def process_voice_to_task(
     # 2. Size validation
     _validate_size(audio_data)
 
-    # 3. Quota check
-    allowed, count = check_and_increment(user_id, get_connection)
-    if not allowed:
-        raise ValueError("Daily AI request limit reached. Please try again tomorrow.")
+    # 3. Quota is enforced at the route level (check_and_increment in
+    #    ai_routes.voice_to_task) to return a proper 429.  This service
+    #    is called only after the route has already checked quota.
 
     # 4. Transcribe
     transcript = _transcribe_audio(audio_data, content_type)

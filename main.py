@@ -264,6 +264,7 @@ def create_app() -> Flask:
     from routes.agent_routes import init_agent_routes
     from routes.privacy_routes import init_privacy_routes
     from routes.control_center_routes import init_control_center_routes
+    from routes.evaluation_routes import init_evaluation_routes
     from routes.api_v1 import init_api_v1_routes
 
     init_user_routes(app, get_connection)
@@ -276,6 +277,7 @@ def create_app() -> Flask:
     init_agent_routes(app, get_connection)
     init_privacy_routes(app, get_connection)
     init_control_center_routes(app, get_connection)
+    init_evaluation_routes(app, get_connection)
     init_api_v1_routes(app, get_connection)
 
     logger.info("Flask application created (env=%s)", settings.FLASK_ENV)

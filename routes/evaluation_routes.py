@@ -8,6 +8,7 @@ import logging
 from flask import Blueprint, jsonify, request
 
 from services.auth_service import get_current_user
+from services.usage_service import check_and_increment
 from services.ai_evaluation import (
     run_default_evaluations,
     run_evaluations,
@@ -35,6 +36,13 @@ def init_evaluation_routes(app, get_connection):
             if error:
                 return jsonify(error), code
 
+            allowed, _ = check_and_increment(current_user["id"], get_connection)
+            if not allowed:
+                return jsonify({
+                    "status": "error",
+                    "message": "Daily AI request limit reached. Please try again tomorrow.",
+                }), 429
+
             run = run_default_evaluations()
             return jsonify({
                 "status": "success",
@@ -52,6 +60,13 @@ def init_evaluation_routes(app, get_connection):
             current_user, error, code = get_current_user(get_connection)
             if error:
                 return jsonify(error), code
+
+            allowed, _ = check_and_increment(current_user["id"], get_connection)
+            if not allowed:
+                return jsonify({
+                    "status": "error",
+                    "message": "Daily AI request limit reached. Please try again tomorrow.",
+                }), 429
 
             data = request.get_json(silent=True)
             if not data:

@@ -415,14 +415,28 @@ def execute_action(
     try:
         if executor:
             result.result = executor(user_id=user_id, **params)
+            result.status = ActionStatus.COMPLETED
+            logger.info(
+                "Agentic action completed: %s (user=%d, action_id=%s)",
+                action_name, user_id, action_id,
+            )
+        elif get_connection_fn is not None:
+            # Live route with no executor — do NOT simulate.
+            # Return PENDING so caller knows a real executor is required.
+            result.status = ActionStatus.PENDING
+            result.error = "No executor provided — action requires a real executor on live routes"
+            result.completed_at = time.monotonic()
+            result.duration_ms = round((result.completed_at - t0) * 1000)
+            _persist_run(action_id, user_id, action_name, ActionStatus.PENDING,
+                         params, None, result.error, get_connection_fn)
+            logger.warning(
+                "Agentic action left pending (no executor on live route): %s (user=%d)",
+                action_name, user_id,
+            )
+            return result
         else:
             result.result = {"simulated": True, "action": action_name, "params": params}
-
-        result.status = ActionStatus.COMPLETED
-        logger.info(
-            "Agentic action completed: %s (user=%d, action_id=%s)",
-            action_name, user_id, action_id,
-        )
+            result.status = ActionStatus.COMPLETED
     except Exception as exc:
         result.status = ActionStatus.FAILED
         result.error = str(exc)

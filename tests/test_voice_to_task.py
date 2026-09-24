@@ -57,22 +57,20 @@ def test_validate_size_too_large():
 
 def test_process_voice_to_task_success():
     mock_conn = MagicMock()
-    # Quota check returns (allowed=True, count=1)
-    with patch("services.voice_to_task.check_and_increment", return_value=(True, 1)):
-        with patch("services.voice_to_task._transcribe_audio", return_value="Buy milk tomorrow"):
-            with patch("services.voice_to_task._extract_task_from_transcript", return_value={
-                "title": "Buy milk",
-                "description": "Buy milk from store",
-                "priority": "high",
-                "status": "pending",
-                "due_date": "2026-09-23",
-            }):
-                result = v2t.process_voice_to_task(
-                    user_id=1,
-                    audio_data=b"\x00" * 100,
-                    content_type="audio/webm",
-                    get_connection=lambda: mock_conn,
-                )
+    with patch("services.voice_to_task._transcribe_audio", return_value="Buy milk tomorrow"):
+        with patch("services.voice_to_task._extract_task_from_transcript", return_value={
+            "title": "Buy milk",
+            "description": "Buy milk from store",
+            "priority": "high",
+            "status": "pending",
+            "due_date": "2026-09-23",
+        }):
+            result = v2t.process_voice_to_task(
+                user_id=1,
+                audio_data=b"\x00" * 100,
+                content_type="audio/webm",
+                get_connection=lambda: mock_conn,
+            )
 
     assert result["status"] == "success"
     assert result["needs_confirmation"] is True
@@ -104,9 +102,46 @@ def test_process_voice_to_task_empty_audio():
 
 
 def test_process_voice_to_task_quota_exceeded():
+    """Quota is now enforced at the route level (returns 429), not in the
+    service.  The service should proceed normally when called directly —
+    the route is responsible for checking quota before calling it."""
     mock_conn = MagicMock()
-    with patch("services.voice_to_task.check_and_increment", return_value=(False, 100)):
-        with pytest.raises(ValueError, match="Daily AI request limit reached"):
+    with patch("services.voice_to_task._transcribe_audio", return_value="test"):
+        with patch("services.voice_to_task._extract_task_from_transcript", return_value={
+            "title": "T", "description": "", "priority": "medium",
+            "status": "pending", "due_date": None,
+        }):
+            # Service no longer blocks on quota — route does
+            result = v2t.process_voice_to_task(
+                user_id=1,
+                audio_data=b"\x00" * 100,
+                content_type="audio/webm",
+                get_connection=lambda: mock_conn,
+            )
+            assert result["status"] == "success"
+
+
+def test_voice_to_task_route_quota_denied(client, mocker):
+    """The /voice-to-task route must enforce quota and return 429."""
+    from tests.conftest import make_user
+    u = make_user()
+    mocker.patch("routes.ai_routes.get_current_user", return_value=(u, None, None))
+    mocker.patch("routes.ai_routes.check_and_increment", return_value=(False, 100))
+    import io
+    audio_bytes = b"\x00" * 100
+    res = client.post(
+        "/voice-to-task",
+        data={"audio": (io.BytesIO(audio_bytes), "test.webm", "audio/webm")},
+        content_type="multipart/form-data",
+    )
+    assert res.status_code == 429
+    assert "limit" in res.get_json()["message"].lower()
+
+
+def test_process_voice_to_task_empty_transcript():
+    mock_conn = MagicMock()
+    with patch("services.voice_to_task._transcribe_audio", return_value=""):
+        with pytest.raises(ValueError, match="empty text"):
             v2t.process_voice_to_task(
                 user_id=1,
                 audio_data=b"\x00" * 100,
@@ -115,41 +150,27 @@ def test_process_voice_to_task_quota_exceeded():
             )
 
 
-def test_process_voice_to_task_empty_transcript():
+def test_process_voice_to_task_does_not_log_transcript():
+    """Ensure the transcript content is not logged — only length is exposed."""
     mock_conn = MagicMock()
-    with patch("services.voice_to_task.check_and_increment", return_value=(True, 1)):
-        with patch("services.voice_to_task._transcribe_audio", return_value=""):
-            with pytest.raises(ValueError, match="empty text"):
-                v2t.process_voice_to_task(
+    with patch("services.voice_to_task._transcribe_audio", return_value="secret content"):
+        with patch("services.voice_to_task._extract_task_from_transcript", return_value={
+            "title": "Test", "description": "", "priority": "medium",
+            "status": "pending", "due_date": None,
+        }):
+            with patch("services.voice_to_task.logger") as mock_logger:
+                result = v2t.process_voice_to_task(
                     user_id=1,
                     audio_data=b"\x00" * 100,
                     content_type="audio/webm",
                     get_connection=lambda: mock_conn,
                 )
-
-
-def test_process_voice_to_task_does_not_log_transcript():
-    """Ensure the transcript content is not logged — only length is exposed."""
-    mock_conn = MagicMock()
-    with patch("services.voice_to_task.check_and_increment", return_value=(True, 1)):
-        with patch("services.voice_to_task._transcribe_audio", return_value="secret content"):
-            with patch("services.voice_to_task._extract_task_from_transcript", return_value={
-                "title": "Test", "description": "", "priority": "medium",
-                "status": "pending", "due_date": None,
-            }):
-                with patch("services.voice_to_task.logger") as mock_logger:
-                    result = v2t.process_voice_to_task(
-                        user_id=1,
-                        audio_data=b"\x00" * 100,
-                        content_type="audio/webm",
-                        get_connection=lambda: mock_conn,
-                    )
-                    # Verify no log call contains the transcript
-                    for call in mock_logger.info.call_args_list + mock_logger.debug.call_args_list:
-                        assert "secret content" not in str(call)
-                    # Result should not contain the transcript text
-                    assert "secret content" not in str(result)
-                    assert result["transcript_length"] == len("secret content")
+                # Verify no log call contains the transcript
+                for call in mock_logger.info.call_args_list + mock_logger.debug.call_args_list:
+                    assert "secret content" not in str(call)
+                # Result should not contain the transcript text
+                assert "secret content" not in str(result)
+                assert result["transcript_length"] == len("secret content")
 
 
 # ------------------------------------------------------------------ #
@@ -193,19 +214,31 @@ def test_confirm_and_create_task_empty():
 # ------------------------------------------------------------------ #
 
 def test_quota_check_is_called():
+    """Quota is now enforced at the route level. Verify the route calls
+    check_and_increment before processing."""
+    from tests.conftest import make_user
+    import io
+
+    u = make_user()
     mock_conn = MagicMock()
-    with patch("services.voice_to_task.check_and_increment", return_value=(True, 1)) as mock_check:
-        with patch("services.voice_to_task._transcribe_audio", return_value="test"):
-            with patch("services.voice_to_task._extract_task_from_transcript", return_value={
-                "title": "T", "description": "", "priority": "medium",
-                "status": "pending", "due_date": None,
+    with patch("routes.ai_routes.get_current_user", return_value=(u, None, None)):
+        with patch("routes.ai_routes.check_and_increment", return_value=(True, 1)) as mock_check:
+            with patch("services.voice_to_task.process_voice_to_task", return_value={
+                "status": "success", "transcript_length": 4, "task": {
+                    "title": "T", "description": "", "priority": "medium",
+                    "status": "pending", "due_date": None,
+                }, "needs_confirmation": True,
             }):
-                v2t.process_voice_to_task(
-                    user_id=42,
-                    audio_data=b"\x00" * 10,
-                    content_type="audio/webm",
-                    get_connection=lambda: mock_conn,
-                )
-                assert mock_check.called
-                args = mock_check.call_args
-                assert args[0][0] == 42 or args[1].get("user_id") == 42
+                # Use the test client to call the route
+                from main import create_app
+                app = create_app()
+                app.config["TESTING"] = True
+                with app.test_client() as client:
+                    res = client.post(
+                        "/voice-to-task",
+                        data={"audio": (io.BytesIO(b"\x00" * 10), "test.webm", "audio/webm")},
+                        content_type="multipart/form-data",
+                    )
+                    assert mock_check.called
+                    args = mock_check.call_args
+                    assert args[0][0] == u["id"]

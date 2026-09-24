@@ -401,3 +401,29 @@ class TestDeterminism:
         assert run.fail_count == 1
         assert run.results[0].error is not None
         assert "nonexistent_category" in run.results[0].error
+
+
+# ------------------------------------------------------------------ #
+# A4: Evaluation routes enforce quota
+# ------------------------------------------------------------------ #
+
+class TestEvaluationQuotaEnforcement:
+    """The /api/v1/ai-evaluation routes must enforce AI quota."""
+
+    def test_get_evaluation_quota_denied(self, client, mocker):
+        from tests.conftest import make_user
+        u = make_user()
+        mocker.patch("routes.evaluation_routes.get_current_user", return_value=(u, None, None))
+        mocker.patch("routes.evaluation_routes.check_and_increment", return_value=(False, 100))
+        res = client.get("/api/v1/ai-evaluation")
+        assert res.status_code == 429
+        assert "limit" in res.get_json()["message"].lower()
+
+    def test_post_evaluation_quota_denied(self, client, mocker):
+        from tests.conftest import make_user
+        u = make_user()
+        mocker.patch("routes.evaluation_routes.get_current_user", return_value=(u, None, None))
+        mocker.patch("routes.evaluation_routes.check_and_increment", return_value=(False, 100))
+        res = client.post("/api/v1/ai-evaluation", json={"scenarios": []})
+        assert res.status_code == 429
+        assert "limit" in res.get_json()["message"].lower()

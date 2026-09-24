@@ -359,3 +359,45 @@ def test_state_pending_to_canceled():
     cancel_action("state-3", 1)
     run = get_agent_run("state-3", 1)
     assert run["status"] == "canceled"
+
+
+# ------------------------------------------------------------------ #
+# A6: No silent simulation on live routes
+# ------------------------------------------------------------------ #
+
+def test_live_route_no_executor_does_not_simulate():
+    """When get_connection_fn is provided (live route), a write action
+    without an executor must NOT report COMPLETED with a simulated result.
+    It must return PENDING so the caller knows a real executor is required."""
+    from unittest.mock import MagicMock
+    mock_conn = MagicMock()
+    result = execute_action(
+        "create_task", 1, {"title": "test"},
+        get_connection_fn=lambda: mock_conn,
+    )
+    assert result.status == ActionStatus.PENDING
+    assert "executor" in (result.error or "").lower()
+    assert result.result is None  # no simulated result
+
+
+def test_live_route_with_executor_completes():
+    """When get_connection_fn is provided AND an executor is provided,
+    the action should complete normally."""
+    from unittest.mock import MagicMock
+    mock_conn = MagicMock()
+    def my_executor(user_id, **params):
+        return {"done": True}
+    result = execute_action(
+        "create_task", 1, {"title": "test"},
+        executor=my_executor,
+        get_connection_fn=lambda: mock_conn,
+    )
+    assert result.status == ActionStatus.COMPLETED
+    assert result.result == {"done": True}
+
+
+def test_inmemory_simulate_still_works():
+    """In-memory path (no get_connection_fn) still simulates for unit tests."""
+    result = execute_action("create_task", 1, {"title": "test"})
+    assert result.status == ActionStatus.COMPLETED
+    assert result.result == {"simulated": True, "action": "create_task", "params": {"title": "test"}}

@@ -277,6 +277,14 @@ def init_ai_routes(app, get_connection):
             if error:
                 return jsonify(error), code
 
+            # Quota enforcement — voice-to-task incurs an AI call
+            allowed, _ = check_and_increment(current_user["id"], get_connection)
+            if not allowed:
+                return jsonify({
+                    "status": "error",
+                    "message": "Daily AI request limit reached. Please try again tomorrow.",
+                }), 429
+
             if "audio" not in request.files:
                 return jsonify({"status": "error", "message": "Audio file is required"}), 400
 
