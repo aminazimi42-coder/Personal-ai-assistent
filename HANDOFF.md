@@ -4,7 +4,7 @@
 
 A production-grade, security-hardened AI-native personal productivity platform built on Flask + PostgreSQL + OpenAI. Features task management, appointment scheduling, reminders, voice transcription, conversational AI, code retrieval, layered memory, agentic execution, tool gateway, cost intelligence, project workspace, unified knowledge retrieval, verification engine, automation, privacy controls, and a real-time control center.
 
-**Version:** 1.0.0 | **Tests:** 384/384 pass | **License:** Apache-2.0
+**Version:** 1.1.0 | **Tests:** 754/754 pass | **License:** Apache-2.0
 
 ---
 
@@ -136,7 +136,7 @@ Migrations are managed by Flask-Migrate (Alembic). 4 migrations total:
 .venv/bin/python -m pytest tests/ -v --tb=short
 ```
 
-- **384 tests** across 27 modules
+- **384 tests** across 27 modules (v1.0.0 baseline) → **754 tests** across 40+ modules (current)
 - No real DB or OpenAI API calls in tests
 - Mock pool via `conftest.py`
 - Security, migration, isolation, API integration, and full regression covered
@@ -264,7 +264,7 @@ bdc63c2 feat(phase3): DB-backed shared AI usage quota with atomic UPSERT
 - [x] Procfile for Render deployment
 - [x] render.yaml Infrastructure as Code
 - [x] GitHub Actions CI pipeline
-- [x] 384 tests — 384/384 pass
+- [x] 754 tests — 754/754 pass
 - [x] No real DB or OpenAI calls in tests
 - [x] All modules import cleanly
 - [x] All migration files parse as valid Python
@@ -277,3 +277,20 @@ bdc63c2 feat(phase3): DB-backed shared AI usage quota with atomic UPSERT
 - [x] CHANGELOG.md
 - [x] README rebuilt with full capability matrix
 - [x] HANDOFF synchronized with actual state
+
+---
+
+## Current Status
+
+**Version 1.1.0 — Active maintenance. Not frozen. Not a commercial market launch.**
+
+The project is under active development toward a production-grade SaaS market offering.
+754/754 tests pass. The product is not offered to the market until the intended
+production-grade SaaS output is real.
+
+### What is not yet production-like
+
+- Testcontainers / real PostgreSQL isolation suite — not yet integrated
+- Live payment processor — billing model exists; no live processor proven
+- Distributed rate limiting — per-process Flask-Limiter only
+- iPhone / App Store binary — no iOS client exists

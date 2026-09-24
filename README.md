@@ -1,21 +1,12 @@
 <div align="center">
 
-# PERSONAL AI ASSISTANT
+# Personal AI Assistant
 
 ### Capture · Retrieve · Understand · Plan · Act · Verify · Remember
 
-[![Live status ribbon for Render, OpenAPI, tests, security and deployment](docs/assets/paa-status-ribbon.svg)](docs/assets/paa-status-ribbon.svg)
+**An AI-assisted personal productivity workspace evolving into a production-grade SaaS platform.**
 
-**Production-Grade SaaS · Active Maintenance — Not Frozen**
-
-[![Live App](https://img.shields.io/badge/Live_App-Render-00C7B7?style=for-the-badge)](https://personal-ai-assistent.onrender.com)
-[![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
-[![Flask](https://img.shields.io/badge/Flask-3.0.3-000000?style=for-the-badge&logo=flask&logoColor=white)](https://flask.palletsprojects.com/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Production-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![Tests](https://img.shields.io/badge/Tests-743%20pass-brightgreen?style=for-the-badge)](#testing--quality)
-[![License](https://img.shields.io/badge/Apache-2.0-blue?style=for-the-badge)](LICENSE)
-
-[Live Application](https://personal-ai-assistent.onrender.com) · [GitHub Repository](https://github.com/aminazimi42-coder/Personal-ai-assistent) · [API v1 OpenAPI](#api-reference--generated-openapi) · [Security Model](#security--privacy) · [Quick Start](#quick-start) · [Roadmap](#roadmap)
+[![Status ribbon](docs/assets/paa-status-ribbon.svg)](docs/assets/paa-status-ribbon.svg)
 
 </div>
 
@@ -23,18 +14,17 @@
 
 ## Truth / Release Status
 
-**Status:** Active Maintenance — Production-Grade SaaS Evolution
-
-Personal AI Assistant has evolved beyond its v1.0.0 foundation into a production-grade multi-tenant SaaS platform. The v1.0.0 release remains immutable history (commit `f02a32f`, tag `v1.0.0`). Post-v1.0.0 evolution follows semantic versioning: security patches, backward-compatible features, and the new SaaS/billing/tenant/evaluation capabilities described in this directive.
-
 | Signal | Verified state |
 | --- | --- |
 | **Live App** | [`personal-ai-assistent.onrender.com`](https://personal-ai-assistent.onrender.com) |
 | **Liveness** | [`/health`](https://personal-ai-assistent.onrender.com/health) |
 | **Readiness** | [`/ready`](https://personal-ai-assistent.onrender.com/ready) (DB connectivity) |
-| **API v1** | `/api/v1/` with generated OpenAPI |
-| **Base release** | v1.0.0 / `f02a32f` / Apache-2.0 |
-| **Current state** | Active Maintenance — Not Frozen |
+| **API v1** | `/api/v1/` with generated OpenAPI spec (`_build_openapi_spec`) |
+| **Current version** | 1.1.0 |
+| **Immutable baseline** | v1.0.0 / `f02a32f` / Apache-2.0 |
+| **Tests** | 754 passing (real count from this run) |
+| **License** | Apache-2.0 ([LICENSE](LICENSE)) |
+| **Status** | Active maintenance — not a commercial market launch yet |
 
 ---
 
@@ -44,13 +34,13 @@ Personal AI Assistant has evolved beyond its v1.0.0 foundation into a production
 
 > **Capture → Retrieve → Understand → Plan → Act → Verify → Remember**
 >
-> Every action verified. Every tool permissioned. Every tenant isolated.
+> Every action verified. Every tool permissioned. Every workspace user-isolated.
 
 ---
 
-## Project Visual Gallery
+## Screenshot Gallery
 
-> Four verified views of the Personal AI Assistant production baseline.
+> Verified views of the Personal AI Assistant application.
 
 <div align="center">
 
@@ -63,65 +53,26 @@ Personal AI Assistant has evolved beyond its v1.0.0 foundation into a production
 
 ---
 
-## Verified Technology Badges
+## True Badges Only
 
-![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white) ![Flask](https://img.shields.io/badge/Flask-3.0.3-000000?style=flat-square&logo=flask&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Production-4169E1?style=flat-square&logo=postgresql&logoColor=white) ![OpenAI](https://img.shields.io/badge/OpenAI-Provider-412991?style=flat-square&logo=openai&logoColor=white) ![Render](https://img.shields.io/badge/Render-Deployed-46E3B7?style=flat-square&logo=render&logoColor=111827) ![Gunicorn](https://img.shields.io/badge/Gunicorn-21.2.0-499A51?style=flat-square) ![pytest](https://img.shields.io/badge/pytest-743%20pass-brightgreen?style=flat-square) ![Apache](https://img.shields.io/badge/Apache-2.0-blue?style=flat-square)
+![Python](https://img.shields.io/badge/Python-3.11-3776AB?style=flat-square&logo=python&logoColor=white)
+![Flask](https://img.shields.io/badge/Flask-3.0.3-000000?style=flat-square&logo=flask&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Production-4169E1?style=flat-square&logo=postgresql&logoColor=white)
+![Apache](https://img.shields.io/badge/Apache-2.0-blue?style=flat-square)
+![pytest](https://img.shields.io/badge/pytest-754%20pass-brightgreen?style=flat-square)
 
----
-
-## Control Center / System Snapshot
-
-[![Personal AI Assistant control center snapshot — verified metrics from live system state](docs/assets/paa-control-center-strip.svg)](docs/assets/paa-control-center-strip.svg)
-
-| Control-plane signal | Verified state |
-| --- | --- |
-| **Live App** | `personal-ai-assistent.onrender.com` |
-| **API surface** | `/api/v1/` with generated OpenAPI spec |
-| **Automated tests** | 743 passing (up from 384 at v1.0.0) |
-| **AI provider** | Abstracted via `LLMProvider` boundary |
-| **Retrieval** | Hybrid keyword + symbol search, context compression |
-| **Memory** | 4-layer (short_term, task, preference, project), user-isolated |
-| **Agent engine** | Durable runs with state machine, cancel, retry, idempotency |
-| **Automation** | DB-backed scheduler with background job queue |
-| **Multi-tenant** | Tenants, memberships, roles, subscriptions |
-| **Billing** | Plan model (free/pro), idempotent webhooks, entitlements |
-| **Security** | Hashed-only tokens, quota enforcement, MIME validation, prompt-injection defense |
-| **Privacy** | Data export, account deletion, safe logging, AI data boundary |
-| **AI evaluation** | 12 scenario families, deterministic, reproducible |
-| **MCP tools** | MCP-compatible schemas routing through tool gateway |
-| **Deployment** | Live Render service with PostgreSQL |
+> No fake coverage badge. Test count reflects the actual run (754/754 pass).
 
 ---
 
-## Table of Contents
+## Journey Frame
 
-1. [Connected Systems](#connected-systems)
-2. [Why Personal AI Assistant](#why-personal-ai-assistant)
-3. [Capability Matrix](#capability-matrix)
-4. [Evidence / System Journey](#evidence--system-journey)
-5. [Architecture](#architecture)
-6. [Technology Stack](#technology-stack)
-7. [Quick Start](#quick-start)
-8. [API Reference + Generated OpenAPI](#api-reference--generated-openapi)
-9. [Testing & Quality](#testing--quality)
-10. [Security & Privacy](#security--privacy)
-11. [AI / Retrieval / Token Architecture](#ai--retrieval--token-architecture)
-12. [Agentic Execution](#agentic-execution)
-13. [Automation](#automation)
-14. [Control Center](#control-center)
-15. [Roadmap](#roadmap)
-16. [Project Timeline / Release History](#project-timeline--release-history)
-17. [Documentation Index](#documentation-index)
-18. [Project Links Hub](#project-links-hub)
-19. [Author](#author)
+| ORIGIN | CURRENT | INTENDED |
+| --- | --- | --- |
+| **v1.0.0 — personal productivity foundation** | **Aligned SaaS core after integrity work** | **Production-grade SaaS market offer** |
+| Tasks, calendar, reminders, AI, voice, auth, quota, Render deployment. 384 tests. Immutable baseline (`f02a32f`, Apache-2.0). | Hashed-only tokens, quota boundaries on all cost routes, workspace DB path with user isolation, real agent executors on allowlisted writes (no simulated COMPLETE), `/api/v1` with generated OpenAPI, tenant vs. workspace boundary documented. 754 tests. | A production-grade SaaS market offering and a later iPhone client. Not yet shipped. |
 
----
-
-## Connected Systems
-
-[![Connected systems visual story — user to verification through workspace, knowledge, memory, AI, tools, and action](docs/assets/paa-connected-systems.svg)](docs/assets/paa-connected-systems.svg)
-
-Personal AI Assistant connects the user's daily workspace to AI-powered knowledge, memory, tools, and verified action. Every system boundary enforces isolation, permissions, and audit. The connected-systems story communicates the flow: **User → Workspace → Knowledge → Memory → AI → Tools → Action → Verification**.
+> This product is not offered to the market until that intended output is real.
 
 ---
 
@@ -134,11 +85,8 @@ Daily cognitive load comes from fragmented tools — tasks in one app, notes in 
 | **Capture-First** | Voice, text, or structured input — all captured and understood |
 | **Retrieval-Grounded** | AI responses use real context from your workspace, not hallucination |
 | **Verified Action** | Every action produces evidence; no fabricated success |
-| **Permissioned Tools** | Every tool call goes through a policy gateway with approval gates |
 | **User-Isolated** | Your data never crosses into another user's context |
 | **Token-Aware** | Context budgets, cost estimation, and retrieval savings are measured |
-| **Tenant-Scoped** | Multi-tenant architecture with workspace-level isolation |
-| **Privacy-First** | Data export, account deletion, and safe logging built in |
 
 ---
 
@@ -185,36 +133,23 @@ Daily cognitive load comes from fragmented tools — tasks in one app, notes in 
 
 | Capability | Status |
 | --- | --- |
-| **Integration Tests (Testcontainers)** | Infrastructure designed; production-like tests pending real PostgreSQL |
+| **Integration Tests (Testcontainers)** | Infrastructure designed; production-like tests pending real PostgreSQL isolation suite |
 | **Live AI Evaluation in CI** | Evaluation framework ready; live AI calls remain isolated and cost-bounded |
+| **Live Payment Processor** | Billing model and webhook path exist; live processor integration not yet proven in production-like env |
+| **Distributed Rate Limiting** | Per-process Flask-Limiter in place; multi-worker distributed limiter not yet proven |
 
 ### Planned
 
+> Future only — owner may add or revise later. Not locked as final.
+
 | Capability | Target |
 | --- | --- |
+| iPhone / App Store client | Native iOS companion app |
+| Richer billing provider | Full live payment processor integration |
+| Distributed rate limiting | Across multiple workers |
 | Cognitive Memory Graph | Temporal, provenance-aware knowledge graph |
 | Decision & Simulation Lab | What-if scenario modeling before consequential actions |
 | Portable Personal AI Runtime | Hybrid cloud/local execution with encrypted local storage |
-
----
-
-## Evidence / System Journey
-
-[![Evidence constellation — from capture through retrieve, understand, plan, act, verify, remember](docs/assets/paa-evidence-constellation.svg)](docs/assets/paa-evidence-constellation.svg)
-
-| Phase | Commit | Evidence |
-| --- | --- | --- |
-| **v1.0.0 Foundation** | `f02a32f` | 20-phase production build, 384 tests, Apache-2.0, deployed |
-| **Security Hardening** | `4313f5c` | Raw token removed, quota bypass fixed, MIME validation, prompt-injection defense |
-| **LLM Provider** | `4313f5c` | Provider abstraction, OpenAI adapter, timeout/retry, cost metadata |
-| **SaaS / Billing** | `4313f5c` | Tenants, memberships, subscriptions, idempotent webhooks, API v1/OpenAPI |
-| **Durable Agents** | `4313f5c` | DB-backed runs, state machine, cancel, retry, idempotency |
-| **Context Compiler** | `4313f5c` | Provenance, relevance, token budgets, selection explanations |
-| **Automation** | `4313f5c` | DB-backed scheduler, background jobs, voice-to-task |
-| **AI Evaluation** | `4313f5c` | 12 scenario families, deterministic, reproducible |
-| **MCP Tools** | `4313f5c` | MCP-compatible schemas routing through tool gateway |
-| **Privacy** | `4313f5c` | Export, delete, safe logging, AI data boundary |
-| **Control Center** | `4313f5c` | Tenant, billing, agent, automation, tool audit metrics |
 
 ---
 
@@ -254,48 +189,22 @@ flowchart TD
     API --> AUTO["Automation<br/>Scheduler · Background Jobs"]
     AUTO --> JOBS["Job Queue<br/>Enqueue · Process · Retry"]
     JOBS --> DB
-
-    API --> V2T["Voice → Task<br/>MIME · Transcribe · Confirm"]
-    API --> EVAL["AI Evaluation<br/>12 Scenario Families"]
-    API --> PRIV["Privacy<br/>Export · Delete · Safe Log"]
-    API --> CTRL["Control Center<br/>Real Metrics Dashboard"]
-    CTRL --> DB
 ```
 
-### Service Architecture Layers
+### Technology Stack
 
-| Layer | Components | Responsibility |
+| Category | Technology | Role |
 | --- | --- | --- |
-| **HTTP/API** | `main.py`, `routes/*.py` | Request routing, response orchestration |
-| **Authentication** | `services/auth_service.py` | Token hashing, expiry, revocation, user lookup |
-| **Application Services** | Task, Calendar, Reminder, AI routes | Business logic orchestration |
-| **Domain Services** | Memory, Retrieval, Agent, Tools, Automation | Domain-specific business logic |
-| **AI/Retrieval** | `llm_provider`, `ai_service`, `code_retrieval`, `knowledge_retrieval`, `context_compiler` | LLM calls, retrieval, context compilation |
-| **Agent/Tools** | `agentic_execution`, `tool_gateway`, `mcp_tools` | Action execution, tool permissions, MCP |
-| **SaaS/Billing** | `tenant_service`, `billing_service` | Multi-tenant, subscriptions, entitlements |
-| **Privacy/Cost** | `privacy`, `cost_intelligence`, `control_center` | Data protection, cost tracking, dashboard |
-| **Persistence** | `db/pool.py`, `db/models.py`, `migrations/` | PostgreSQL connection pool, schema |
-| **External Providers** | `external_api.py`, `voice_to_task.py` | External HTTP, voice transcription |
-
----
-
-## Technology Stack
-
-| Category | Technology | Version | Role |
-| --- | --- | --- | --- |
-| **Runtime** | Python | 3.11 | Application runtime |
-| **Backend** | Flask | 3.0.3 | HTTP routing, REST API, app factory |
-| **ORM/Migrations** | Flask-SQLAlchemy + Flask-Migrate | 3.1.1 + 4.0.7 | Schema management (Alembic) |
-| **Rate Limiting** | Flask-Limiter | 3.5.1 | 3-tier rate limiting |
-| **Database** | PostgreSQL | — | Persistent relational storage |
-| **DB Driver** | psycopg2-binary | 2.9.9 | ThreadedConnectionPool |
-| **AI** | OpenAI Python SDK | 1.30.1 | GPT-4o-mini, Whisper |
-| **Security** | bcrypt | 4.1.2 | Password hashing |
-| **HTTP** | requests | 2.31.0 | External API calls |
-| **Server** | Gunicorn | 21.2.0 | WSGI production server |
-| **Frontend** | HTML5 + CSS3 + Vanilla JS | — | Responsive SPA |
-| **CI/CD** | GitHub Actions | — | Test + secret scan + import smoke |
-| **Deployment** | Render | — | Cloud hosting |
+| **Runtime** | Python 3.11 | Application runtime |
+| **Backend** | Flask 3.0.3 | HTTP routing, REST API, app factory |
+| **ORM/Migrations** | Flask-SQLAlchemy + Flask-Migrate | Schema management (Alembic) |
+| **Rate Limiting** | Flask-Limiter 3.5.1 | 3-tier rate limiting |
+| **Database** | PostgreSQL | Persistent relational storage |
+| **DB Driver** | psycopg2-binary 2.9.9 | ThreadedConnectionPool |
+| **AI** | OpenAI Python SDK 1.30.1 | GPT-4o-mini, Whisper via `LLMProvider` abstraction |
+| **Security** | bcrypt 4.1.2 | Password hashing |
+| **Server** | Gunicorn 21.2.0 | WSGI production server |
+| **Deployment** | Render | Cloud hosting |
 
 ---
 
@@ -313,8 +222,8 @@ source .venv/bin/activate
 # Install dependencies
 pip install -r requirements.txt
 
-# Configure environment
-export DATABASE_URL="postgresql://user:pass@localhost/personal_ai_assistant"
+# Configure environment (see .env.example for full list)
+export DATABASE_URL="postgresql://user:***@localhost/personal_ai_assistant"
 export OPENAI_API_KEY="sk-..."
 export SECRET_KEY="your-secret-key"
 export FLASK_ENV="development"
@@ -333,7 +242,7 @@ gunicorn main:app --config gunicorn.conf.py
 
 ---
 
-## API Reference + Generated OpenAPI
+## API
 
 ### Versioned API v1
 
@@ -353,6 +262,8 @@ All new SaaS capabilities are exposed through `/api/v1/`:
 | `GET` | `/api/v1/ai-evaluation` | Yes | Run AI evaluations |
 | `GET` | `/api/v1/mcp-tools` | Yes | List MCP tool schemas |
 
+The OpenAPI spec is generated by `_build_openapi_spec()` in `routes/api_v1.py` and served at `/api/v1/openapi.json`.
+
 ### Platform Endpoints
 
 | Method | Endpoint | Auth | Description |
@@ -369,7 +280,7 @@ All new SaaS capabilities are exposed through `/api/v1/`:
 | `GET` | `/reminders` | Yes | Due within 1-hour window |
 | `POST` | `/ai` | Yes | Conversational AI chat |
 | `POST` | `/smart-ai` | Yes | Smart AI: reply or task |
-| ` `POST` | `/ai-to-task` | Yes | Extract task from natural language |
+| `POST` | `/ai-to-task` | Yes | Extract task from natural language |
 | `POST` | `/transcribe-voice` | Yes | Voice → text transcription |
 | `POST` | `/agent/execute` | Yes | Execute an agent action |
 | `GET` | `/agent/runs` | Yes | List agent runs |
@@ -379,20 +290,59 @@ All new SaaS capabilities are exposed through `/api/v1/`:
 | `GET` | `/privacy/policy` | No | Privacy policy |
 | `GET` | `/privacy/export` | Yes | Export user data |
 
-> **Auth:** All protected endpoints require `Authorization: Bearer <token>` header.
-> Tokens are 48-byte URL-safe random values, stored as SHA-256 hashes (raw token never persisted), with configurable expiry (default 24h).
+> **Auth:** All protected endpoints require `Authorization: Bearer <token>` header. Tokens are 48-byte URL-safe random values, stored as SHA-256 hashes (raw token never persisted), with configurable expiry (default 24h).
 
 ---
 
-## Testing & Quality
+## Security & Privacy
+
+### Security Controls
+
+| Control | Implementation |
+| --- | --- |
+| **Password Storage** | bcrypt (cost factor 12) |
+| **Token Storage** | SHA-256 hash only — raw token never persisted |
+| **Token Expiry** | Enforced at query time (`token_expires_at > NOW()`) |
+| **Token Revocation** | Immediate — nulls hash on logout |
+| **Anti-Enumeration** | Same error for bad email / bad password |
+| **SQL Injection** | Parameterized queries throughout (`%s` placeholders) |
+| **CORS** | Restrictive — configured origins only, no wildcards |
+| **Security Headers** | X-Content-Type-Options, X-Frame-Options, Referrer-Policy |
+| **Rate Limiting** | 3-tier: login (10/min), AI (20/min), general (60/min) |
+| **AI Quota** | Per-user daily, atomic UPSERT, fail-closed in production |
+| **Quota Bypass** | ai-to-task + transcription + voice-to-task + evaluation all enforce quota |
+| **Upload Security** | MIME validation, filename sanitization, size limits |
+| **Prompt Injection** | Query sanitization, control-char stripping, length bounds |
+| **Tool Permissions** | Least-privilege registry, approval for destructive, audit logging |
+| **MCP Boundary** | MCP tools route through gateway — cannot bypass |
+| **User Isolation** | All queries scoped by `user_id` |
+
+### Privacy Controls
+
+| Control | Implementation |
+| --- | --- |
+| **Data Export** | `GET /privacy/export` — exports all user data |
+| **Account Deletion** | `DELETE /privacy/account` — cascades all user data |
+| **Safe Logging** | `privacy_safe_log()` masks tokens, passwords, emails |
+| **AI Data Boundary** | `enforce_ai_data_boundary()` — classified data not in AI context |
+| **No Transcript/Token Logging** | AI metadata logs model/tokens/duration — never prompt content or raw tokens |
+| **Tool Gateway as Permission Source** | All tool calls pass through the policy gateway before execution |
+
+---
+
+## Testing
 
 | Metric | Value |
 | --- | --- |
-| **Total Tests** | 743 |
-| **Test Modules** | 40+ |
-| **Pass Rate** | 100% (743/743) |
+| **Total Tests** | 754 |
+| **Pass Rate** | 100% (754/754) |
 | **External Dependencies** | None (no real DB or OpenAI calls in tests) |
 | **Test Framework** | pytest 8.2.2 + pytest-mock 3.14.0 |
+
+```bash
+# Run the full test suite
+.venv/bin/python -m pytest tests/ -v --tb=short
+```
 
 ### Test Coverage by Area
 
@@ -412,6 +362,13 @@ All new SaaS capabilities are exposed through `/api/v1/`:
 | Workspace & Routes | 60+ | DB-backed workspace, project CRUD, API routes |
 | Migration Safety | 13+ | Chain validation, syntax, additive upgrade, FK, downgrade |
 
+### What is not yet production-like
+
+- **Testcontainers / real PostgreSQL isolation suite** — not yet integrated; tests use mocked connection pools
+- **Live payment processor** — billing model and webhook path exist; no live processor integration proven
+- **Distributed rate limiting** — per-process Flask-Limiter only; multi-worker distributed limiter not proven
+- **iPhone / App Store binary** — no iOS client exists
+
 ### CI Pipeline
 
 GitHub Actions CI runs on every push to `main` and every PR:
@@ -424,266 +381,49 @@ GitHub Actions CI runs on every push to `main` and every PR:
 
 ---
 
-## Security & Privacy
-
-### Security Controls
-
-| Control | Implementation | Verified By |
-| --- | --- | --- |
-| **Password Storage** | bcrypt (cost factor 12) | `test_security_hardening.py` |
-| **Token Storage** | SHA-256 hash only — raw token never persisted | `test_auth_service.py`, `test_security_hardening.py` |
-| **Token Expiry** | Enforced at query time (`token_expires_at > NOW()`) | `test_auth_service.py` |
-| **Token Revocation** | Immediate — nulls hash on logout | `test_api_routes.py` |
-| **Anti-Enumeration** | Same error for bad email / bad password | `test_security_hardening.py` |
-| **SQL Injection** | Parameterized queries throughout (`%s` placeholders) | `test_security_hardening.py` |
-| **CORS** | Restrictive — configured origins only, no wildcards | `test_production_env.py` |
-| **Security Headers** | X-Content-Type-Options, X-Frame-Options, Referrer-Policy | `test_security_hardening.py` |
-| **Rate Limiting** | 3-tier: login (10/min), AI (20/min), general (60/min) | `test_rate_limiter.py` |
-| **AI Quota** | Per-user daily, atomic UPSERT, fail-closed in production | `test_usage_service.py`, `test_quota_bypass.py` |
-| **Quota Bypass** | ai-to-task + transcription enforce quota | `test_quota_bypass.py` |
-| **Upload Security** | MIME validation, filename sanitization, size limits | `test_quota_bypass.py` |
-| **Prompt Injection** | Query sanitization, control-char stripping, length bounds | `test_quota_bypass.py` |
-| **Tool Permissions** | Least-privilege registry, approval for destructive | `test_tool_gateway.py`, `test_mcp_tools.py` |
-| **MCP Boundary** | MCP tools route through gateway — cannot bypass | `test_mcp_tools.py` |
-| **User Isolation** | All queries scoped by `user_id` | `test_user_isolation.py` |
-| **Secrets** | Environment variables only, validated at startup | `test_config.py` |
-
-### Privacy Controls
-
-| Control | Implementation |
-| --- | --- |
-| **Data Export** | `GET /privacy/export` — exports all user data |
-| **Account Deletion** | `DELETE /privacy/account` — cascades all user data |
-| **Memory Deletion** | User-controlled memory deletion |
-| **Safe Logging** | `privacy_safe_log()` masks tokens, passwords, emails |
-| **AI Data Boundary** | `enforce_ai_data_boundary()` — classified data not in AI context |
-| **Data Classification** | PUBLIC, INTERNAL, CONFIDENTIAL, RESTRICTED |
-| **Retention Policies** | Per-category retention with expiry |
-| **Privacy Policy** | `GET /privacy/policy` — public endpoint |
-
----
-
-## AI / Retrieval / Token Architecture
-
-### LLM Provider Abstraction
-
-```
-Application Logic → LLMProvider (abstract) → OpenAIProvider (adapter) → OpenAI API
-```
-
-| Feature | Implementation |
-| --- | --- |
-| **Provider Registry** | `get_provider(name)`, `register_provider(name, provider)` |
-| **Default Provider** | OpenAIProvider with configurable model |
-| **Timeout** | Configurable `AI_REQUEST_TIMEOUT` (default 30s) |
-| **Retries** | Bounded with exponential backoff |
-| **Error Normalization** | `LLMError` exception class |
-| **Cost Metadata** | Model, input/output tokens, estimated cost |
-| **Telemetry** | Model, duration, tokens logged per call |
-
-### Retrieval Pipeline
-
-```
-USER REQUEST → QUERY SANITIZATION → REPOSITORY INGESTION →
-AST SYMBOL EXTRACTION → HYBRID SEARCH (keyword + symbol) →
-RELEVANCE RANKING (type-weighted) → CONTEXT COMPRESSION →
-TOKEN-BUDGET GUARD → CONTEXT COMPILER → LLM → RESPONSE
-```
-
-| Component | Key Features |
-| --- | --- |
-| **Code Retrieval** | AST parsing, hybrid search, context compression, tiktoken counting |
-| **Memory Engine** | 4-layer (short_term/task/preference/project), user-isolated, DB-backed |
-| **Knowledge Retrieval** | Typed sources (code/memory/task/note/project), ranked, token-budgeted |
-| **Context Compiler** | Provenance, relevance ranking, token budget, selection explanation |
-| **Cost Intelligence** | Model routing, response caching, cost estimation, monthly limits |
-
-### Token Budget
-
-| Metric | Measurement |
-| --- | --- |
-| Input tokens without retrieval | Measured per AI call |
-| Input tokens with retrieval | Measured per AI call |
-| Tokens saved by retrieval | Computed difference |
-| Context size | Token count of assembled context |
-| Retrieval latency | `time.monotonic()` measured |
-| Estimated cost | Per-model pricing table |
-
----
-
-## Agentic Execution
-
-```
-PLAN → RETRIEVE → ANALYZE → PROPOSE → APPROVAL → EXECUTE → VERIFY → EVIDENCE → REPORT
-```
-
-| Feature | Implementation |
-| --- | --- |
-| **Persistent Runs** | `agent_runs` table with state machine |
-| **State Machine** | PENDING → APPROVED → EXECUTING → COMPLETED/FAILED/DENIED/CANCELED |
-| **Idempotency** | Unique `action_id` — completed runs return existing result |
-| **Cancellation** | `cancel_action(action_id, user_id)` |
-| **Retries** | `retry_action(action_id, user_id)` — re-execute failed actions |
-| **Approval Gates** | Destructive actions require explicit approval |
-| **User Isolation** | All runs scoped by `user_id` |
-| **Audit Trail** | Created, updated, completed timestamps |
-| **API** | `POST /agent/execute`, `POST /agent/approve`, `POST /agent/cancel`, `GET /agent/runs` |
-
----
-
-## Automation
-
-```
-TRIGGER → CONDITION → AI PROCESSING → ACTION → VERIFICATION
-```
-
-| Feature | Implementation |
-| --- | --- |
-| **Durable Automations** | DB-backed with `automations` table |
-| **Background Jobs** | Job queue with `jobs` table — enqueue, process, retry |
-| **Triggers** | Daily, hourly, event, manual |
-| **Idempotency** | Duplicate detection by payload hash |
-| **Retries** | Max retries with exponential backoff |
-| **Pause/Resume** | Enable/disable automations |
-| **Daily Limits** | Max executions per day per automation |
-| **Execution History** | `automation_runs` table |
-| **API** | `POST /automations`, `GET /automations`, `POST /automations/{id}/execute` |
-
----
-
-## Control Center
-
-Real metrics from live service state — not a static mock dashboard.
-
-| Metric | Source |
-| --- | --- |
-| AI calls today | `usage_service.get_usage()` |
-| Monthly cost | `cost_intelligence.get_monthly_usage()` |
-| Total tokens | Aggregated from AI call metadata |
-| Retrieval savings | Token delta with/without retrieval |
-| Memory count by type | `memory_engine` aggregation |
-| Workspace/project count | `workspace` service |
-| Task count by status | Task queries |
-| Automation count/status | `automation` service |
-| Agent run count | `agentic_execution` service |
-| Tool audit events | `tool_gateway` audit log |
-| Tenant/billing status | `tenant_service` + `billing_service` |
-| Rate limit configuration | `rate_limiter` settings |
-| CORS origins count | `settings.CORS_ALLOWED_ORIGINS` |
-
-**API:** `GET /control-center` (authenticated), `GET /control-center/cost` (authenticated)
-
----
-
 ## Roadmap
 
-> The following stages are **future-only** — not part of the current release.
+> Future only — owner may add or revise later. Not frozen.
 
-### ROADMAP 01 — Cognitive Memory Graph
-
-Temporal, provenance-aware personal knowledge graph connecting person, preference, project, task, conversation, decision, document, code, and outcome.
-
-### ROADMAP 02 — Decision & Simulation Lab
-
-Structured what-if scenario modeling before consequential actions — options, assumptions, expected effects, risks, dependencies, uncertainty, and verification plans.
-
-### ROADMAP 03 — Portable Personal AI Runtime
-
-Hybrid cloud/local execution with encrypted local storage and explicit policy controlling what data may leave the device.
-
-### ROADMAP 04 — Production Integration Test Suite
-
-Testcontainers PostgreSQL integration tests for real DB, migration upgrade/downgrade, concurrent quota, pool behavior, multi-worker, and tenant isolation.
-
----
-
-## Project Timeline / Release History
-
-| Release | Date | Tests | Description |
-| --- | --- | --- | --- |
-| **v1.0.0** | 2026-09-21 | 384 | Initial production release — 20 phases, Apache-2.0, deployed |
-| **v1.1.0** | 2026-09-22 | 743 | Evolution: SaaS, billing, tenants, agents, MCP, evaluation, privacy |
-
-See [CHANGELOG.md](CHANGELOG.md) for the full release notes.
-
----
-
-## Documentation Index
-
-| Document | Path | Description |
-| --- | --- | --- |
-| **Project Directive** | `PROJECT_DIRECTIVE.txt` | Master engineering directive |
-| **Changelog** | `CHANGELOG.md` | Release history and changes |
-| **Handoff** | `HANDOFF.md` | Engineering handoff notes |
-| **License** | `LICENSE` | Apache 2.0 full text |
-| **Environment Example** | `.env.example` | Configuration template |
-| **Migration Source** | `migrations/versions/` | Alembic migration chain (001–009) |
-| **OpenAPI Spec** | `/api/v1/openapi.json` | Generated OpenAPI specification (live) |
-
----
-
-## Project Links Hub
-
-| Link | URL |
+| Stage | Target |
 | --- | --- |
-| **Live Application** | https://personal-ai-assistent.onrender.com |
-| **GitHub Repository** | https://github.com/aminazimi42-coder/Personal-ai-assistent |
-| **Health Check** | https://personal-ai-assistent.onrender.com/health |
-| **Readiness Check** | https://personal-ai-assistent.onrender.com/ready |
-| **App Info** | https://personal-ai-assistent.onrender.com/app-info |
+| **iPhone / App Store client** | Native iOS companion app |
+| **Richer billing provider** | Full live payment processor integration |
+| **Distributed rate limiting** | Across multiple workers |
+| **Cognitive Memory Graph** | Temporal, provenance-aware knowledge graph connecting person, preference, project, task, conversation, decision, document, code, and outcome |
+| **Decision & Simulation Lab** | Structured what-if scenario modeling before consequential actions |
+| **Portable Personal AI Runtime** | Hybrid cloud/local execution with encrypted local storage and explicit policy controlling what data may leave the device |
+| **Production Integration Test Suite** | Testcontainers PostgreSQL integration tests for real DB, migration upgrade/downgrade, concurrent quota, pool behavior, multi-worker, and tenant isolation |
 
 ---
 
 ## Author
 
-[![Amin Azimi AI Architect author command deck](docs/assets/author-command-deck.svg)](docs/assets/author-command-deck.svg)
+<div align="center">
 
-# AMIN AZIMI
+[![Engineer portrait](docs/assets/bob-agent-portrait.svg)](docs/assets/bob-agent-portrait.svg)
 
+</div>
+
+### AMIN AZIMI
 ### AI ARCHITECT
+### End-to-End Systems Development
+### Azimi Innovation Lab
 
-**End-to-End AI Systems Architecture · AI Product Architecture · Evidence-Based AI · Production AI Systems**
-
-Personal AI Assistant is architected as a complete production-grade SaaS platform: from security-hardened authentication and multi-tenant isolation to AI-powered retrieval, durable agentic execution, permissioned tool gateway, and verified action with evidence. The author position is system-level and end-to-end, with responsibility centered on architectural integrity, reproducibility, security boundaries, and truthful technical communication.
-
-[![Bob engineering agent portrait — the bounded engineering copilot](docs/assets/bob-agent-portrait.svg)](docs/assets/bob-agent-portrait.svg)
-
-### Bob Engineering Agent
-
-Bob is the **Engineering copilot** used to help design, implement, inspect, and qualify this repository. Bob is **not a deployed runtime service**, production operator, or autonomous decision-maker inside Personal AI Assistant.
-
-| Responsibility | What Bob may do | Required evidence |
-| --- | --- | --- |
-| **Repository analysis** | Inspect architecture, contracts, tests, migrations | File identities, diffs, reproducible diagnostics |
-| **Implementation support** | Propose bounded code and documentation changes | Test-first failure, focused verification, atomic scope |
-| **Quality assurance** | Run formatting, linting, tests, coverage | Captured command output and fail-closed result |
-| **Deployment preparation** | Diagnose Render and migration failures | Local build, health check, pinned commit evidence |
-| **Documentation** | Maintain truthful architecture and release status | Links to source, tests, checkpoints, live endpoints |
-| **Rollback protection** | Preserve clean state when a gate fails | Explicit rollback and post-failure repository status |
-
-### Bob's Operating Contract
-
-1. Human intent defines scope before any repository-changing action.
-2. Changes are minimized, testable, reviewable, and bound to explicit files.
-3. Missing evidence, failed tests, or conflicting state never becomes a pass.
-4. Bob cannot authorize production use, paid services, credentials, or legal claims.
-5. Git pushes and deployments remain explicit human-controlled actions.
-6. Every successful change ends with reproducible evidence and a clear next gate.
-
-**Azimi Innovation Lab**
+Personal AI Assistant is a personal laboratory for AI Product Architecture and Evidence-Based AI — a production-grade SaaS system built on evidence over claim, isolation over demo, and verification over a green HTTP status. The work spans end-to-end Systems Development: security-hardened authentication, multi-tenant isolation, retrieval-grounded AI, durable agentic execution, permissioned tool access, and honest technical communication. Azimi Innovation Lab is the author's personal workspace — not an external company. AI Product Architecture · Evidence-Based AI · Production AI Systems.
 
 ---
 
+## Footer
+
+| Link | URL |
+| --- | --- |
+| **Live Application** | https://personal-ai-assistent.onrender.com |
+| **GitHub Repository** | https://github.com/aminazimi42-coder/Personal-ai-assistent |
+| **License** | Apache 2.0 — see [LICENSE](LICENSE) |
+
 <div align="center">
 
-**PERSONAL AI ASSISTANT**
-**PRODUCTION-GRADE SaaS**
-**ENGINEERING-COMPLETE FOR THIS DIRECTIVE**
-**SECURITY-VERIFIED · DATA-INTEGRITY-VERIFIED · AI-EVALUATED**
-**DOCUMENTATION-COMPLETE · CINEMATIC README COMPLETE**
-**RELEASE/VERSION SYNCHRONIZED · REMOTE-VERIFIED**
-**ACTIVE MAINTENANCE — NOT FROZEN**
-
-© Azimi Innovation Lab — Apache 2.0
+© Amin Azimi — Apache 2.0
 
 </div>

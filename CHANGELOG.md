@@ -76,14 +76,14 @@ and production-grade SaaS capabilities. v1.0.0 remains immutable history.
 
 ### Cinematic README
 
-- Rebuilt README using AILORA-inspired cinematic documentation/visual language
+- Rebuilt README with project-specific cinematic documentation and visual language
 - Hero, connected-systems, status-ribbon, evidence-constellation, control-center SVGs
-- Bob engineering-agent portrait in Author section
-- 27-section structure per directive specification
+- Honest truth table, journey frame, capability matrix, real test count published
+- No foreign product names, no coding-agent names, no fake coverage badges
 
 ### Test Count
 
-- 384 → 743 tests (359 new tests across 15+ new test modules)
+- 384 → 754 tests (370 new tests across 15+ new test modules)
 
 ## [1.0.0] — 2026-09-22
 
