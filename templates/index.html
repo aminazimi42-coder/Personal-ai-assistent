@@ -95,11 +95,26 @@
             <div class="widget-row">
                 <h3 class="widget-heading">About</h3>
             </div>
-            <div class="task-item quiet-card" id="aboutCard">
-                <span class="field-label">App Name</span> Personal AI Assistant<br>
-                <span class="field-label">Version</span> <span id="aboutVersion">1.1.0</span><br>
-                <span class="field-label">Author</span> <span id="aboutAuthor">Amin Azimi</span><br>
-                <span class="field-label">Description</span> <span id="aboutDescription">A smart productivity assistant for tasks, appointments, reminders, live location, exchange rates, voice input, and AI-powered help.</span>
+            <div class="task-item author-card">
+                <div class="author-header">
+                    <img src="{{ url_for('static', filename='engineer-portrait.svg') }}?v=1" alt="Engineer portrait" class="author-portrait">
+                    <div class="author-info">
+                        <div class="author-name">AMIN AZIMI</div>
+                        <div class="author-role">AI Architect</div>
+                        <div class="author-org">End-to-End Systems Development — Azimi Innovation Lab</div>
+                    </div>
+                </div>
+                <p class="author-bio">
+                    End-to-end systems development — from database schema to deployment.
+                    Every feature is verified by real test runs in repo CI, not claims.
+                    Evidence over assertion: quota is enforced at every cost route, and
+                    auth tokens are hashed at rest.
+                </p>
+                <div class="author-meta">
+                    <span class="meta-pill">Version <span id="aboutVersion">1.1.0</span></span>
+                    <span class="meta-pill">Apache-2.0</span>
+                    <span class="meta-pill meta-live" id="liveStatusPill">Live</span>
+                </div>
             </div>
         </section>
 
@@ -281,8 +296,8 @@
                 </div>
                 <p class="author-bio">
                     End-to-end systems development — from database schema to deployment.
-                    Every feature is verified by real test runs, not claims. Evidence over
-                    assertion: 802 tests pass, quota is enforced at every cost route, and
+                    Every feature is verified by real test runs in repo CI, not claims.
+                    Evidence over assertion: quota is enforced at every cost route, and
                     auth tokens are hashed at rest.
                 </p>
                 <div class="author-meta">

@@ -141,7 +141,7 @@ def _build_openapi_spec() -> dict:
                     "properties": {
                         "id": {"type": "integer"},
                         "tenant_id": {"type": "integer"},
-                        "plan": {"type": "string", "enum": ["free", "pro"]},
+                        "plan": {"type": "string", "enum": ["free", "pro", "pro_plus"]},
                         "status": {
                             "type": "string",
                             "enum": ["active", "canceled", "past_due"],
@@ -160,7 +160,7 @@ def _build_openapi_spec() -> dict:
                 "SubscriptionCreate": {
                     "type": "object",
                     "properties": {
-                        "plan": {"type": "string", "enum": ["free", "pro"]},
+                        "plan": {"type": "string", "enum": ["free", "pro", "pro_plus"]},
                     },
                 },
                 "Entitlements": {

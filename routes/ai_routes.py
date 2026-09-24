@@ -260,6 +260,11 @@ def init_ai_routes(app, get_connection):
             except EntitlementError as ee:
                 return jsonify({"status": "error", "message": str(ee)}), 403
 
+            # Provider check — BEFORE quota so a 503 (no API key) does not
+            # consume a quota unit.
+            if not _ai_provider_configured():
+                return _ai_error_response("AI provider not configured", 503)
+
             # Quota enforcement — transcription also incurs an AI call
             allowed, _ = check_and_increment(current_user["id"], get_connection)
             if not allowed:
@@ -293,10 +298,6 @@ def init_ai_routes(app, get_connection):
                     "status": "error",
                     "message": f"Unsupported audio type: {content_type}. Allowed: {', '.join(settings.ALLOWED_AUDIO_MIME_TYPES)}",
                 }), 415
-
-            # Provider check — after input validation, before the AI call
-            if not _ai_provider_configured():
-                return _ai_error_response("AI provider not configured", 503)
 
             # Sanitize filename to prevent path traversal
             safe_name = os.path.basename(audio_file.filename)
@@ -359,6 +360,11 @@ def init_ai_routes(app, get_connection):
             except EntitlementError as ee:
                 return jsonify({"status": "error", "message": str(ee)}), 403
 
+            # Provider check — BEFORE quota so a 503 (no API key) does not
+            # consume a quota unit.
+            if not _ai_provider_configured():
+                return _ai_error_response("AI provider not configured", 503)
+
             # Quota enforcement — voice-to-task incurs an AI call
             allowed, _ = check_and_increment(current_user["id"], get_connection)
             if not allowed:
@@ -390,10 +396,6 @@ def init_ai_routes(app, get_connection):
                     "status": "error",
                     "message": f"Unsupported audio type: {content_type}. Allowed: {', '.join(settings.ALLOWED_AUDIO_MIME_TYPES)}",
                 }), 415
-
-            # Provider check — after input validation, before the AI call
-            if not _ai_provider_configured():
-                return _ai_error_response("AI provider not configured", 503)
 
             from services.voice_to_task import process_voice_to_task
 

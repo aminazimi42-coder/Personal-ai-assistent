@@ -183,6 +183,42 @@ function updateLoggedInUiState() {
     updateSendButtonState();
 }
 
+/* ---- Proactive session validation on page load ---- */
+/* Calls /me (cheap auth check).  200 → mark logged-in and load data.
+   401 → clear token, show login panel, show the server message.
+   Never leave a ghost session. */
+async function validateSession() {
+    if (!getAuthToken()) {
+        updateLoggedInUiState();
+        return;
+    }
+
+    try {
+        const res = await authorizedFetch("/me");
+        if (res.ok) {
+            const data = await res.json();
+            if (data && data.status === "success") {
+                updateAuthStatus("Logged in");
+                updateLoggedInUiState();
+                startReminderAutoRefresh();
+                loadTasks();
+                loadAppointments();
+                loadReminders();
+                loadQuota();
+                return;
+            }
+        }
+
+        // 401 or non-success — authorizedFetch already cleared the token
+        // and showed the login panel with the server message.
+        updateLoggedInUiState();
+    } catch (error) {
+        console.error("Session validation failed:", error);
+        updateAuthStatus("Session check failed — please log in again.");
+        updateLoggedInUiState();
+    }
+}
+
 /* ---- Send button is disabled until auth is valid ---- */
 function updateSendButtonState() {
     if (!sendButton) return;
@@ -1182,7 +1218,21 @@ async function sendAudioToServer(audioBlob) {
         }
 
         const formData = new FormData();
-        formData.append("audio", audioBlob, "voice.webm");
+
+        // Derive filename + extension from the actual blob MIME type so
+        // Whisper receives a correctly-named file on iOS (audio/mp4, etc.).
+        const blobType = (audioBlob.type || lastRecordedAudioMimeType || "audio/webm").split(";")[0];
+        let ext = ".webm";
+        if (blobType.includes("mp4") || blobType.includes("m4a")) {
+            ext = ".mp4";
+        } else if (blobType.includes("ogg")) {
+            ext = ".ogg";
+        } else if (blobType.includes("wav")) {
+            ext = ".wav";
+        } else if (blobType.includes("mpeg") || blobType.includes("mp3")) {
+            ext = ".mp3";
+        }
+        formData.append("audio", audioBlob, "voice" + ext);
 
         setVoiceStatus("Processing voice...");
 
@@ -2101,17 +2151,12 @@ restoreCachedLocation();
 initVoiceRecording();
 updateVoiceButtonsState();
 
-if (getAuthToken()) {
-    startReminderAutoRefresh();
-}
+/* Proactive session validation on boot: if a token exists, call /me
+   before data loads.  401 → clear token, show login panel. */
+validateSession();
 
-loadTasks();
-loadAppointments();
-loadReminders();
 loadAppInfo();
 loadExchangeRates();
-loadQuota();
-
 loadWeather();
 
 

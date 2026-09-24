@@ -5,6 +5,7 @@ Uses centralized auth_service — no duplicate logic.
 """
 
 import logging
+from datetime import datetime, timezone
 
 from flask import Blueprint, jsonify, request
 from psycopg2.extras import RealDictCursor
@@ -137,12 +138,46 @@ def init_user_routes(app, get_connection):
                 token_hash = hash_token(raw_token)
                 expires_at = token_expiry()
 
-                cur.execute("""
-                    UPDATE users
-                    SET auth_token_hash = %s,
-                        token_expires_at = %s
-                    WHERE id = %s
-                """, (token_hash, expires_at, user["id"]))
+                # Multi-session: if the primary slot is already occupied by a
+                # valid (non-expired) hash, use the secondary slot so the first
+                # device's token stays valid.  If the primary is free or
+                # expired, reuse it.  This prevents single-slot wipe.
+                cur.execute(
+                    "SELECT auth_token_hash, token_expires_at "
+                    "FROM users WHERE id = %s",
+                    (user["id"],),
+                )
+                existing = cur.fetchone()
+                now = datetime.now(timezone.utc)
+                primary_valid = (
+                    existing
+                    and existing.get("auth_token_hash")
+                    and (
+                        existing.get("token_expires_at") is None
+                        or existing["token_expires_at"] > now
+                    )
+                )
+
+                if primary_valid:
+                    # Primary still valid — use secondary slot.
+                    cur.execute(
+                        "UPDATE users "
+                        "SET auth_token_hash_2 = %s, "
+                        "    token_expires_at_2 = %s "
+                        "WHERE id = %s",
+                        (token_hash, expires_at, user["id"]),
+                    )
+                else:
+                    # Primary free or expired — reuse it.
+                    cur.execute(
+                        "UPDATE users "
+                        "SET auth_token_hash = %s, "
+                        "    token_expires_at = %s, "
+                        "    auth_token_hash_2 = NULL, "
+                        "    token_expires_at_2 = NULL "
+                        "WHERE id = %s",
+                        (token_hash, expires_at, user["id"]),
+                    )
                 conn.commit()
             finally:
                 cur.close()
@@ -177,14 +212,29 @@ def init_user_routes(app, get_connection):
             conn = get_connection()
             cur = conn.cursor(cursor_factory=RealDictCursor)
             try:
-                cur.execute("""
-                    UPDATE users
-                    SET auth_token_hash = NULL,
-                        token_expires_at = NULL
-                    WHERE auth_token_hash = %s
-                    RETURNING id
-                """, (token_hash,))
+                # Try primary slot first.
+                cur.execute(
+                    "UPDATE users "
+                    "SET auth_token_hash = NULL, "
+                    "    token_expires_at = NULL "
+                    "WHERE auth_token_hash = %s "
+                    "RETURNING id",
+                    (token_hash,),
+                )
                 revoked = cur.fetchone()
+
+                if not revoked:
+                    # Try secondary slot.
+                    cur.execute(
+                        "UPDATE users "
+                        "SET auth_token_hash_2 = NULL, "
+                        "    token_expires_at_2 = NULL "
+                        "WHERE auth_token_hash_2 = %s "
+                        "RETURNING id",
+                        (token_hash,),
+                    )
+                    revoked = cur.fetchone()
+
                 conn.commit()
             finally:
                 cur.close()

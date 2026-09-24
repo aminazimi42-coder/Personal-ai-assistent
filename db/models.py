@@ -26,6 +26,10 @@ class User(db.Model):
     # Legacy auth_token column removed in migration 005_remove_legacy_auth_token.
     auth_token_hash = db.Column(db.Text, nullable=True, index=True)
     token_expires_at = db.Column(db.DateTime(timezone=True), nullable=True)
+    # Second token slot (migration 011) — allows two concurrent sessions
+    # so login on a second device does not invalidate the first.
+    auth_token_hash_2 = db.Column(db.Text, nullable=True, index=True)
+    token_expires_at_2 = db.Column(db.DateTime(timezone=True), nullable=True)
     # Multi-tenant: nullable so existing users are not forced into a tenant.
     tenant_id = db.Column(
         db.Integer,

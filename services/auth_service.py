@@ -117,6 +117,9 @@ def get_current_user(get_connection):
     """
     Authenticate the current request by bearer token.
 
+    Checks both auth_token_hash (primary) and auth_token_hash_2 (secondary)
+    so a second login on another device does not invalidate the first.
+
     Returns:
         (user_dict, None, None)        — authenticated
         (None, error_body_dict, code)  — not authenticated
@@ -131,14 +134,26 @@ def get_current_user(get_connection):
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     try:
-        # Only match by hashed token — raw tokens are never stored
-        cur.execute("""
-            SELECT id, name, email, created_at, token_expires_at
-            FROM users
-            WHERE auth_token_hash = %s
-              AND (token_expires_at IS NULL OR token_expires_at > %s)
-        """, (token_hash, now))
+        # Match either token slot — both are checked so a second login
+        # on another device does not invalidate the first.
+        cur.execute(
+            "SELECT id, name, email, created_at, token_expires_at "
+            "FROM users "
+            "WHERE auth_token_hash = %s "
+            "  AND (token_expires_at IS NULL OR token_expires_at > %s)",
+            (token_hash, now),
+        )
         user = cur.fetchone()
+
+        if not user:
+            cur.execute(
+                "SELECT id, name, email, created_at, token_expires_at_2 "
+                "FROM users "
+                "WHERE auth_token_hash_2 = %s "
+                "  AND (token_expires_at_2 IS NULL OR token_expires_at_2 > %s)",
+                (token_hash, now),
+            )
+            user = cur.fetchone()
     finally:
         cur.close()
         from db.pool import return_connection
@@ -155,6 +170,9 @@ def _lookup_user_by_token(token_hash: str) -> int | None:
     Lightweight token-to-user-id lookup for rate limiting.
     Returns the user ID if a valid (non-expired) token hash matches,
     or None if not found.  Does NOT raise — callers handle None.
+
+    Checks both token slots (primary and secondary) so a user whose
+    session is in the second slot is still rate-limited correctly.
     """
     try:
         from db.pool import get_connection, return_connection
@@ -163,12 +181,21 @@ def _lookup_user_by_token(token_hash: str) -> int | None:
         conn = get_connection()
         cur = conn.cursor()
         try:
-            cur.execute("""
-                SELECT id FROM users
-                WHERE auth_token_hash = %s
-                  AND (token_expires_at IS NULL OR token_expires_at > %s)
-            """, (token_hash, now))
+            cur.execute(
+                "SELECT id FROM users "
+                "WHERE auth_token_hash = %s "
+                "  AND (token_expires_at IS NULL OR token_expires_at > %s)",
+                (token_hash, now),
+            )
             row = cur.fetchone()
+            if not row:
+                cur.execute(
+                    "SELECT id FROM users "
+                    "WHERE auth_token_hash_2 = %s "
+                    "  AND (token_expires_at_2 IS NULL OR token_expires_at_2 > %s)",
+                    (token_hash, now),
+                )
+                row = cur.fetchone()
         finally:
             cur.close()
             return_connection(conn)
