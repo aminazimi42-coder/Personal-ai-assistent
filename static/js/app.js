@@ -54,6 +54,19 @@ const weatherConditionText = document.getElementById("weatherConditionText");
 const weatherHumidityText = document.getElementById("weatherHumidityText");
 const weatherWindText = document.getElementById("weatherWindText");
 
+/* ---- Quota panel elements ---- */
+const loginPanel = document.getElementById("loginPanel");
+const accountQuotaPanel = document.getElementById("accountQuotaPanel");
+const refreshQuotaButton = document.getElementById("refreshQuotaButton");
+const quotaPlanText = document.getElementById("quotaPlanText");
+const quotaLimitText = document.getElementById("quotaLimitText");
+const quotaUsedText = document.getElementById("quotaUsedText");
+const quotaRemainingText = document.getElementById("quotaRemainingText");
+const quotaStatusText = document.getElementById("quotaStatusText");
+
+/* ---- Message error element ---- */
+const messageError = document.getElementById("messageError");
+
 const AUTH_TOKEN_STORAGE_KEY = "personal_ai_auth_token";
 const LOCATION_STORAGE_KEY = "personal_ai_live_location_cache";
 const AUTO_REMINDER_INTERVAL_MS = 30000;
@@ -78,6 +91,9 @@ let voiceRecordingSupported = false;
 let lastRecordedAudioBlob = null;
 let lastRecordedAudioUrl = "";
 let lastRecordedAudioMimeType = "";
+
+/* Track the tab the user was on when a 401 occurred so we can return there. */
+let pendingReturnTab = null;
 
 function formatDateForDisplay(value) {
     if (!value) {
@@ -156,10 +172,26 @@ function updateAuthStatus(text) {
 }
 
 function updateLoggedInUiState() {
-    if (getAuthToken()) {
-        updateAuthStatus("Logged in");
-    } else {
-        updateAuthStatus("Not logged in");
+    const hasToken = !!getAuthToken();
+    if (loginPanel) {
+        loginPanel.classList.toggle("is-hidden", hasToken);
+    }
+    if (accountQuotaPanel) {
+        accountQuotaPanel.classList.toggle("is-hidden", !hasToken);
+    }
+    updateAuthStatus(hasToken ? "Logged in" : "Not logged in");
+    updateSendButtonState();
+}
+
+/* ---- Send button is disabled until auth is valid ---- */
+function updateSendButtonState() {
+    if (!sendButton) return;
+    const hasToken = !!getAuthToken();
+    sendButton.disabled = !hasToken;
+    if (!hasToken && messageError) {
+        messageError.textContent = "Please log in on the Account tab to send messages.";
+    } else if (messageError) {
+        messageError.textContent = "";
     }
 }
 
@@ -182,6 +214,27 @@ function togglePasswordVisibility() {
     );
 }
 
+/* ---- On 401: show a real login panel that returns to the same tab ---- */
+function showLoginPanelForAuth() {
+    const activeTab = document.querySelector(".bottom-nav-item.active");
+    pendingReturnTab = activeTab ? activeTab.dataset.tab : null;
+
+    updateAuthStatus("Session expired — please log in again.");
+
+    if (typeof showAppTab === "function") {
+        showAppTab("account");
+    }
+
+    if (loginPanel) {
+        loginPanel.classList.remove("is-hidden");
+    }
+    if (accountQuotaPanel) {
+        accountQuotaPanel.classList.add("is-hidden");
+    }
+
+    updateSendButtonState();
+}
+
 async function authorizedFetch(url, options = {}) {
     const existingHeaders = options.headers || {};
     const finalOptions = {
@@ -195,10 +248,10 @@ async function authorizedFetch(url, options = {}) {
         clearAuthToken();
         stopReminderAutoRefresh();
         shownReminderIds = new Set();
-        updateAuthStatus("Please login again");
+        showLoginPanelForAuth();
 
         if (statusText) {
-            statusText.textContent = "Please login again";
+            statusText.textContent = "Please log in on the Account tab.";
         }
     }
 
@@ -227,8 +280,8 @@ function renderTasks(tasks) {
         <div class="task-item ${isDone ? "task-done" : ""}">
             <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:12px;">
                 <div>
-                    <strong style="font-size:16px;">${escapeHtml(title)}</strong><br>
-                    <span style="color:#64748b;font-size:13px;">
+                    <strong style="font-size:15px;color:var(--text-primary);">${escapeHtml(title)}</strong><br>
+                    <span style="color:var(--text-muted);font-size:13px;">
                         ${escapeHtml(description)}
                     </span>
                 </div>
@@ -238,9 +291,8 @@ function renderTasks(tasks) {
                 </span>
             </div>
 
-            <div style="margin-top:12px;font-size:13px;color:#334155;">
-                📅 Due: ${escapeHtml(dueDate)}<br>
-                ⚡ Priority: ${escapeHtml(priority)}
+            <div style="margin-top:10px;font-size:13px;color:var(--text-muted);">
+                Due: ${escapeHtml(dueDate)} · Priority: ${escapeHtml(priority)}
             </div>
 
             <div class="task-actions" style="margin-top:12px;">
@@ -268,12 +320,13 @@ function renderAppointments(appointments) {
         <div class="task-item">
             <strong>${escapeHtml(appointment.title)}</strong><br>
             ${escapeHtml(appointment.description || "No description")}<br>
-            Appointment ID: ${appointment.id}<br>
-            Time: ${escapeHtml(formatAppointmentTimeForDisplay(appointment.appointment_time))}<br>
-            Location: ${escapeHtml(appointment.location || "No location")}<br>
-            Created at: ${escapeHtml(appointment.created_at)}<br>
-
-            <span class="badge badge-status">Status: ${escapeHtml(appointment.status || "scheduled")}</span>
+            <span style="color:var(--text-muted);font-size:13px;">
+                Time: ${escapeHtml(formatAppointmentTimeForDisplay(appointment.appointment_time))}
+            </span><br>
+            <span style="color:var(--text-muted);font-size:13px;">
+                Location: ${escapeHtml(appointment.location || "No location")}
+            </span><br>
+            <span class="badge badge-status" style="margin-top:6px;">Status: ${escapeHtml(appointment.status || "scheduled")}</span>
         </div>
         `;
     }).join("");
@@ -484,17 +537,12 @@ function isReminderTriggerable(dateValue) {
     const dueDate = parseReminderDate(dateValue);
 
     if (!dueDate) {
-        console.log("Invalid date:", dateValue);
         return false;
     }
 
     const now = Date.now();
     const dueTime = dueDate.getTime();
     const differenceMs = dueTime - now;
-
-    console.log("Now:", new Date(now).toLocaleTimeString());
-    console.log("Due:", new Date(dueTime).toLocaleTimeString());
-    console.log("Difference in ms:", differenceMs);
 
     return differenceMs <= REMINDER_LOOKAHEAD_MS && differenceMs >= -REMINDER_OVERDUE_GRACE_MS;
 }
@@ -585,117 +633,7 @@ function buildReminderSignature(tasks, appointments) {
 }
 
 function ensureReminderUiStyle() {
-    if (document.getElementById("reminderUiStyle")) {
-        return;
-    }
-
-    const style = document.createElement("style");
-    style.id = "reminderUiStyle";
-    style.textContent = `
-        .reminder-highlight {
-            animation: reminderPulse 1.2s ease-in-out 5;
-            box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.35);
-            border: 2px solid rgba(255, 193, 7, 0.85);
-            background: rgba(255, 248, 225, 0.98);
-        }
-
-        .reminder-toast {
-            position: fixed;
-            top: 20px;
-            left: 16px;
-            right: 16px;
-            z-index: 9999;
-            animation: reminderToastSlideDown 0.25s ease-out;
-        }
-
-        .reminder-toast-content {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            width: 100%;
-            box-sizing: border-box;
-            background: #ffffff;
-            color: #111827;
-            border-radius: 18px;
-            padding: 16px 18px;
-            box-shadow: 0 12px 35px rgba(0, 0, 0, 0.18);
-            border: 1px solid rgba(15, 23, 42, 0.08);
-        }
-
-        .reminder-toast-icon {
-            font-size: 28px;
-            line-height: 1;
-            flex: 0 0 auto;
-        }
-
-        .reminder-toast-message {
-            flex: 1 1 auto;
-            min-width: 0;
-            font-size: 18px;
-            font-weight: 700;
-            line-height: 1.35;
-            white-space: normal;
-            word-break: normal;
-            overflow-wrap: anywhere;
-        }
-
-        .reminder-toast-close {
-            margin-left: auto;
-            border: none;
-            background: transparent;
-            color: #2563eb;
-            font-size: 28px;
-            line-height: 1;
-            font-weight: 700;
-            cursor: pointer;
-            flex: 0 0 auto;
-            padding: 0;
-        }
-
-        #voiceTranscriptBox {
-            min-height: 56px;
-            border: 1px solid rgba(15, 23, 42, 0.12);
-            border-radius: 12px;
-            padding: 12px;
-            background: rgba(248, 250, 252, 0.95);
-            color: #111827;
-            line-height: 1.5;
-            white-space: pre-wrap;
-            word-break: break-word;
-        }
-
-        .voice-audio-player {
-            width: 100%;
-            margin-top: 12px;
-        }
-
-        @keyframes reminderPulse {
-            0% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.55);
-            }
-            50% {
-                transform: scale(1.02);
-                box-shadow: 0 0 0 10px rgba(255, 193, 7, 0.14);
-            }
-            100% {
-                transform: scale(1);
-                box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
-            }
-        }
-
-        @keyframes reminderToastSlideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-12px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-    `;
-    document.head.appendChild(style);
+    /* Styles are now in the main stylesheet; no need to inject. */
 }
 
 function updateLocationStatus(text) {
@@ -826,9 +764,7 @@ async function loadLiveLocation() {
                 const longitude = position.coords.longitude;
 
                 updateLocationStatus("Resolving location details...");
-
                 const resolved = await reverseGeocode(latitude, longitude);
-
                 const locationData = {
                     status: "Live location loaded.",
                     live: resolved.live,
@@ -891,7 +827,6 @@ async function loadWeather() {
 
         if (!cachedLocation || !cachedLocation.latitude || !cachedLocation.longitude) {
             weatherStatusText.textContent = "Please load location first.";
-            updateAlinaMood();
             return;
         }
 
@@ -939,10 +874,6 @@ async function loadWeather() {
         }
 
         weatherStatusText.textContent = "Weather updated";
-
-        window.setTimeout(function () {
-            updateAlinaMood();
-        }, 300);
     } catch (error) {
         console.error("Weather error:", error);
         weatherStatusText.textContent = "Error loading weather";
@@ -973,42 +904,6 @@ function getWeatherConditionText(code) {
     };
 
     return weatherCodeMap[code] || "Unknown";
-}
-
-function updateAlinaMood() {
-    const moodEl = document.getElementById("alinaMoodText");
-    if (!moodEl) return;
-
-    let moodText = "";
-
-    const conditionTextEl = document.getElementById("weatherConditionText");
-    const condition = conditionTextEl ? conditionTextEl.textContent.toLowerCase() : "";
-
-    if (condition && condition !== "—" && condition !== "unknown") {
-        if (condition.includes("rain")) {
-            moodText = "Rainy mood 🌧";
-        } else if (condition.includes("cloud")) {
-            moodText = "Calm & cloudy ☁️";
-        } else if (condition.includes("clear") || condition.includes("sun")) {
-            moodText = "Happy & sunny 😎";
-        } else {
-            moodText = "Weather mood 🌍";
-        }
-    } else {
-        const hour = new Date().getHours();
-
-        if (hour >= 5 && hour < 12) {
-            moodText = "Good morning ☀️";
-        } else if (hour >= 12 && hour < 17) {
-            moodText = "Active & ready 💪";
-        } else if (hour >= 17 && hour < 21) {
-            moodText = "Relax mode 🌆";
-        } else {
-            moodText = "Sleepy 😴";
-        }
-    }
-
-    moodEl.textContent = moodText;
 }
 
 function setVoiceStatus(text) {
@@ -1062,6 +957,7 @@ function getPreferredAudioMimeType() {
         "audio/webm;codecs=opus",
         "audio/webm",
         "audio/mp4",
+        "video/mp4",
         "audio/mpeg"
     ];
 
@@ -1119,7 +1015,7 @@ function renderRecordedAudioPreview() {
 
 function updateVoiceButtonsState() {
     if (startVoiceButton) {
-        startVoiceButton.disabled = isVoiceRecording;
+        startVoiceButton.disabled = isVoiceRecording || !getAuthToken();
     }
 
     if (stopVoiceButton) {
@@ -1145,6 +1041,11 @@ function initVoiceRecording() {
 async function startVoiceInput() {
     if (!voiceRecordingSupported) {
         setVoiceStatus("Microphone recording is not supported on this device.");
+        return;
+    }
+
+    if (!getAuthToken()) {
+        setVoiceStatus("Please log in on the Account tab to use voice input.");
         return;
     }
 
@@ -1184,7 +1085,7 @@ async function startVoiceInput() {
         mediaRecorder.onerror = function (event) {
             console.error("MediaRecorder error:", event);
             isVoiceRecording = false;
-            setVoiceStatus("Voice recording failed.");
+            setVoiceStatus("Voice recording failed: " + (event.error ? event.error.name : "unknown error"));
             updateVoiceButtonsState();
             stopVoiceStreamTracks();
         };
@@ -1211,7 +1112,7 @@ async function startVoiceInput() {
                 }
             } catch (error) {
                 console.error("Failed to finalize voice recording:", error);
-                setVoiceStatus("Could not process recorded audio.");
+                setVoiceStatus("Could not process recorded audio: " + (error.message || "unknown"));
                 setVoiceTranscript("Recorded audio could not be processed.");
             }
 
@@ -1235,7 +1136,7 @@ async function startVoiceInput() {
         } else if (error && error.name === "NotReadableError") {
             setVoiceStatus("Microphone is already in use or not readable.");
         } else {
-            setVoiceStatus("Could not start microphone recording.");
+            setVoiceStatus("Could not start microphone recording: " + (error.message || "unknown"));
         }
 
         setVoiceTranscript("No voice recording yet.");
@@ -1252,7 +1153,7 @@ function stopVoiceInput() {
         setVoiceStatus("Stopping voice recording...");
     } catch (error) {
         console.error("Failed to stop microphone recording:", error);
-        setVoiceStatus("Could not stop voice recording.");
+        setVoiceStatus("Could not stop voice recording: " + (error.message || "unknown"));
     }
 }
 
@@ -1260,6 +1161,11 @@ async function sendAudioToServer(audioBlob) {
     try {
         if (!audioBlob || audioBlob.size === 0) {
             setVoiceStatus("No audio captured");
+            return;
+        }
+
+        if (!getAuthToken()) {
+            setVoiceStatus("Please log in on the Account tab to use voice input.");
             return;
         }
 
@@ -1277,12 +1183,14 @@ async function sendAudioToServer(audioBlob) {
         try {
             data = await response.json();
         } catch (e) {
-            setVoiceStatus("Invalid server response");
+            setVoiceStatus("Invalid server response (could not parse JSON).");
             return;
         }
 
         if (!response.ok) {
-            setVoiceStatus("Server error during voice processing");
+            /* Show the actual server error — quota, MIME, auth, provider. */
+            const serverMsg = (data && (data.message || data.error)) || `Server error (HTTP ${response.status})`;
+            setVoiceStatus("Voice processing failed: " + serverMsg);
             return;
         }
 
@@ -1311,7 +1219,7 @@ async function sendAudioToServer(audioBlob) {
         setVoiceStatus("Voice converted and sent");
     } catch (error) {
         console.error("Failed to convert voice to text:", error);
-        setVoiceStatus("Voice conversion failed");
+        setVoiceStatus("Voice conversion failed: " + (error.message || "network error"));
     }
 }
 
@@ -1505,25 +1413,86 @@ function findCustomCurrency() {
 }
 
 async function loadAppInfo() {
+    /* Update the about card on the Home tab with server-side app info. */
+    const aboutVersionEl = document.getElementById("aboutVersion");
+    const aboutAuthorEl = document.getElementById("aboutAuthor");
+    const aboutDescriptionEl = document.getElementById("aboutDescription");
+
     try {
         const res = await fetch("/app-info");
         const data = await res.json();
 
-        const aboutBoxes = document.querySelectorAll(".task-item");
-        const aboutBox = aboutBoxes.length > 0 ? aboutBoxes[aboutBoxes.length - 1] : null;
+        if (aboutVersionEl) {
+            aboutVersionEl.textContent = data.version || "1.1.0";
+        }
+        if (aboutAuthorEl) {
+            aboutAuthorEl.textContent = data.author || "Amin Azimi";
+        }
+        if (aboutDescriptionEl) {
+            aboutDescriptionEl.textContent = data.description || "A smart productivity assistant.";
+        }
+    } catch (error) {
+        console.error("Failed to load app info:", error);
+    }
+}
 
-        if (!aboutBox) {
+/* =========================
+   QUOTA — GET /api/v1/account/quota
+   ========================= */
+
+async function loadQuota() {
+    if (!getAuthToken()) {
+        if (quotaPlanText) quotaPlanText.textContent = "—";
+        if (quotaLimitText) quotaLimitText.textContent = "—";
+        if (quotaUsedText) quotaUsedText.textContent = "—";
+        if (quotaRemainingText) quotaRemainingText.textContent = "—";
+        if (quotaStatusText) quotaStatusText.textContent = "Not logged in";
+        return;
+    }
+
+    if (quotaStatusText) quotaStatusText.textContent = "Loading quota...";
+
+    try {
+        const res = await authorizedFetch("/api/v1/account/quota");
+        const data = await res.json();
+
+        if (!res.ok) {
+            if (quotaStatusText) {
+                quotaStatusText.textContent = (data && data.message) || "Could not load quota";
+            }
             return;
         }
 
-        aboutBox.innerHTML = `
-            <strong>App Name:</strong> ${escapeHtml(data.name || "Personal AI Assistant")}<br>
-            <strong>Version:</strong> ${escapeHtml(data.version || "1.0.0")}<br>
-            <strong>Author:</strong> ${escapeHtml(data.author || "Amin Azimi")}<br>
-            <strong>Description:</strong> ${escapeHtml(data.description || "A smart productivity assistant.")}
-        `;
+        if (quotaPlanText) {
+            quotaPlanText.textContent = data.plan_name || data.plan || "Free";
+        }
+        if (quotaLimitText) {
+            quotaLimitText.textContent =
+                data.ai_daily_limit != null ? String(data.ai_daily_limit) : "—";
+        }
+        if (quotaUsedText) {
+            quotaUsedText.textContent =
+                data.ai_calls_today != null ? String(data.ai_calls_today) : "—";
+        }
+        if (quotaRemainingText) {
+            if (data.remaining != null) {
+                quotaRemainingText.textContent = String(data.remaining);
+            } else {
+                quotaRemainingText.textContent = "Unlimited";
+            }
+        }
+        if (quotaStatusText) {
+            if (data.quota_exceeded) {
+                quotaStatusText.textContent = "Daily quota exceeded — please try again tomorrow.";
+            } else {
+                quotaStatusText.textContent = "Active";
+            }
+        }
     } catch (error) {
-        console.error("Failed to load app info:", error);
+        console.error("Failed to load quota:", error);
+        if (quotaStatusText) {
+            quotaStatusText.textContent = "Could not load quota: " + (error.message || "network error");
+        }
     }
 }
 
@@ -1551,10 +1520,13 @@ async function signup() {
         if (data.status === "success" && data.user && data.user.token) {
             setAuthToken(data.user.token);
             updateAuthStatus("Signup successful and logged in");
+            updateLoggedInUiState();
             startReminderAutoRefresh();
             loadTasks();
             loadAppointments();
             loadReminders();
+            loadQuota();
+            returnToPendingTab();
             return;
         }
 
@@ -1588,10 +1560,13 @@ async function login() {
         if (data.status === "success" && data.user && data.user.token) {
             setAuthToken(data.user.token);
             updateAuthStatus("Logged in");
+            updateLoggedInUiState();
             startReminderAutoRefresh();
             loadTasks();
             loadAppointments();
             loadReminders();
+            loadQuota();
+            returnToPendingTab();
             return;
         }
 
@@ -1599,6 +1574,14 @@ async function login() {
     } catch (error) {
         updateAuthStatus("Login failed");
         console.error("Login failed:", error);
+    }
+}
+
+/* After login, return to the tab the user was on when the 401 occurred. */
+function returnToPendingTab() {
+    if (pendingReturnTab) {
+        showAppTab(pendingReturnTab);
+        pendingReturnTab = null;
     }
 }
 
@@ -1617,6 +1600,7 @@ async function logout() {
     lastReminderSignature = "";
     shownReminderIds = new Set();
     updateAuthStatus("Logged out");
+    updateLoggedInUiState();
 
     if (tasksList) {
         tasksList.innerHTML = `<div class="loading">No tasks yet.</div>`;
@@ -1629,6 +1613,12 @@ async function logout() {
     if (remindersList) {
         remindersList.innerHTML = `<div class="loading">No reminders right now.</div>`;
     }
+
+    if (quotaPlanText) quotaPlanText.textContent = "—";
+    if (quotaLimitText) quotaLimitText.textContent = "—";
+    if (quotaUsedText) quotaUsedText.textContent = "—";
+    if (quotaRemainingText) quotaRemainingText.textContent = "—";
+    if (quotaStatusText) quotaStatusText.textContent = "Not logged in";
 }
 
 async function createTaskFromMessage(message, dueDateValue) {
@@ -1687,11 +1677,18 @@ async function sendMessage(isAuto = false) {
         finalDueDate = `${dueDateValue}T${dueTimeValue}:00`;
     }
 
+    if (!getAuthToken()) {
+        if (statusText) statusText.textContent = "Please log in first.";
+        if (messageError) messageError.textContent = "Login required to send messages.";
+        return;
+    }
+
     if (!message) {
         if (statusText) statusText.textContent = "Please enter a message";
         return;
     }
 
+    if (messageError) messageError.textContent = "";
     if (statusText) statusText.textContent = "Sending...";
 
     if (!isAuto) {
@@ -1700,7 +1697,6 @@ async function sendMessage(isAuto = false) {
     }
 
     try {
-        // POST JSON to /smart-ai (authenticated, no URL length limit)
         const res = await authorizedFetch("/smart-ai", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -1711,12 +1707,14 @@ async function sendMessage(isAuto = false) {
         try {
             data = await res.json();
         } catch (e) {
-            if (statusText) statusText.textContent = "Server error";
+            if (statusText) statusText.textContent = "Server error (invalid response)";
             return;
         }
 
         if (!res.ok || data.status !== "success") {
-            if (statusText) statusText.textContent = data.message || "Request failed";
+            const errMsg = data.message || data.error || "Request failed";
+            if (statusText) statusText.textContent = errMsg;
+            if (resultBox) resultBox.textContent = "Error: " + errMsg;
             return;
         }
 
@@ -1729,7 +1727,6 @@ async function sendMessage(isAuto = false) {
         if (data.action === "task" && data.task) {
             let finalTask = data.task;
 
-            // If user provided a due date override, update the task
             if (finalDueDate && data.task.id) {
                 try {
                     const updateData = await updateTaskDueDate(data.task.id, finalDueDate);
@@ -1751,19 +1748,22 @@ async function sendMessage(isAuto = false) {
             loadTasks();
             loadAppointments();
             loadReminders();
+            loadQuota();
             return;
         }
 
-        // Fallback: show raw response
+        /* Fallback: show raw response */
         if (resultBox) resultBox.textContent = JSON.stringify(data, null, 2);
         if (statusText) statusText.textContent = "Done";
         loadTasks();
         loadAppointments();
         loadReminders();
+        loadQuota();
 
     } catch (error) {
         console.error("sendMessage error:", error);
-        if (statusText) statusText.textContent = "Send failed";
+        if (statusText) statusText.textContent = "Send failed: " + (error.message || "network error");
+        if (resultBox) resultBox.textContent = "Error: " + (error.message || "Send failed");
     }
 }
 
@@ -1777,7 +1777,7 @@ async function updateTask(id, status) {
         body: JSON.stringify({ status })
     });
 
-    statusText.textContent = "Task updated";
+    if (statusText) statusText.textContent = "Task updated";
     loadTasks();
     loadReminders();
 }
@@ -1794,7 +1794,7 @@ async function deleteTask(id) {
         method: "DELETE"
     });
 
-    statusText.textContent = "Task deleted";
+    if (statusText) statusText.textContent = "Task deleted";
     loadTasks();
     loadReminders();
 }
@@ -1803,19 +1803,22 @@ if (sendButton) {
     sendButton.addEventListener("click", sendMessage);
 }
 
-// ---- Manual task creation ----
+/* ---- Manual task creation ---- */
 async function createTaskManual() {
     const titleEl = document.getElementById("newTaskTitleInput");
     const descEl = document.getElementById("newTaskDescInput");
     const priorityEl = document.getElementById("newTaskPrioritySelect");
     const dueDateEl = document.getElementById("newTaskDueDateInput");
     const statusEl = document.getElementById("createTaskStatus");
+    const titleErrorEl = document.getElementById("newTaskTitleError");
 
     const title = titleEl ? titleEl.value.trim() : "";
     if (!title) {
+        if (titleErrorEl) titleErrorEl.textContent = "Title is required";
         if (statusEl) statusEl.textContent = "Title is required";
         return;
     }
+    if (titleErrorEl) titleErrorEl.textContent = "";
 
     if (statusEl) statusEl.textContent = "Creating...";
 
@@ -1847,28 +1850,35 @@ async function createTaskManual() {
             if (statusEl) statusEl.textContent = data.message || "Failed to create task";
         }
     } catch (e) {
-        if (statusEl) statusEl.textContent = "Error creating task";
+        if (statusEl) statusEl.textContent = "Error creating task: " + (e.message || "network error");
     }
 }
 
-// ---- Manual appointment creation ----
+/* ---- Manual appointment creation ---- */
 async function createAppointmentManual() {
     const titleEl = document.getElementById("newApptTitleInput");
     const timeEl = document.getElementById("newApptTimeInput");
     const locationEl = document.getElementById("newApptLocationInput");
     const statusEl = document.getElementById("createApptStatus");
+    const titleErrorEl = document.getElementById("newApptTitleError");
+    const timeErrorEl = document.getElementById("newApptTimeError");
 
     const title = titleEl ? titleEl.value.trim() : "";
     const apptTime = timeEl ? timeEl.value : "";
 
     if (!title) {
+        if (titleErrorEl) titleErrorEl.textContent = "Title is required";
         if (statusEl) statusEl.textContent = "Title is required";
         return;
     }
+    if (titleErrorEl) titleErrorEl.textContent = "";
+
     if (!apptTime) {
+        if (timeErrorEl) timeErrorEl.textContent = "Date & time is required";
         if (statusEl) statusEl.textContent = "Appointment time is required";
         return;
     }
+    if (timeErrorEl) timeErrorEl.textContent = "";
 
     if (statusEl) statusEl.textContent = "Creating...";
 
@@ -1895,7 +1905,7 @@ async function createAppointmentManual() {
             if (statusEl) statusEl.textContent = data.message || "Failed to create appointment";
         }
     } catch (e) {
-        if (statusEl) statusEl.textContent = "Error creating appointment";
+        if (statusEl) statusEl.textContent = "Error creating appointment: " + (e.message || "network error");
     }
 }
 
@@ -1942,7 +1952,6 @@ if (refreshWeatherButton) {
     refreshWeatherButton.addEventListener("click", async function () {
         await unlockReminderSound();
         await loadWeather();
-        updateAlinaMood();
     });
 }
 
@@ -1992,6 +2001,13 @@ if (logoutButton) {
     });
 }
 
+if (refreshQuotaButton) {
+    refreshQuotaButton.addEventListener("click", async function () {
+        await unlockReminderSound();
+        loadQuota();
+    });
+}
+
 document.addEventListener("visibilitychange", function () {
     if (document.hidden) {
         stopReminderAutoRefresh();
@@ -2020,14 +2036,10 @@ loadAppointments();
 loadReminders();
 loadAppInfo();
 loadExchangeRates();
-updateAlinaMood();
+loadQuota();
 
-loadWeather().then(function () {
-    updateAlinaMood();
-});
+loadWeather();
 
-window.setTimeout(updateAlinaMood, 1000);
-window.setTimeout(updateAlinaMood, 3000);
 
 function updateDateTime() {
     const now = new Date();
@@ -2066,56 +2078,25 @@ function updateSmartGreeting() {
     const hour = new Date().getHours();
 
     if (hour >= 5 && hour < 12) {
-        greetingText.textContent = "Good morning ☀️";
+        greetingText.textContent = "Good morning";
         greetingSubText.textContent = "Welcome back. Hope you have a productive morning.";
     } else if (hour >= 12 && hour < 17) {
-        greetingText.textContent = "Good afternoon 🌤";
+        greetingText.textContent = "Good afternoon";
         greetingSubText.textContent = "Welcome back. Your assistant is ready to help.";
     } else if (hour >= 17 && hour < 21) {
-        greetingText.textContent = "Good evening 🌆";
-        greetingSubText.textContent = "Welcome back. Let’s organize the rest of your day.";
+        greetingText.textContent = "Good evening";
+        greetingSubText.textContent = "Welcome back. Let's organize the rest of your day.";
     } else {
-        greetingText.textContent = "Good night 🌙";
-        greetingSubText.textContent = "Welcome back. I’m here whenever you need me.";
+        greetingText.textContent = "Good night";
+        greetingSubText.textContent = "Welcome back. I'm here whenever you need me.";
     }
 }
 
 updateSmartGreeting();
 
-const alinaAvatar = document.getElementById("alinaAvatar");
-const alinaWrapper = document.getElementById("alinaWrapper");
-
-if (alinaAvatar && alinaWrapper) {
-    alinaAvatar.addEventListener("click", function () {
-        alinaAvatar.classList.toggle("alina-dance");
-        alinaWrapper.classList.toggle("alina-active");
-
-        const alinaLeft = document.getElementById("alinaLeft");
-        const alinaRight = document.getElementById("alinaRight");
-
-        if (alinaWrapper.classList.contains("alina-active")) {
-            if (alinaLeft) {
-                alinaLeft.style.left = "10px";
-                alinaLeft.style.opacity = "1";
-            }
-
-            if (alinaRight) {
-                alinaRight.style.left = "190px";
-                alinaRight.style.opacity = "1";
-            }
-        } else {
-            if (alinaLeft) {
-                alinaLeft.style.left = "100px";
-                alinaLeft.style.opacity = "0";
-            }
-
-            if (alinaRight) {
-                alinaRight.style.left = "100px";
-                alinaRight.style.opacity = "0";
-            }
-        }
-    });
-}
+/* =========================
+   TAB SWITCHING
+   ========================= */
 
 function showAppTab(tabName) {
     const tabButtons = document.querySelectorAll(".bottom-nav-item");
@@ -2128,6 +2109,15 @@ function showAppTab(tabName) {
     tabButtons.forEach(button => {
         button.classList.toggle("active", button.dataset.tab === tabName);
     });
+
+    /* Refresh data when switching to relevant tabs */
+    if (tabName === "account" && getAuthToken()) {
+        loadQuota();
+    }
+    if (tabName === "ai") {
+        updateSendButtonState();
+        updateVoiceButtonsState();
+    }
 
     window.scrollTo({
         top: 0,

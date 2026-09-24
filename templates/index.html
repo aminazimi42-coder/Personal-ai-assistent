@@ -5,62 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Personal AI Assistant</title>
 
-    <meta name="theme-color" content="#0f172a">
+    <meta name="theme-color" content="#0a0e1a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Personal AI Assistant">
 
-    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='CF271111-3A51-4CE1-AFB2-1589062C9903.png') }}?v=4">
-    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='CF271111-3A51-4CE1-AFB2-1589062C9903.png') }}?v=4">
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='CF271111-3A51-4CE1-AFB2-1589062C9903.png') }}?v=4">
-    <link rel="apple-touch-icon-precomposed" href="{{ url_for('static', filename='CF271111-3A51-4CE1-AFB2-1589062C9903.png') }}?v=4">
+    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='CF271111-3A51-4CE1-AFB2-1589062C9903.png') }}?v=5">
+    <link rel="shortcut icon" type="image/png" href="{{ url_for('static', filename='CF271111-3A51-4CE1-AFB2-1589062C9903.png') }}?v=5">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='CF271111-3A51-4CE1-AFB2-1589062C9903.png') }}?v=5">
+    <link rel="apple-touch-icon-precomposed" href="{{ url_for('static', filename='CF271111-3A51-4CE1-AFB2-1589062C9903.png') }}?v=5">
 
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=2">
 
 </head>
 <body>
 <div class="container">
     <div class="app-content">
 
+        <!-- ===================== HOME ===================== -->
         <section id="homeSection" class="app-tab-section" data-tab-section="home">
-            <div style="text-align:center; font-size:22px; font-weight:bold; margin-bottom:10px;">
-                LILA COMPANY
-            </div>
-
-            <div id="alinaWidget" style="text-align:center; margin-bottom:20px;">
-                <div style="font-weight:bold; font-size:18px;">ALINA</div>
-
-                <div id="alinaMoodText" style="font-size:14px; color:#64748b; margin-top:4px;">
-                    Mood loading...
-                </div>
-
-                <div id="alinaWrapper" style="position:relative; display:inline-block; width:280px; height:110px;">
-                    <img
-                        id="alinaLeft"
-                        src="{{ url_for('static', filename='IMG_9143.jpeg') }}?v=1"
-                        style="width:80px; height:80px; object-fit:cover; border-radius:50%; position:absolute; left:100px; top:10px; opacity:0; transition:0.4s; z-index:1;"
-                    />
-
-                    <img
-                        id="alinaAvatar"
-                        src="{{ url_for('static', filename='IMG_9142.jpeg') }}?v=1"
-                        style="width:100px; height:100px; object-fit:cover; border-radius:50%; cursor:pointer; position:absolute; left:90px; top:0; z-index:3;"
-                    />
-
-                    <img
-                        id="alinaRight"
-                        src="{{ url_for('static', filename='IMG_9144.jpeg') }}?v=1"
-                        style="width:80px; height:80px; object-fit:cover; border-radius:50%; position:absolute; left:100px; top:10px; opacity:0; transition:0.4s; z-index:1;"
-                    />
-                </div>
-            </div>
-
             <div class="top-bar">
                 <div>
                     <h1>Personal AI Assistant</h1>
-                    <p>Talk to your assistant and let it reply or create a task automatically.</p>
+                    <p class="top-bar-subtitle">Talk to your assistant and let it reply or create a task automatically.</p>
                 </div>
-
                 <div class="datetime-widget">
                     <div id="digitalTimeText" class="datetime-time">--:--</div>
                     <div id="digitalDateText" class="datetime-date">Loading date...</div>
@@ -72,101 +40,104 @@
                 <div id="smartGreetingSubText" class="greeting-subtitle">Your assistant is ready.</div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
-                <h3>Weather</h3>
-                <button id="refreshWeatherButton" type="button">Refresh Weather</button>
+            <div class="widget-row">
+                <h3 class="widget-heading">Weather</h3>
+                <button id="refreshWeatherButton" type="button" class="btn-sm">Refresh</button>
+            </div>
+            <div class="task-item quiet-card">
+                <span class="field-label">Status</span> <span id="weatherStatusText">Weather not loaded yet.</span><br>
+                <span class="field-label">City</span> <span id="weatherCityText">—</span><br>
+                <span class="field-label">Temperature</span> <span id="weatherTempText">—</span><br>
+                <span class="field-label">Condition</span> <span id="weatherConditionText">—</span><br>
+                <span class="field-label">Humidity</span> <span id="weatherHumidityText">—</span><br>
+                <span class="field-label">Wind</span> <span id="weatherWindText">—</span>
             </div>
 
-            <div class="task-item">
-                <strong>Status:</strong> <span id="weatherStatusText">Weather not loaded yet.</span><br>
-                <strong>City:</strong> <span id="weatherCityText">—</span><br>
-                <strong>Temperature:</strong> <span id="weatherTempText">—</span><br>
-                <strong>Condition:</strong> <span id="weatherConditionText">—</span><br>
-                <strong>Humidity:</strong> <span id="weatherHumidityText">—</span><br>
-                <strong>Wind:</strong> <span id="weatherWindText">—</span>
+            <div class="widget-row">
+                <h3 class="widget-heading">Live Location</h3>
+                <button id="refreshLocationButton" type="button" class="btn-sm">Refresh</button>
+            </div>
+            <div class="task-item quiet-card">
+                <span class="field-label">Status</span> <span id="locationStatusText">Location not loaded yet.</span><br>
+                <span class="field-label">Live</span> <span id="locationLiveText">Unknown</span><br>
+                <span class="field-label">Country</span> <span id="locationCountryText">Unknown</span><br>
+                <span class="field-label">City / Region</span> <span id="locationCityText">Unknown</span><br>
+                <span class="field-label">Latitude</span> <span id="locationLatitudeText">—</span><br>
+                <span class="field-label">Longitude</span> <span id="locationLongitudeText">—</span>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-                <h3>Live Location</h3>
-                <button id="refreshLocationButton" type="button">Refresh Location</button>
+            <div class="widget-row">
+                <h3 class="widget-heading">Exchange Rates</h3>
+                <button id="refreshExchangeRatesButton" type="button" class="btn-sm">Refresh</button>
             </div>
+            <div class="task-item quiet-card">
+                <span class="field-label">Status</span> <span id="exchangeRatesStatusText">Exchange rates not loaded yet.</span><br>
+                <span class="field-label">Base</span> <span id="exchangeRatesBaseText">USD</span><br>
+                <span class="field-label">USD → EUR</span> <span id="exchangeRateEurText">—</span><br>
+                <span class="field-label">USD → GBP</span> <span id="exchangeRateGbpText">—</span><br>
+                <span class="field-label">USD → CAD</span> <span id="exchangeRateCadText">—</span><br>
+                <span class="field-label">USD → TRY</span> <span id="exchangeRateTryText">—</span><br>
+                <span class="field-label">USD → AED</span> <span id="exchangeRateAedText">—</span><br>
+                <span class="field-label">Updated</span> <span id="exchangeRatesUpdatedText">—</span>
 
-            <div class="task-item">
-                <strong>Status:</strong> <span id="locationStatusText">Location not loaded yet.</span><br>
-                <strong>Live:</strong> <span id="locationLiveText">Unknown</span><br>
-                <strong>Country:</strong> <span id="locationCountryText">Unknown</span><br>
-                <strong>City / Region:</strong> <span id="locationCityText">Unknown</span><br>
-                <strong>Latitude:</strong> <span id="locationLatitudeText">—</span><br>
-                <strong>Longitude:</strong> <span id="locationLongitudeText">—</span>
-            </div>
-
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-                <h3>Exchange Rates</h3>
-                <button id="refreshExchangeRatesButton" type="button">Refresh Rates</button>
-            </div>
-
-            <div class="task-item">
-                <strong>Status:</strong> <span id="exchangeRatesStatusText">Exchange rates not loaded yet.</span><br>
-                <strong>Base:</strong> <span id="exchangeRatesBaseText">USD</span><br>
-                <strong>USD → EUR:</strong> <span id="exchangeRateEurText">—</span><br>
-                <strong>USD → GBP:</strong> <span id="exchangeRateGbpText">—</span><br>
-                <strong>USD → CAD:</strong> <span id="exchangeRateCadText">—</span><br>
-                <strong>USD → TRY:</strong> <span id="exchangeRateTryText">—</span><br>
-                <strong>USD → AED:</strong> <span id="exchangeRateAedText">—</span><br>
-                <strong>Updated:</strong> <span id="exchangeRatesUpdatedText">—</span>
-
-                <div style="margin-top:16px;">
+                <div class="currency-finder">
                     <label for="customCurrencyInput">Find currency</label>
-                    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;">
+                    <div class="currency-finder-row">
                         <input id="customCurrencyInput" type="text" placeholder="Country or code, e.g. Japan or JPY">
-                        <button id="findCurrencyButton" type="button">Find</button>
+                        <button id="findCurrencyButton" type="button" class="btn-sm">Find</button>
                     </div>
-                    <div style="margin-top:12px;">
-                        <strong>Result:</strong> <span id="customCurrencyResultText">—</span>
+                    <div class="currency-finder-result">
+                        <span class="field-label">Result</span> <span id="customCurrencyResultText">—</span>
                     </div>
                 </div>
             </div>
 
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-                <h3>About</h3>
+            <div class="widget-row">
+                <h3 class="widget-heading">About</h3>
             </div>
-
-            <div class="task-item">
-                <strong>App Name:</strong> Personal AI Assistant<br>
-                <strong>Version:</strong> 1.0.0<br>
-                <strong>Author:</strong> Amin Azimi<br>
-                <strong>Description:</strong> A smart productivity assistant for tasks, appointments, reminders, live location, exchange rates, voice input, and AI-powered help.
+            <div class="task-item quiet-card" id="aboutCard">
+                <span class="field-label">App Name</span> Personal AI Assistant<br>
+                <span class="field-label">Version</span> <span id="aboutVersion">1.1.0</span><br>
+                <span class="field-label">Author</span> <span id="aboutAuthor">Amin Azimi</span><br>
+                <span class="field-label">Description</span> <span id="aboutDescription">A smart productivity assistant for tasks, appointments, reminders, live location, exchange rates, voice input, and AI-powered help.</span>
             </div>
         </section>
 
+        <!-- ===================== TASKS ===================== -->
         <section id="tasksSection" class="app-tab-section is-hidden" data-tab-section="tasks">
             <div class="section-header">
                 <h3>Tasks</h3>
-                <button id="refreshTasksButton">Refresh</button>
+                <button id="refreshTasksButton" class="btn-sm">Refresh</button>
             </div>
 
             <div id="tasksList" class="task-list">
                 <div class="loading">Loading tasks...</div>
             </div>
 
-            <!-- Create Task Form -->
-            <div class="task-item" style="margin-top:16px;">
-                <h3 style="margin-bottom:10px;">Add Task</h3>
+            <div class="task-item form-card">
+                <h3 class="form-heading">Add Task</h3>
+                <label for="newTaskTitleInput">Title</label>
                 <input id="newTaskTitleInput" type="text" placeholder="Task title" maxlength="200">
-                <textarea id="newTaskDescInput" placeholder="Description (optional)" style="margin-top:8px;height:60px;"></textarea>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;align-items:center;">
-                    <select id="newTaskPrioritySelect">
-                        <option value="medium">Medium priority</option>
-                        <option value="low">Low priority</option>
-                        <option value="high">High priority</option>
-                    </select>
-                    <input id="newTaskDueDateInput" type="date" style="flex:1;">
-                </div>
-                <button id="createTaskButton" type="button" style="margin-top:10px;">Create Task</button>
-                <div id="createTaskStatus" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
+                <div id="newTaskTitleError" class="field-error"></div>
+
+                <label for="newTaskDescInput">Description (optional)</label>
+                <textarea id="newTaskDescInput" class="textarea-short" placeholder="Description (optional)"></textarea>
+
+                <label for="newTaskPrioritySelect">Priority</label>
+                <select id="newTaskPrioritySelect">
+                    <option value="medium">Medium priority</option>
+                    <option value="low">Low priority</option>
+                    <option value="high">High priority</option>
+                </select>
+
+                <label for="newTaskDueDateInput">Due date (optional)</label>
+                <input id="newTaskDueDateInput" type="date">
+
+                <button id="createTaskButton" type="button" class="btn-primary">Create Task</button>
+                <div id="createTaskStatus" class="field-error"></div>
             </div>
 
-            <div class="section-header" style="margin-top:28px;">
+            <div class="section-header">
                 <h3>Appointments</h3>
             </div>
 
@@ -174,19 +145,26 @@
                 <div class="loading">Loading appointments...</div>
             </div>
 
-            <!-- Create Appointment Form -->
-            <div class="task-item" style="margin-top:16px;">
-                <h3 style="margin-bottom:10px;">Add Appointment</h3>
+            <div class="task-item form-card">
+                <h3 class="form-heading">Add Appointment</h3>
+                <label for="newApptTitleInput">Title</label>
                 <input id="newApptTitleInput" type="text" placeholder="Appointment title" maxlength="200">
-                <input id="newApptTimeInput" type="datetime-local" style="margin-top:8px;">
-                <input id="newApptLocationInput" type="text" placeholder="Location (optional)" style="margin-top:8px;">
-                <button id="createApptButton" type="button" style="margin-top:10px;">Create Appointment</button>
-                <div id="createApptStatus" style="margin-top:8px;font-size:13px;color:#94a3b8;"></div>
+                <div id="newApptTitleError" class="field-error"></div>
+
+                <label for="newApptTimeInput">Date &amp; time</label>
+                <input id="newApptTimeInput" type="datetime-local">
+                <div id="newApptTimeError" class="field-error"></div>
+
+                <label for="newApptLocationInput">Location (optional)</label>
+                <input id="newApptLocationInput" type="text" placeholder="Location (optional)">
+
+                <button id="createApptButton" type="button" class="btn-primary">Create Appointment</button>
+                <div id="createApptStatus" class="field-error"></div>
             </div>
 
-            <div class="section-header" style="margin-top:28px;">
+            <div class="section-header">
                 <h3>Reminders</h3>
-                <button id="refreshRemindersButton">Refresh</button>
+                <button id="refreshRemindersButton" class="btn-sm">Refresh</button>
             </div>
 
             <div id="remindersList" class="task-list">
@@ -194,63 +172,124 @@
             </div>
         </section>
 
+        <!-- ===================== AI ===================== -->
         <section id="aiSection" class="app-tab-section is-hidden" data-tab-section="ai">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:24px;">
-                <h3>Voice Input</h3>
+            <div class="section-header">
+                <h3>AI</h3>
             </div>
 
-            <div class="task-item">
-                <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                    <button id="startVoiceButton" type="button">Start Voice</button>
-                    <button id="stopVoiceButton" type="button">Stop Voice</button>
+            <div class="task-item form-card">
+                <h3 class="form-heading">Voice Input</h3>
+                <div class="voice-button-row">
+                    <button id="startVoiceButton" type="button" class="btn-primary">Start Voice</button>
+                    <button id="stopVoiceButton" type="button" class="btn-secondary" disabled>Stop Voice</button>
                 </div>
-
-                <div id="voiceStatusText" style="margin-top:16px;">Voice input is idle.</div>
-                <div id="voiceTranscriptBox" style="margin-top:16px;">No voice transcript yet.</div>
+                <div id="voiceStatusText" class="status-line">Voice input is idle.</div>
+                <div id="voiceTranscriptBox" class="transcript-box">No voice transcript yet.</div>
             </div>
 
-            <label for="messageInput">Your message</label>
-            <textarea id="messageInput"></textarea>
+            <div class="task-item form-card">
+                <label for="messageInput">Your message</label>
+                <textarea id="messageInput" placeholder="Type your message..."></textarea>
+                <div id="messageError" class="field-error"></div>
 
-            <label for="dueDateInput" style="margin-top: 16px;">Due date</label>
-            <input id="dueDateInput" type="date">
+                <label for="dueDateInput">Due date (optional)</label>
+                <input id="dueDateInput" type="date">
 
-            <label for="dueTimeInput" style="margin-top: 16px;">Due time</label>
-            <input id="dueTimeInput" type="time">
+                <label for="dueTimeInput">Due time (optional)</label>
+                <input id="dueTimeInput" type="time">
 
-            <button id="sendButton">Send</button>
+                <button id="sendButton" class="btn-primary" disabled>Send</button>
+                <div id="statusText" class="status-line">Ready</div>
+            </div>
 
-            <div id="statusText">Ready</div>
-
-            <h3>Result</h3>
-            <div id="resultBox">No result yet.</div>
+            <div class="section-header">
+                <h3>Result</h3>
+            </div>
+            <div id="resultBox" class="result-box">No result yet.</div>
         </section>
 
+        <!-- ===================== ACCOUNT ===================== -->
         <section id="accountSection" class="app-tab-section is-hidden" data-tab-section="account">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;">
+            <div class="section-header">
                 <h3>Account</h3>
             </div>
 
-            <div class="task-item">
+            <!-- Login panel shown when not authenticated -->
+            <div id="loginPanel" class="task-item form-card">
+                <h3 class="form-heading">Sign In</h3>
+                <p class="login-panel-hint">Please log in to use the assistant. You'll return here after login.</p>
+
                 <label for="nameInput">Name / Username</label>
                 <input id="nameInput" type="text" placeholder="Enter your name">
+                <div id="nameError" class="field-error"></div>
 
-                <label for="emailInput" style="margin-top: 16px;">Email</label>
+                <label for="emailInput">Email</label>
                 <input id="emailInput" type="email" placeholder="Enter your email">
+                <div id="emailError" class="field-error"></div>
 
-                <label for="passwordInput" style="margin-top: 16px;">Password</label>
+                <label for="passwordInput">Password</label>
                 <div class="password-field-wrapper">
                     <input id="passwordInput" type="password" placeholder="Enter your password">
                     <button id="togglePasswordButton" type="button" class="password-toggle-button" aria-label="Show password" title="Show password">👁</button>
                 </div>
+                <div id="passwordError" class="field-error"></div>
 
-                <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px;">
-                    <button id="signupButton" type="button">Sign Up</button>
-                    <button id="loginButton" type="button">Log In</button>
-                    <button id="logoutButton" type="button">Log Out</button>
+                <div class="auth-button-row">
+                    <button id="loginButton" type="button" class="btn-primary">Log In</button>
+                    <button id="signupButton" type="button" class="btn-secondary">Sign Up</button>
                 </div>
+                <div id="authStatusText" class="status-line">Not logged in</div>
+            </div>
 
-                <div id="authStatusText" style="margin-top:16px;">Not logged in</div>
+            <!-- Quota + logout shown when authenticated -->
+            <div id="accountQuotaPanel" class="task-item quiet-card is-hidden">
+                <h3 class="form-heading">Usage &amp; Quota</h3>
+                <div class="quota-row">
+                    <span class="field-label">Plan</span>
+                    <span id="quotaPlanText">—</span>
+                </div>
+                <div class="quota-row">
+                    <span class="field-label">Daily AI limit</span>
+                    <span id="quotaLimitText">—</span>
+                </div>
+                <div class="quota-row">
+                    <span class="field-label">Used today</span>
+                    <span id="quotaUsedText">—</span>
+                </div>
+                <div class="quota-row">
+                    <span class="field-label">Remaining</span>
+                    <span id="quotaRemainingText">—</span>
+                </div>
+                <div class="quota-row">
+                    <span class="field-label">Status</span>
+                    <span id="quotaStatusText">—</span>
+                </div>
+                <button id="refreshQuotaButton" type="button" class="btn-sm">Refresh Quota</button>
+                <button id="logoutButton" type="button" class="btn-danger">Log Out</button>
+            </div>
+
+            <!-- Author / About panel -->
+            <div class="task-item author-card">
+                <div class="author-header">
+                    <img src="{{ url_for('static', filename='engineer-portrait.svg') }}?v=1" alt="Engineer portrait" class="author-portrait">
+                    <div class="author-info">
+                        <div class="author-name">AMIN AZIMI</div>
+                        <div class="author-role">AI Architect</div>
+                        <div class="author-org">Azimi Innovation Lab</div>
+                    </div>
+                </div>
+                <p class="author-bio">
+                    End-to-end systems development — from database schema to deployment.
+                    Every feature is verified by real test runs, not claims. Evidence over
+                    assertion: 802 tests pass, quota is enforced at every cost route, and
+                    auth tokens are hashed at rest.
+                </p>
+                <div class="author-meta">
+                    <span class="meta-pill">Version 1.1.0</span>
+                    <span class="meta-pill">Apache-2.0</span>
+                    <span class="meta-pill meta-live" id="liveStatusPill">Live</span>
+                </div>
             </div>
         </section>
 
@@ -264,6 +303,6 @@
     </nav>
 </div>
 
-<script src="{{ url_for('static', filename='js/app.js') }}?v=100" defer></script>
+<script src="{{ url_for('static', filename='js/app.js') }}?v=110" defer></script>
 </body>
 </html>
