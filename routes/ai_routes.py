@@ -18,6 +18,7 @@ from services.ai_service import (
     get_openai_client,
 )
 from services.usage_service import check_and_increment
+from services.billing_service import assert_entitlement, EntitlementError
 from routes.task_routes import insert_task
 from config import settings
 
@@ -50,6 +51,12 @@ def init_ai_routes(app, get_connection):
                     "status": "error",
                     "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
                 }), 400
+
+            # M1.1 — Entitlement gate
+            try:
+                assert_entitlement(current_user["id"], "ai_chat", get_connection)
+            except EntitlementError as ee:
+                return jsonify({"status": "error", "message": str(ee)}), 403
 
             allowed, _ = check_and_increment(current_user["id"], get_connection)
             if not allowed:
@@ -87,6 +94,12 @@ def init_ai_routes(app, get_connection):
                     "status": "error",
                     "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
                 }), 400
+
+            # M1.1 — Entitlement gate
+            try:
+                assert_entitlement(current_user["id"], "ai_to_task", get_connection)
+            except EntitlementError as ee:
+                return jsonify({"status": "error", "message": str(ee)}), 403
 
             # Quota enforcement — ai-to-task also incurs an AI call
             allowed, _ = check_and_increment(current_user["id"], get_connection)
@@ -141,6 +154,12 @@ def init_ai_routes(app, get_connection):
                     "message": f"Message too long (max {settings.AI_MAX_INPUT_CHARS} chars)",
                 }), 400
 
+            # M1.1 — Entitlement gate
+            try:
+                assert_entitlement(current_user["id"], "smart_ai", get_connection)
+            except EntitlementError as ee:
+                return jsonify({"status": "error", "message": str(ee)}), 403
+
             allowed, _ = check_and_increment(current_user["id"], get_connection)
             if not allowed:
                 return jsonify({
@@ -190,6 +209,12 @@ def init_ai_routes(app, get_connection):
             current_user, error, code = get_current_user(get_connection)
             if error:
                 return jsonify(error), code
+
+            # M1.1 — Entitlement gate (voice)
+            try:
+                assert_entitlement(current_user["id"], "transcribe_voice", get_connection)
+            except EntitlementError as ee:
+                return jsonify({"status": "error", "message": str(ee)}), 403
 
             # Quota enforcement — transcription also incurs an AI call
             allowed, _ = check_and_increment(current_user["id"], get_connection)
@@ -276,6 +301,12 @@ def init_ai_routes(app, get_connection):
             current_user, error, code = get_current_user(get_connection)
             if error:
                 return jsonify(error), code
+
+            # M1.1 — Entitlement gate (voice)
+            try:
+                assert_entitlement(current_user["id"], "voice_to_task", get_connection)
+            except EntitlementError as ee:
+                return jsonify({"status": "error", "message": str(ee)}), 403
 
             # Quota enforcement — voice-to-task incurs an AI call
             allowed, _ = check_and_increment(current_user["id"], get_connection)

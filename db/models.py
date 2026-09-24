@@ -252,7 +252,7 @@ class Subscription(db.Model):
     tenant = db.relationship("Tenant", back_populates="subscription")
 
     __table_args__ = (
-        db.CheckConstraint("plan IN ('free', 'pro')", name="ck_subscriptions_plan"),
+        db.CheckConstraint("plan IN ('free', 'pro', 'pro_plus')", name="ck_subscriptions_plan"),
         db.CheckConstraint(
             "status IN ('active', 'canceled', 'past_due')",
             name="ck_subscriptions_status",

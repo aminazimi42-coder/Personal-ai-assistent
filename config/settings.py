@@ -123,6 +123,9 @@ AI_MONTHLY_COST_LIMIT_PER_USER: float = float(
     _get("AI_MONTHLY_COST_LIMIT_PER_USER", "0") or "0"
 )
 
+# Context compiler max input-token budget per request (M1.4)
+CONTEXT_COMPILER_MAX_TOKENS: int = _get_int("CONTEXT_COMPILER_MAX_TOKENS", 4000)
+
 # ------------------------------------------------------------------ #
 # LOGGING
 # ------------------------------------------------------------------ #

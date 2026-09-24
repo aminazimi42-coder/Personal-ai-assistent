@@ -224,6 +224,18 @@ def _build_openapi_spec() -> dict:
                         "version": {"type": "string"},
                     },
                 },
+                "AccountQuota": {
+                    "type": "object",
+                    "properties": {
+                        "user_id": {"type": "integer"},
+                        "plan": {"type": "string", "enum": ["free", "pro", "pro_plus"]},
+                        "plan_name": {"type": "string"},
+                        "ai_daily_limit": {"type": "integer"},
+                        "ai_calls_today": {"type": "integer"},
+                        "remaining": {"type": "integer", "nullable": True},
+                        "quota_exceeded": {"type": "boolean"},
+                    },
+                },
             },
         },
         "security": [{"BearerAuth": []}],
@@ -447,6 +459,67 @@ def _build_openapi_spec() -> dict:
                         },
                         "400": {
                             "description": "Invalid webhook payload",
+                            "content": {
+                                "application/json": {"schema": {"$ref": "#/components/schemas/Error"}},
+                            },
+                        },
+                    },
+                },
+            },
+            "/privacy/export": {
+                "get": {
+                    "summary": "Export all data for the authenticated user (GDPR)",
+                    "responses": {
+                        "200": {
+                            "description": "User data export",
+                            "content": {
+                                "application/json": {"schema": {"type": "object"}},
+                            },
+                        },
+                        "401": {
+                            "description": "Authentication required",
+                            "content": {
+                                "application/json": {"schema": {"$ref": "#/components/schemas/Error"}},
+                            },
+                        },
+                    },
+                },
+            },
+            "/privacy/account": {
+                "delete": {
+                    "summary": "Delete the user account and all associated data (GDPR)",
+                    "parameters": [
+                        {"name": "confirm", "in": "query", "required": True,
+                         "schema": {"type": "string"}, "description": "Pass confirm=true to confirm deletion"},
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "Account deleted",
+                            "content": {
+                                "application/json": {"schema": {"$ref": "#/components/schemas/Error"}},
+                            },
+                        },
+                        "400": {
+                            "description": "Confirmation required",
+                            "content": {
+                                "application/json": {"schema": {"$ref": "#/components/schemas/Error"}},
+                            },
+                        },
+                    },
+                },
+            },
+            "/api/v1/account/quota": {
+                "get": {
+                    "summary": "Get the current user plan and remaining quota",
+                    "responses": {
+                        "200": {
+                            "description": "Plan and quota details",
+                            "content": {
+                                "application/json": {"schema": {"$ref": "#/components/schemas/AccountQuota"}},
+                            },
+                        },
+                        "401": {
+                            "description": "Authentication required",
                             "content": {
                                 "application/json": {"schema": {"$ref": "#/components/schemas/Error"}},
                             },
@@ -679,5 +752,35 @@ def init_api_v1_routes(app, get_connection):
         except Exception:
             logger.error("Billing webhook error", exc_info=True)
             return _error_response("Could not process webhook", 500)
+
+    # ------------------------------------------------------------------ #
+    # Account quota (M1.5 — release pack: expose plan name + remaining quota)
+    # ------------------------------------------------------------------ #
+    @api_v1.route("/api/v1/account/quota", methods=["GET"])
+    def account_quota():
+        user, error, code = get_current_user(get_connection)
+        if error:
+            return _error_response(error["message"], code)
+        try:
+            from services.billing_service import get_user_plan, Plan
+            from services.usage_service import get_usage
+            plan_name = get_user_plan(user["id"], get_connection)
+            plan_def = Plan.get(plan_name) or Plan.get("free")
+            usage = get_usage(user["id"], get_connection)
+            daily_limit = plan_def.get("ai_daily_limit", 0)
+            used = usage.get("ai_calls_today", 0)
+            remaining = (daily_limit - used) if daily_limit > 0 else None
+            return jsonify({
+                "user_id": user["id"],
+                "plan": plan_name,
+                "plan_name": plan_def.get("name", plan_name),
+                "ai_daily_limit": daily_limit,
+                "ai_calls_today": used,
+                "remaining": remaining,
+                "quota_exceeded": usage.get("quota_exceeded", False),
+            })
+        except Exception:
+            logger.error("Account quota error", exc_info=True)
+            return _error_response("Could not retrieve quota", 500)
 
     app.register_blueprint(api_v1)

@@ -166,6 +166,107 @@ def _language_instruction() -> str:
 
 
 # ------------------------------------------------------------------ #
+# Intent short-circuit (M1.3)
+# ------------------------------------------------------------------ #
+
+import re as _re
+
+# Patterns that can be handled without an LLM call.
+# Each maps to a result dict matching the decide_smart_action return shape.
+_SHORT_CIRCUIT_PATTERNS: list[tuple[tuple, str]] = [
+    # Quota / usage status — return a status reply
+    ((_re.compile(r"\b(what|how).*(my|the).*(quota|usage|limit|remaining|plan)\b", _re.IGNORECASE),
+      _re.compile(r"\b(quota|usage|limit|remaining|plan)\b", _re.IGNORECASE)),
+     "quota_status"),
+    # List reminders
+    ((_re.compile(r"\b(list|show|what).*(reminders?|alerts?|notifications?)\b", _re.IGNORECASE),),
+     "list_reminders"),
+    # List tasks
+    ((_re.compile(r"\b(list|show|what).*(tasks?|todos?|to-?do)\b", _re.IGNORECASE),),
+     "list_tasks"),
+    # List appointments
+    ((_re.compile(r"\b(list|show|what).*(appointments?|meetings?|schedule|calendar)\b", _re.IGNORECASE),),
+     "list_appointments"),
+]
+
+
+def _try_short_circuit(user_message: str) -> dict | None:
+    """
+    Check if the message matches a clear no-LLM intent.
+
+    Returns a decision dict (same shape as decide_smart_action) if it
+    matches, or None to fall through to the LLM path.
+
+    Does NOT build a new framework — just cheap regex checks that avoid
+    a costly model call for obvious cases.
+    """
+    if not user_message or not user_message.strip():
+        return None
+
+    msg = user_message.strip()
+
+    for patterns, intent in _SHORT_CIRCUIT_PATTERNS:
+        if all(p.search(msg) for p in patterns):
+            if intent == "quota_status":
+                return {
+                    "action": "reply",
+                    "title": "",
+                    "description": "",
+                    "priority": "medium",
+                    "status": "pending",
+                    "due_date": None,
+                    "reply": (
+                        "You can check your current quota and plan details "
+                        "via the /api/v1/account/quota endpoint."
+                    ),
+                    "_short_circuit": True,
+                }
+            elif intent == "list_reminders":
+                return {
+                    "action": "reply",
+                    "title": "",
+                    "description": "",
+                    "priority": "medium",
+                    "status": "pending",
+                    "due_date": None,
+                    "reply": (
+                        "You can view your upcoming reminders at the "
+                        "/reminders endpoint."
+                    ),
+                    "_short_circuit": True,
+                }
+            elif intent == "list_tasks":
+                return {
+                    "action": "reply",
+                    "title": "",
+                    "description": "",
+                    "priority": "medium",
+                    "status": "pending",
+                    "due_date": None,
+                    "reply": (
+                        "You can view your tasks at the /tasks endpoint."
+                    ),
+                    "_short_circuit": True,
+                }
+            elif intent == "list_appointments":
+                return {
+                    "action": "reply",
+                    "title": "",
+                    "description": "",
+                    "priority": "medium",
+                    "status": "pending",
+                    "due_date": None,
+                    "reply": (
+                        "You can view your appointments at the "
+                        "/appointments endpoint."
+                    ),
+                    "_short_circuit": True,
+                }
+
+    return None
+
+
+# ------------------------------------------------------------------ #
 # AI functions
 # ------------------------------------------------------------------ #
 
@@ -262,8 +363,21 @@ def decide_smart_action(user_message: str) -> dict:
     """
     Decide whether to reply conversationally or create a task.
     Uses a SINGLE LLM call — eliminates the prior double-call pattern.
+
+    Before calling the LLM, checks if the message is a clear no-LLM
+    intent (quota status, list reminders, etc.) and short-circuits.
     """
     t0 = time.monotonic()
+
+    # --- M1.3: Intent short-circuit — no LLM for clear intents ---
+    short = _try_short_circuit(user_message)
+    if short is not None:
+        logger.info(
+            "smart_action short-circuited (no LLM)",
+            extra={"op": "decide_smart_action", "duration_ms": round((time.monotonic() - t0) * 1000)},
+        )
+        return short
+
     try:
         provider = get_llm()
         prompt = (

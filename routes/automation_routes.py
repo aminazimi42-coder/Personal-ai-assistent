@@ -21,6 +21,7 @@ from services.automation import (
     list_automation_runs,
     TriggerType,
 )
+from services.billing_service import assert_entitlement, EntitlementError
 from db.pool import return_connection
 
 logger = logging.getLogger(__name__)
@@ -61,6 +62,12 @@ def init_automation_routes(app, get_connection):
                 trigger_type = TriggerType(trigger_type_str)
             except ValueError:
                 trigger_type = TriggerType.MANUAL
+
+            # M1.1 — Entitlement gate: automation creation requires automations feature
+            try:
+                assert_entitlement(current_user["id"], "automation_create", get_connection)
+            except EntitlementError as ee:
+                return jsonify({"status": "error", "message": str(ee)}), 403
 
             auto = create_automation(
                 user_id=current_user["id"],

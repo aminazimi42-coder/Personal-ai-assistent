@@ -19,6 +19,7 @@ from services.agentic_execution import (
     is_action_allowed,
     ActionStatus,
 )
+from services.billing_service import assert_entitlement, EntitlementError
 from db.pool import return_connection
 
 logger = logging.getLogger(__name__)
@@ -31,11 +32,12 @@ logger = logging.getLogger(__name__)
 # ------------------------------------------------------------------ #
 
 def _make_task_executor(get_connection):
-    """Return an executor that creates a task in the DB."""
+    """Return an executor that creates a task in the DB with write verification."""
     from routes.task_routes import insert_task
+    from services.write_verification import verify_write
 
     def _exec(user_id, **params):
-        return insert_task(
+        task = insert_task(
             get_connection=get_connection,
             title=params.get("title", ""),
             description=params.get("description", ""),
@@ -44,6 +46,13 @@ def _make_task_executor(get_connection):
             due_date=params.get("due_date"),
             user_id=user_id,
         )
+        # M1.2 — Write verification: read back the row scoped by user_id
+        if task and task.get("id"):
+            verification = verify_write(
+                user_id, "tasks", task["id"], get_connection,
+            )
+            task["_write_verified"] = verification["verified"]
+        return task
     return _exec
 
 
@@ -81,11 +90,12 @@ def _make_update_task_executor(get_connection):
 
 
 def _make_appointment_executor(get_connection):
-    """Return an executor that creates an appointment in the DB."""
+    """Return an executor that creates an appointment in the DB with write verification."""
     from routes.calendar_routes import insert_appointment
+    from services.write_verification import verify_write
 
     def _exec(user_id, **params):
-        return insert_appointment(
+        appt = insert_appointment(
             get_connection=get_connection,
             title=params.get("title", ""),
             appointment_time=params.get("appointment_time"),
@@ -94,6 +104,13 @@ def _make_appointment_executor(get_connection):
             status=params.get("status", "scheduled"),
             user_id=user_id,
         )
+        # M1.2 — Write verification: read back the row scoped by user_id
+        if appt and appt.get("id"):
+            verification = verify_write(
+                user_id, "appointments", appt["id"], get_connection,
+            )
+            appt["_write_verified"] = verification["verified"]
+        return appt
     return _exec
 
 
@@ -131,6 +148,15 @@ def init_agent_routes(app, get_connection):
 
             if not is_action_allowed(action_name):
                 return jsonify({"status": "error", "message": f"Unknown action: {action_name}"}), 400
+
+            # M1.1 — Entitlement gate: write actions require agent_write capability
+            from services.agentic_execution import _ACTION_REGISTRY, ActionType
+            action_info = _ACTION_REGISTRY.get(action_name, {})
+            if action_info.get("type") in (ActionType.WRITE, ActionType.DESTRUCTIVE):
+                try:
+                    assert_entitlement(current_user["id"], "agent_write", get_connection)
+                except EntitlementError as ee:
+                    return jsonify({"status": "error", "message": str(ee)}), 403
 
             params = data.get("params", {})
             if not isinstance(params, dict):

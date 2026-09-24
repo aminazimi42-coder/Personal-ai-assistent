@@ -36,6 +36,7 @@ class Plan:
 
     FREE = "free"
     PRO = "pro"
+    PRO_PLUS = "pro_plus"
 
     PLANS: dict[str, dict] = {
         "free": {
@@ -43,13 +44,31 @@ class Plan:
             "price_monthly": 0,
             "ai_daily_limit": 50,
             "features": ["basic_ai", "tasks", "calendar"],
+            "agent_writes": False,
+            "voice": True,
+            "voice_daily_limit": 5,
         },
         "pro": {
             "name": "Pro",
             "price_monthly": 20,
             "ai_daily_limit": 1000,
             "features": ["basic_ai", "tasks", "calendar", "advanced_ai",
-                          "priority_support", "team_collaboration"],
+                          "priority_support", "team_collaboration", "memory",
+                          "retrieval"],
+            "agent_writes": True,
+            "voice": True,
+            "voice_daily_limit": 100,
+        },
+        "pro_plus": {
+            "name": "Pro Plus",
+            "price_monthly": 50,
+            "ai_daily_limit": 5000,
+            "features": ["basic_ai", "tasks", "calendar", "advanced_ai",
+                          "priority_support", "team_collaboration", "memory",
+                          "retrieval", "multiple_workspaces", "automations"],
+            "agent_writes": True,
+            "voice": True,
+            "voice_daily_limit": 500,
         },
     }
 
@@ -575,3 +594,100 @@ def check_entitlement(tenant_id: int, feature: str,
     """
     entitlements = get_entitlements(tenant_id, get_connection_fn)
     return feature in entitlements["features"]
+
+
+# ------------------------------------------------------------------ #
+# User-level entitlement gate (M1.1)
+# ------------------------------------------------------------------ #
+
+# Actions that require specific plan capabilities.
+# Each action maps to a capability key in the plan definition.
+_ACTION_CAPABILITY_MAP: dict[str, str] = {
+    "ai_chat": "basic_ai",
+    "ai_to_task": "basic_ai",
+    "smart_ai": "basic_ai",
+    "transcribe_voice": "voice",
+    "voice_to_task": "voice",
+    "agent_write": "agent_writes",
+    "automation_create": "automations",
+}
+
+
+def get_user_plan(user_id: int, get_connection_fn=None) -> str:
+    """
+    Resolve the plan for a user.
+
+    Looks up the user's tenant(s) and their subscription.
+    Defaults to 'free' if no tenant/subscription is found.
+    """
+    if get_connection_fn is None:
+        return "free"
+    try:
+        from services.tenant_service import get_user_tenants
+        tenants = get_user_tenants(user_id, get_connection_fn)
+        if not tenants:
+            return "free"
+        # Use the first tenant's subscription
+        tenant_id = tenants[0].get("id")
+        if tenant_id is None:
+            return "free"
+        sub = get_subscription(tenant_id, get_connection_fn)
+        return sub["plan"] if sub else "free"
+    except Exception:
+        logger.warning("get_user_plan failed for user %s — defaulting to free", user_id)
+        return "free"
+
+
+class EntitlementError(Exception):
+    """Raised when a user's plan does not permit an action."""
+
+    def __init__(self, action: str, plan: str, required: str):
+        self.action = action
+        self.plan = plan
+        self.required = required
+        super().__init__(
+            f"Plan '{plan}' does not permit action '{action}' "
+            f"(requires '{required}')."
+        )
+
+
+def assert_entitlement(user_id: int, action: str,
+                       get_connection_fn=None) -> bool:
+    """
+    Assert that the user's plan permits the given action.
+
+    Args:
+        user_id: The user requesting the action.
+        action: One of: ai_chat, ai_to_task, smart_ai, transcribe_voice,
+                voice_to_task, agent_write, automation_create.
+        get_connection_fn: DB connection provider (optional; falls back to
+                           in-memory stores).
+
+    Returns:
+        True if the action is permitted.
+
+    Raises:
+        EntitlementError: if the user's plan does not include the
+                          required capability.
+    """
+    plan_name = get_user_plan(user_id, get_connection_fn)
+    plan_def = Plan.get(plan_name)
+    if plan_def is None:
+        plan_def = Plan.get("free")
+    required = _ACTION_CAPABILITY_MAP.get(action)
+
+    if required is None:
+        # Unknown action — allow by default (quota still applies)
+        return True
+
+    # Check boolean capability flags (agent_writes, voice)
+    if required in ("agent_writes", "voice"):
+        if not plan_def.get(required, False):
+            raise EntitlementError(action, plan_name, required)
+        return True
+
+    # Check feature-list capabilities
+    if required not in plan_def.get("features", []):
+        raise EntitlementError(action, plan_name, required)
+
+    return True
