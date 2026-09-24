@@ -215,6 +215,7 @@ def _mem_create_tenant(name: str, owner_user_id: int) -> dict:
 
 
 def add_member(tenant_id: int, user_id: int, role: str = "member",
+               requesting_user_id: int | None = None,
                get_connection_fn=None) -> dict:
     """
     Add a user to a tenant with a given role.
@@ -227,6 +228,14 @@ def add_member(tenant_id: int, user_id: int, role: str = "member",
 
     tenant_id = int(tenant_id)
     user_id = int(user_id)
+
+    if requesting_user_id is not None:
+        requesting_user_id = int(requesting_user_id)
+        actor_role = get_member_role(tenant_id, requesting_user_id, get_connection_fn)
+        if actor_role not in ("owner", "admin"):
+            raise PermissionError("Only tenant owners and admins can manage members")
+        if role == "owner" and actor_role != "owner":
+            raise PermissionError("Only the tenant owner can assign the owner role")
 
     if get_connection_fn is None or not _is_db_available(get_connection_fn):
         return _mem_add_member(tenant_id, user_id, role)
@@ -274,6 +283,23 @@ def _mem_add_member(tenant_id: int, user_id: int, role: str) -> dict:
         }
         _mem_memberships[mid] = membership
     return _serialize_membership(membership)
+
+
+def get_member_role(tenant_id: int, user_id: int, get_connection_fn=None) -> str | None:
+    """Return a user tenant role, or None when not a member."""
+    tenant_id=int(tenant_id); user_id=int(user_id)
+    if get_connection_fn is None or not _is_db_available(get_connection_fn):
+        with _lock:
+            for m in _mem_memberships.values():
+                if m["tenant_id"] == tenant_id and m["user_id"] == user_id: return m["role"]
+        return None
+    conn=get_connection_fn(); cur=conn.cursor(cursor_factory=RealDictCursor)
+    try:
+        cur.execute("SELECT role FROM tenant_memberships WHERE tenant_id = %s AND user_id = %s", (tenant_id,user_id)); row=cur.fetchone(); return row["role"] if row else None
+    finally:
+        cur.close()
+        from db.pool import return_connection
+        return_connection(conn)
 
 
 def list_members(tenant_id: int, requesting_user_id: int,

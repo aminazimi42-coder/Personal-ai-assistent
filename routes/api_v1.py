@@ -568,7 +568,11 @@ def init_api_v1_routes(app, get_connection):
             if not member_user_id:
                 return _error_response("user_id is required", 400)
             membership = tenant_service.add_member(
-                tenant_id, int(member_user_id), role, get_connection
+                tenant_id,
+                int(member_user_id),
+                role,
+                requesting_user_id=user["id"],
+                get_connection_fn=get_connection,
             )
             return jsonify(membership), 201
         except ValueError as ve:
