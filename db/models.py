@@ -463,3 +463,25 @@ class Job(db.Model):
         ),
         db.Index("ix_jobs_status", "status"),
     )
+
+
+# ------------------------------------------------------------------ #
+# User Files (M2.3 — file upload)
+# ------------------------------------------------------------------ #
+
+class UserFile(db.Model):
+    """A user-uploaded file (photo or document), owner-scoped."""
+    __tablename__ = "user_files"
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False, index=True,
+    )
+    filename = db.Column(db.Text, nullable=False)
+    content_type = db.Column(db.Text, nullable=False)
+    size_bytes = db.Column(db.Integer, nullable=False)
+    stored_path = db.Column(db.Text, nullable=False)
+    created_at = db.Column(
+        db.DateTime(timezone=True), nullable=False, default=utcnow
+    )

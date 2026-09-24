@@ -70,3 +70,4 @@ Thumbs.db
 .bob/
 *.sublime-project
 *.sublime-workspace
+data/uploads/

@@ -227,13 +227,24 @@ def _build_openapi_spec() -> dict:
                 "AccountQuota": {
                     "type": "object",
                     "properties": {
-                        "user_id": {"type": "integer"},
-                        "plan": {"type": "string", "enum": ["free", "pro", "pro_plus"]},
-                        "plan_name": {"type": "string"},
-                        "ai_daily_limit": {"type": "integer"},
-                        "ai_calls_today": {"type": "integer"},
-                        "remaining": {"type": "integer", "nullable": True},
-                        "quota_exceeded": {"type": "boolean"},
+                        "user_id": { "type": "integer" },
+                        "plan": { "type": "string", "enum": ["free", "pro", "pro_plus"] },
+                        "plan_name": { "type": "string" },
+                        "ai_daily_limit": { "type": "integer" },
+                        "ai_calls_today": { "type": "integer" },
+                        "remaining": { "type": "integer", "nullable": True },
+                        "quota_exceeded": { "type": "boolean" },
+                    },
+                },
+                "UserFile": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "integer" },
+                        "user_id": { "type": "integer" },
+                        "filename": { "type": "string" },
+                        "content_type": { "type": "string" },
+                        "size_bytes": { "type": "integer" },
+                        "created_at": { "type": "string", "format": "date-time" },
                     },
                 },
             },
@@ -515,13 +526,133 @@ def _build_openapi_spec() -> dict:
                         "200": {
                             "description": "Plan and quota details",
                             "content": {
-                                "application/json": {"schema": {"$ref": "#/components/schemas/AccountQuota"}},
+                                "application/json": { "schema": { "$ref": "#/components/schemas/AccountQuota" }},
                             },
                         },
                         "401": {
                             "description": "Authentication required",
                             "content": {
-                                "application/json": {"schema": {"$ref": "#/components/schemas/Error"}},
+                                "application/json": { "schema": { "$ref": "#/components/schemas/Error" }},
+                            },
+                        },
+                    },
+                },
+            },
+            "/files": {
+                "post": {
+                    "summary": "Upload a file (photo or document)",
+                    "description": "Upload a file with MIME allowlist (jpeg/png/webp, pdf/txt/markdown) and size cap. Stored outside git, owner-scoped.",
+                    "requestBody": {
+                        "required": True,
+                        "content": {
+                            "multipart/form-data": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": ["file"],
+                                    "properties": {
+                                        "file": {
+                                            "type": "string",
+                                            "format": "binary",
+                                            "description": "The file to upload",
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    "responses": {
+                        "201": {
+                            "description": "File uploaded",
+                            "content": {
+                                "application/json": { "schema": { "$ref": "#/components/schemas/UserFile" }},
+                            },
+                        },
+                        "400": {
+                            "description": "Invalid file or empty upload",
+                            "content": {
+                                "application/json": { "schema": { "$ref": "#/components/schemas/Error" }},
+                            },
+                        },
+                        "401": {
+                            "description": "Authentication required",
+                            "content": {
+                                "application/json": { "schema": { "$ref": "#/components/schemas/Error" }},
+                            },
+                        },
+                        "413": {
+                            "description": "File too large",
+                            "content": {
+                                "application/json": { "schema": { "$ref": "#/components/schemas/Error" }},
+                            },
+                        },
+                    },
+                },
+                "get": {
+                    "summary": "List all files for the authenticated user",
+                    "responses": {
+                        "200": {
+                            "description": "List of user files",
+                            "content": {
+                                "application/json": {
+                                    "schema": {
+                                        "type": "object",
+                                        "properties": {
+                                            "items": {
+                                                "type": "array",
+                                                "items": { "$ref": "#/components/schemas/UserFile" },
+                                            },
+                                            "total": { "type": "integer" },
+                                        },
+                                    },
+                                },
+                            },
+                        },
+                        "401": {
+                            "description": "Authentication required",
+                            "content": {
+                                "application/json": { "schema": { "$ref": "#/components/schemas/Error" }},
+                            },
+                        },
+                    },
+                },
+            },
+            "/files/{file_id}": {
+                "get": {
+                    "summary": "Get a single file record (owner only)",
+                    "parameters": [
+                        { "name": "file_id", "in": "path", "required": True, "schema": { "type": "integer" }},
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "File record",
+                            "content": {
+                                "application/json": { "schema": { "$ref": "#/components/schemas/UserFile" }},
+                            },
+                        },
+                        "404": {
+                            "description": "File not found or not owned by user",
+                            "content": {
+                                "application/json": { "schema": { "$ref": "#/components/schemas/Error" }},
+                            },
+                        },
+                    },
+                },
+                "delete": {
+                    "summary": "Delete a file (owner only)",
+                    "parameters": [
+                        { "name": "file_id", "in": "path", "required": True, "schema": { "type": "integer" }},
+                    ],
+                    "responses": {
+                        "200": {
+                            "description": "File deleted",
+                            "content": {
+                                "application/json": { "schema": { "$ref": "#/components/schemas/Error" }},
+                            },
+                        },
+                        "404": {
+                            "description": "File not found or not owned by user",
+                            "content": {
+                                "application/json": { "schema": { "$ref": "#/components/schemas/Error" }},
                             },
                         },
                     },
@@ -782,5 +913,91 @@ def init_api_v1_routes(app, get_connection):
         except Exception:
             logger.error("Account quota error", exc_info=True)
             return _error_response("Could not retrieve quota", 500)
+
+    # ------------------------------------------------------------------ #
+    # File uploads (M2.3 — photos + documents)
+    # ------------------------------------------------------------------ #
+    @api_v1.route("/api/v1/files", methods=["POST"])
+    def upload_file():
+        user, error, code = get_current_user(get_connection)
+        if error:
+            return _error_response(error["message"], code)
+        try:
+            if "file" not in request.files:
+                return _error_response("File is required", 400)
+            uploaded = request.files["file"]
+            if not uploaded or not uploaded.filename:
+                return _error_response("Invalid file", 400)
+
+            # Read and cap size before writing to disk
+            from services.file_service import (
+                create_file, FILE_MAX_UPLOAD_BYTES,
+            )
+            file_data = uploaded.read(FILE_MAX_UPLOAD_BYTES + 1)
+            if len(file_data) > FILE_MAX_UPLOAD_BYTES:
+                return _error_response(
+                    f"File too large (max {FILE_MAX_UPLOAD_BYTES // (1024 * 1024)} MB)",
+                    413,
+                )
+            if len(file_data) == 0:
+                return _error_response("File is empty", 400)
+
+            content_type = uploaded.content_type or ""
+            record = create_file(
+                user_id=user["id"],
+                filename=uploaded.filename,
+                content_type=content_type,
+                file_data=file_data,
+                get_connection_fn=get_connection,
+            )
+            return jsonify(record), 201
+        except ValueError as ve:
+            return _error_response(str(ve), 400)
+        except Exception:
+            logger.error("File upload error", exc_info=True)
+            return _error_response("Could not upload file", 500)
+
+    @api_v1.route("/api/v1/files", methods=["GET"])
+    def list_user_files():
+        user, error, code = get_current_user(get_connection)
+        if error:
+            return _error_response(error["message"], code)
+        try:
+            from services.file_service import list_files
+            files = list_files(user["id"], get_connection)
+            return jsonify({"items": files, "total": len(files)})
+        except Exception:
+            logger.error("List files error", exc_info=True)
+            return _error_response("Could not list files", 500)
+
+    @api_v1.route("/api/v1/files/<int:file_id>", methods=["GET"])
+    def get_user_file(file_id):
+        user, error, code = get_current_user(get_connection)
+        if error:
+            return _error_response(error["message"], code)
+        try:
+            from services.file_service import get_file
+            record = get_file(file_id, user["id"], get_connection)
+            if not record:
+                return _error_response("File not found", 404)
+            return jsonify(record)
+        except Exception:
+            logger.error("Get file error", exc_info=True)
+            return _error_response("Could not retrieve file", 500)
+
+    @api_v1.route("/api/v1/files/<int:file_id>", methods=["DELETE"])
+    def delete_user_file(file_id):
+        user, error, code = get_current_user(get_connection)
+        if error:
+            return _error_response(error["message"], code)
+        try:
+            from services.file_service import delete_file
+            deleted = delete_file(file_id, user["id"], get_connection)
+            if not deleted:
+                return _error_response("File not found", 404)
+            return jsonify({"status": "success", "message": "File deleted"})
+        except Exception:
+            logger.error("Delete file error", exc_info=True)
+            return _error_response("Could not delete file", 500)
 
     app.register_blueprint(api_v1)

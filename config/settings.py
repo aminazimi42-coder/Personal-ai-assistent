@@ -109,7 +109,10 @@ ALLOWED_AUDIO_MIME_TYPES: list[str] = [
     "audio/mpeg",
     "audio/wav",
     "audio/x-wav",
+    "audio/m4a",
+    "audio/x-m4a",
     "video/webm",  # Chrome sometimes sends this for audio
+    "video/mp4",   # iOS Safari may send this for audio recordings
 ]
 
 # ------------------------------------------------------------------ #
@@ -125,6 +128,23 @@ AI_MONTHLY_COST_LIMIT_PER_USER: float = float(
 
 # Context compiler max input-token budget per request (M1.4)
 CONTEXT_COMPILER_MAX_TOKENS: int = _get_int("CONTEXT_COMPILER_MAX_TOKENS", 4000)
+
+# ------------------------------------------------------------------ #
+# FILE UPLOADS (M2.3)
+# ------------------------------------------------------------------ #
+FILE_STORAGE_DIR: str = _get(
+    "FILE_STORAGE_DIR",
+    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "uploads"),
+)
+FILE_MAX_UPLOAD_BYTES: int = _get_int("FILE_MAX_UPLOAD_BYTES", 25 * 1024 * 1024)  # 25 MB
+FILE_ALLOWED_MIME_TYPES: list[str] = [
+    "image/jpeg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+    "text/plain",
+    "text/markdown",
+]
 
 # ------------------------------------------------------------------ #
 # LOGGING
