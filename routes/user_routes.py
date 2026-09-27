@@ -51,6 +51,7 @@ def init_user_routes(app, get_connection):
 
             conn = get_connection()
             cur = conn.cursor(cursor_factory=RealDictCursor)
+            db_exc = None
             try:
                 # Check existing user
                 cur.execute(
@@ -75,9 +76,27 @@ def init_user_routes(app, get_connection):
                 """, (name, email, hashed_pw, token_hash, expires_at))
                 user = cur.fetchone()
                 conn.commit()
+            except Exception as exc:
+                db_exc = exc
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
             finally:
                 cur.close()
                 return_connection(conn)
+
+            if db_exc is not None:
+                pgcode = getattr(db_exc, "pgcode", None)
+                logger.error(
+                    "Signup DB error type=%s pgcode=%s",
+                    type(db_exc).__name__, pgcode, exc_info=db_exc,
+                )
+                return jsonify({"status": "error", "message": "Signup failed"}), 500
+
+            if user is None:
+                logger.error("Signup INSERT returned no row (unexpected)")
+                return jsonify({"status": "error", "message": "Signup failed"}), 500
 
             logger.info("New user registered: id=%d", user["id"])
             return jsonify({
@@ -119,6 +138,7 @@ def init_user_routes(app, get_connection):
 
             conn = get_connection()
             cur = conn.cursor(cursor_factory=RealDictCursor)
+            db_exc = None
             try:
                 cur.execute(
                     "SELECT id, name, email, password, created_at "
@@ -179,9 +199,23 @@ def init_user_routes(app, get_connection):
                         (token_hash, expires_at, user["id"]),
                     )
                 conn.commit()
+            except Exception as exc:
+                db_exc = exc
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
             finally:
                 cur.close()
                 return_connection(conn)
+
+            if db_exc is not None:
+                pgcode = getattr(db_exc, "pgcode", None)
+                logger.error(
+                    "Login DB error type=%s pgcode=%s",
+                    type(db_exc).__name__, pgcode, exc_info=db_exc,
+                )
+                return jsonify({"status": "error", "message": "Login failed"}), 500
 
             logger.info("User logged in: id=%d", user["id"])
             return jsonify({
