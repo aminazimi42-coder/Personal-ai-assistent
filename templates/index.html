@@ -284,6 +284,18 @@
                 <button id="logoutButton" type="button" class="btn-danger">Log Out</button>
             </div>
 
+            <!-- Files panel shown when authenticated -->
+            <div id="filesPanel" class="task-item quiet-card is-hidden">
+                <h3 class="form-heading">My Files</h3>
+                <div class="quota-row">
+                    <span class="field-label">Upload</span>
+                    <input id="fileUploadInput" type="file" accept=".jpg,.jpeg,.png,.webp,.pdf,.txt,.md" style="flex:1;min-width:0;">
+                    <button id="uploadFileButton" type="button" class="btn-sm">Upload</button>
+                </div>
+                <div id="fileUploadStatus" class="status-line"></div>
+                <div id="fileListContainer" style="margin-top:8px;"></div>
+            </div>
+
             <!-- Author / About panel -->
             <div class="task-item author-card">
                 <div class="author-header">
@@ -291,7 +303,7 @@
                     <div class="author-info">
                         <div class="author-name">AMIN AZIMI</div>
                         <div class="author-role">AI Architect</div>
-                        <div class="author-org">Azimi Innovation Lab</div>
+                        <div class="author-org">End-to-End Systems Development — Azimi Innovation Lab</div>
                     </div>
                 </div>
                 <p class="author-bio">
@@ -318,6 +330,6 @@
     </nav>
 </div>
 
-<script src="{{ url_for('static', filename='js/app.js') }}?v=110" defer></script>
+<script src="{{ url_for('static', filename='js/app.js') }}?v=120" defer></script>
 </body>
 </html>

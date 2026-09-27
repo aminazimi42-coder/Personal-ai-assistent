@@ -179,6 +179,16 @@ function updateLoggedInUiState() {
     if (accountQuotaPanel) {
         accountQuotaPanel.classList.toggle("is-hidden", !hasToken);
     }
+    const filesPanel = document.getElementById("filesPanel");
+    if (filesPanel) {
+        filesPanel.classList.toggle("is-hidden", !hasToken);
+        if (hasToken) {
+            loadFileList();
+        } else {
+            const fileListContainer = document.getElementById("fileListContainer");
+            if (fileListContainer) fileListContainer.innerHTML = "";
+        }
+    }
     updateAuthStatus(hasToken ? "Logged in" : "Not logged in");
     updateSendButtonState();
 }
@@ -2251,3 +2261,90 @@ document.querySelectorAll(".bottom-nav-item").forEach(button => {
 });
 
 showAppTab("home");
+
+
+/* =========================
+   FILE UPLOAD — /api/v1/files
+   ========================= */
+
+async function uploadFile() {
+    const input = document.getElementById("fileUploadInput");
+    const statusEl = document.getElementById("fileUploadStatus");
+    if (!input || !input.files || input.files.length === 0) {
+        if (statusEl) statusEl.textContent = "Please select a file first.";
+        return;
+    }
+    const file = input.files[0];
+    if (statusEl) statusEl.textContent = "Uploading…";
+
+    const formData = new FormData();
+    formData.append("file", file, file.name);
+
+    try {
+        const res = await authorizedFetch("/api/v1/files", {
+            method: "POST",
+            body: formData,
+        });
+        const data = await res.json();
+        if (!res.ok) {
+            if (statusEl) statusEl.textContent = "Upload failed: " + ((data && data.message) || `HTTP ${res.status}`);
+            return;
+        }
+        if (statusEl) statusEl.textContent = "Uploaded: " + escapeHtml(data.filename || file.name);
+        input.value = "";
+        loadFileList();
+    } catch (err) {
+        if (statusEl) statusEl.textContent = "Upload error: " + (err.message || "network error");
+    }
+}
+
+async function deleteUploadedFile(fileId, filename) {
+    if (!confirm("Delete file: " + filename + "?")) return;
+    const statusEl = document.getElementById("fileUploadStatus");
+    try {
+        const res = await authorizedFetch("/api/v1/files/" + fileId, { method: "DELETE" });
+        if (!res.ok) {
+            const data = await res.json().catch(() => ({}));
+            if (statusEl) statusEl.textContent = "Delete failed: " + ((data && data.message) || `HTTP ${res.status}`);
+            return;
+        }
+        if (statusEl) statusEl.textContent = "File deleted.";
+        loadFileList();
+    } catch (err) {
+        if (statusEl) statusEl.textContent = "Delete error: " + (err.message || "network error");
+    }
+}
+
+async function loadFileList() {
+    const container = document.getElementById("fileListContainer");
+    if (!container) return;
+    if (!getAuthToken()) { container.innerHTML = ""; return; }
+
+    try {
+        const res = await authorizedFetch("/api/v1/files");
+        const data = await res.json();
+        if (!res.ok || !Array.isArray(data.items)) {
+            container.innerHTML = `<div class="status-line">Could not load files.</div>`;
+            return;
+        }
+        if (data.items.length === 0) {
+            container.innerHTML = `<div class="status-line">No files uploaded yet.</div>`;
+            return;
+        }
+        container.innerHTML = data.items.map(f => {
+            const sizeKb = f.size_bytes ? Math.round(f.size_bytes / 1024) + " KB" : "—";
+            const name = escapeHtml(f.filename || "file");
+            return `<div class="task-item" style="padding:8px 10px;display:flex;justify-content:space-between;align-items:center;gap:8px;">
+                <span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name} <span style="color:var(--text-muted)">(${sizeKb})</span></span>
+                <button type="button" class="btn-sm" style="flex-shrink:0;" onclick="deleteUploadedFile(${f.id}, '${name.replace(/'/g, "\\'")}')">Delete</button>
+            </div>`;
+        }).join("");
+    } catch (err) {
+        container.innerHTML = `<div class="status-line">Could not load files.</div>`;
+    }
+}
+
+const uploadFileButton = document.getElementById("uploadFileButton");
+if (uploadFileButton) {
+    uploadFileButton.addEventListener("click", uploadFile);
+}
