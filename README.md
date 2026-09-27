@@ -22,7 +22,7 @@
 | **API v1** | `/api/v1/` with generated OpenAPI spec (`_build_openapi_spec`) |
 | **Current version** | 1.1.0 |
 | **Immutable baseline** | v1.0.0 / `f02a32f` / Apache-2.0 |
-| **Tests** | 802 passing (real count from this run) |
+| **Tests** | 853 passing (real count from this run) |
 | **License** | Apache-2.0 ([LICENSE](LICENSE)) |
 | **Status** | Active maintenance — not a commercial market launch yet |
 
@@ -59,18 +59,30 @@
 ![Flask](https://img.shields.io/badge/Flask-3.0.3-000000?style=flat-square&logo=flask&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Production-4169E1?style=flat-square&logo=postgresql&logoColor=white)
 ![Apache](https://img.shields.io/badge/Apache-2.0-blue?style=flat-square)
-![pytest](https://img.shields.io/badge/pytest-802%20pass-brightgreen?style=flat-square)
+![pytest](https://img.shields.io/badge/pytest-853%20pass-brightgreen?style=flat-square)
 
-> No fake coverage badge. Test count reflects the actual run (802/802 pass).
+> No fake coverage badge. Test count reflects the actual run (853/853 pass).
 
 ---
 
-## Journey Frame
+## Journey
+
+This project began as a personal productivity tool — tasks, calendar, reminders, a conversational AI layer, and voice transcription. The initial version shipped and ran.
+
+Field testing on an iPhone Safari revealed real problems: 401 errors on protected routes after sessions appeared valid, voice recordings that completed but never became text, a Render deploy failure caused by a dialect mismatch between SQLAlchemy and the psycopg2 driver, and a migration that could not run on the live database without direct shell access.
+
+Each problem was reproduced, traced to root cause, and fixed — not papered over. The session now validates on boot and clears ghost state on 401. Voice surfaces the real server error. The database dialect is normalised in-process. Migrations run before the server accepts traffic.
+
+The codebase then grew to align with what a production SaaS platform needs: hashed-only token storage, per-user quota enforced atomically at every cost route, a multi-tenant layer with subscription entitlements, an agentic execution engine with a durable state machine, a permissioned tool gateway, and a versioned API with a generated OpenAPI spec.
+
+The result is a system with real architecture decisions behind it — not a demo. Field defects were found and fixed. The work is active.
+
+---
 
 | ORIGIN | CURRENT | INTENDED |
 | --- | --- | --- |
 | **v1.0.0 — personal productivity foundation** | **Aligned SaaS core after integrity work** | **Production-grade SaaS market offer** |
-| Tasks, calendar, reminders, AI, voice, auth, quota, Render deployment. 384 tests. Immutable baseline (`f02a32f`, Apache-2.0). | Hashed-only tokens, quota boundaries on all cost routes, workspace DB path with user isolation, real agent executors on allowlisted writes (no simulated COMPLETE), `/api/v1` with generated OpenAPI, tenant vs. workspace boundary documented. 802 tests. | A production-grade SaaS market offering and a later iPhone client. Not yet shipped. |
+| Tasks, calendar, reminders, AI, voice, auth, quota, Render deployment. 384 tests. Immutable baseline (`f02a32f`, Apache-2.0). | Hashed-only tokens, quota boundaries on all cost routes, workspace DB path with user isolation, real agent executors on allowlisted writes (no simulated COMPLETE), `/api/v1` with generated OpenAPI, tenant vs. workspace boundary documented. 853 tests. | A production-grade SaaS market offering and a later iPhone client. Not yet shipped. |
 
 > This product is not offered to the market until that intended output is real.
 
@@ -104,7 +116,7 @@ Daily cognitive load comes from fragmented tools — tasks in one app, notes in 
 | 6 | **AI-to-Task** | Natural-language task extraction with quota enforcement |
 | 7 | **Voice Transcription** | OpenAI Whisper with MIME validation, filename sanitization, quota |
 | 8 | **Voice-to-Task** | End-to-end: voice → transcription → task extraction → confirmation |
-| 9 | **Authentication** | bcrypt, SHA-256 hashed-only token storage, expiry, revocation |
+| 9 | **Authentication** | bcrypt, SHA-256 hashed-only token storage, two-slot sessions, expiry, revocation |
 | 10 | **Rate Limiting** | 3-tier Flask-Limiter (login, AI, general) |
 | 11 | **AI Quota** | Per-user daily quota, atomic UPSERT, fail-closed in production |
 | 12 | **External API Reliability** | Bounded retries, exponential backoff, timeouts, URL redaction |
@@ -118,16 +130,18 @@ Daily cognitive load comes from fragmented tools — tasks in one app, notes in 
 | 20 | **Context Compiler** | Provenance, relevance, token budgets, selection explanations |
 | 21 | **Verification Engine** | Evidence-based verification, no-fabricated-success guard |
 | 22 | **Automation** | DB-backed scheduler, background job queue, retries, idempotency, pause/resume |
-| 23 | **Privacy Controls** | Data export, account deletion, safe logging, AI data boundary |
+| 23 | **Privacy Controls** | Data export, account deletion, safe logging, AI data boundary, GDPR routes |
 | 24 | **Control Center** | Real metrics dashboard from live service state |
 | 25 | **Multi-Tenant SaaS** | Tenants, memberships, roles, ownership, tenant-scoped resources |
-| 26 | **Billing / Subscriptions** | Plan model (free/pro), idempotent webhooks, entitlement enforcement |
-| 27 | **API v1 + OpenAPI** | Versioned `/api/v1/` with generated OpenAPI spec |
+| 26 | **Billing / Subscriptions** | Plan model (free/pro/pro_plus), idempotent webhook skeleton, entitlement enforcement |
+| 27 | **API v1 + OpenAPI** | Versioned `/api/v1/` with generated OpenAPI spec; enums include free/pro/pro_plus |
 | 28 | **LLM Provider Abstraction** | Provider-neutral boundary, OpenAI adapter, registry, timeout/retry |
 | 29 | **AI Evaluation** | 12 scenario families, deterministic, reproducible, CI-integrated |
 | 30 | **MCP-Compatible Tools** | MCP schemas routing through tool gateway — MCP cannot bypass gateway |
 | 31 | **Background Jobs** | Job queue with enqueue, process, status, idempotency, retries |
 | 32 | **Server-Side Reminders** | Scheduled work moved out of request threads |
+| 33 | **File Upload** | Owner-isolated upload API with MIME allowlist, size cap, metadata export |
+| 34 | **Plan + Quota Display** | Account tab shows plan name (free/pro/pro_plus) and remaining daily quota |
 
 ### Active Development
 
@@ -135,12 +149,12 @@ Daily cognitive load comes from fragmented tools — tasks in one app, notes in 
 | --- | --- |
 | **Integration Tests (Testcontainers)** | Infrastructure designed; production-like tests pending real PostgreSQL isolation suite |
 | **Live AI Evaluation in CI** | Evaluation framework ready; live AI calls remain isolated and cost-bounded |
-| **Live Payment Processor** | Billing model and webhook path exist; live processor integration not yet proven in production-like env |
+| **Live Payment Processor** | Billing model and idempotent webhook skeleton exist; owner wires live processor keys before going live |
 | **Distributed Rate Limiting** | Per-process Flask-Limiter in place; multi-worker distributed limiter not yet proven |
 
 ### Planned
 
-> Future only — owner may add or revise later. Not locked as final.
+> Future only — owner may add or revise. Not locked as final.
 
 | Capability | Target |
 | --- | --- |
@@ -246,7 +260,7 @@ gunicorn main:app --config gunicorn.conf.py
 
 ### Versioned API v1
 
-All new SaaS capabilities are exposed through `/api/v1/`:
+All SaaS capabilities are exposed through `/api/v1/`:
 
 | Method | Endpoint | Auth | Description |
 | --- | --- | --- | --- |
@@ -258,11 +272,15 @@ All new SaaS capabilities are exposed through `/api/v1/`:
 | `GET` | `/api/v1/tenants/{id}/members` | Yes | List members |
 | `GET` | `/api/v1/tenants/{id}/subscription` | Yes | Get subscription |
 | `POST` | `/api/v1/tenants/{id}/subscription` | Yes | Create subscription |
-| `POST` | `/api/v1/billing/webhook` | No | Idempotent billing webhook |
-| `GET` | `/api/v1/ai-evaluation` | Yes | Run AI evaluations |
-| `GET` | `/api/v1/mcp-tools` | Yes | List MCP tool schemas |
+| `GET` | `/api/v1/tenants/{id}/entitlements` | Yes | Get plan entitlements |
+| `POST` | `/api/v1/billing/webhook` | No | Idempotent billing webhook skeleton |
+| `GET` | `/api/v1/account/quota` | Yes | Plan name + remaining daily quota |
+| `POST` | `/api/v1/files` | Yes | Upload a file (MIME allowlist, size cap) |
+| `GET` | `/api/v1/files` | Yes | List user's uploaded files |
+| `GET` | `/api/v1/files/{id}` | Yes | Get a single file record |
+| `DELETE` | `/api/v1/files/{id}` | Yes | Delete a file |
 
-The OpenAPI spec is generated by `_build_openapi_spec()` in `routes/api_v1.py` and served at `/api/v1/openapi.json`.
+The OpenAPI spec is generated by `_build_openapi_spec()` in [`routes/api_v1.py`](routes/api_v1.py) and served at `/api/v1/openapi.json`. Plan enums include `free`, `pro`, and `pro_plus`.
 
 ### Platform Endpoints
 
@@ -288,9 +306,10 @@ The OpenAPI spec is generated by `_build_openapi_spec()` in `routes/api_v1.py` a
 | `POST` | `/automations` | Yes | List/create automations |
 | `GET` | `/control-center` | Yes | Dashboard metrics |
 | `GET` | `/privacy/policy` | No | Privacy policy |
-| `GET` | `/privacy/export` | Yes | Export user data |
+| `GET` | `/privacy/export` | Yes | Export user data (GDPR) |
+| `DELETE` | `/privacy/account` | Yes | Delete account and all data (GDPR) |
 
-> **Auth:** All protected endpoints require `Authorization: Bearer <token>` header. Tokens are 48-byte URL-safe random values, stored as SHA-256 hashes (raw token never persisted), with configurable expiry (default 24h).
+> **Auth:** All protected endpoints require `Authorization: Bearer <token>` header. Tokens are 48-byte URL-safe random values, stored as SHA-256 hashes (raw token never persisted), with configurable expiry (default 24h). Two session slots allow a second device to log in without invalidating the first.
 
 ---
 
@@ -304,6 +323,7 @@ The OpenAPI spec is generated by `_build_openapi_spec()` in `routes/api_v1.py` a
 | **Token Storage** | SHA-256 hash only — raw token never persisted |
 | **Token Expiry** | Enforced at query time (`token_expires_at > NOW()`) |
 | **Token Revocation** | Immediate — nulls hash on logout |
+| **Two-Slot Sessions** | Second login does not invalidate the first device's token |
 | **Anti-Enumeration** | Same error for bad email / bad password |
 | **SQL Injection** | Parameterized queries throughout (`%s` placeholders) |
 | **CORS** | Restrictive — configured origins only, no wildcards |
@@ -321,12 +341,26 @@ The OpenAPI spec is generated by `_build_openapi_spec()` in `routes/api_v1.py` a
 
 | Control | Implementation |
 | --- | --- |
-| **Data Export** | `GET /privacy/export` — exports all user data |
-| **Account Deletion** | `DELETE /privacy/account` — cascades all user data |
+| **Data Export** | `GET /privacy/export` — exports account, tasks, appointments, files metadata, memories, usage, automations |
+| **Account Deletion** | `DELETE /privacy/account?confirm=true` — cascades all user data |
 | **Safe Logging** | `privacy_safe_log()` masks tokens, passwords, emails |
 | **AI Data Boundary** | `enforce_ai_data_boundary()` — classified data not in AI context |
 | **No Transcript/Token Logging** | AI metadata logs model/tokens/duration — never prompt content or raw tokens |
+| **No File Content in DB** | Upload bytes stored on disk outside git; only filename/content_type/size_bytes/created_at recorded in DB |
 | **Tool Gateway as Permission Source** | All tool calls pass through the policy gateway before execution |
+
+### What is stored
+
+| Category | Stored fields | Deletable |
+| --- | --- | --- |
+| **Account** | name, email, bcrypt-hashed password, created_at | Yes |
+| **Auth tokens** | SHA-256 hash only, expiry timestamp | Yes |
+| **Tasks** | title, description, status, priority, due_date, created_at | Yes |
+| **Appointments** | title, description, appointment_time, location, status, created_at | Yes |
+| **Files metadata** | filename (UUID-prefixed, sanitized), content_type, size_bytes, created_at | Yes |
+| **Memories** | key/value pairs per layer (short_term, task, preference, project) | Yes |
+| **Usage** | daily AI call count per user | No (aggregate only) |
+| **Automations** | name, trigger_type, enabled, execution_count | Yes |
 
 ---
 
@@ -334,8 +368,8 @@ The OpenAPI spec is generated by `_build_openapi_spec()` in `routes/api_v1.py` a
 
 | Metric | Value |
 | --- | --- |
-| **Total Tests** | 802 |
-| **Pass Rate** | 100% (802/802) |
+| **Total Tests** | 853 |
+| **Pass Rate** | 100% (853/853) |
 | **External Dependencies** | None (no real DB or OpenAI calls in tests) |
 | **Test Framework** | pytest 8.2.2 + pytest-mock 3.14.0 |
 
@@ -361,11 +395,13 @@ The OpenAPI spec is generated by `_build_openapi_spec()` in `routes/api_v1.py` a
 | Control Center | 30+ | Dashboard metrics, cost, comprehensive snapshot |
 | Workspace & Routes | 60+ | DB-backed workspace, project CRUD, API routes |
 | Migration Safety | 13+ | Chain validation, syntax, additive upgrade, FK, downgrade |
+| File Upload & Isolation | 25+ | MIME allowlist, size cap, owner isolation, path traversal |
+| Phase 1 & 2 Regressions | 15+ | Session boot, dialect rewrite, voice MIME, quota display |
 
 ### What is not yet production-like
 
 - **Testcontainers / real PostgreSQL isolation suite** — not yet integrated; tests use mocked connection pools
-- **Live payment processor** — billing model and webhook path exist; no live processor integration proven
+- **Live payment processor** — billing model and idempotent webhook skeleton exist; no live processor keys wired
 - **Distributed rate limiting** — per-process Flask-Limiter only; multi-worker distributed limiter not proven
 - **iPhone / App Store binary** — no iOS client exists
 
@@ -383,7 +419,7 @@ GitHub Actions CI runs on every push to `main` and every PR:
 
 ## Roadmap
 
-> Future only — owner may add or revise later. Not frozen.
+> Future only — owner may add or revise. Not frozen.
 
 | Stage | Target |
 | --- | --- |
@@ -401,7 +437,7 @@ GitHub Actions CI runs on every push to `main` and every PR:
 
 <div align="center">
 
-[![Engineer portrait](docs/assets/bob-agent-portrait.svg)](docs/assets/bob-agent-portrait.svg)
+[![Personal AI Assistant engineer portrait](static/engineer-portrait.svg)](static/engineer-portrait.svg)
 
 </div>
 
