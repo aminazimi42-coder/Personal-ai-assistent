@@ -25,7 +25,7 @@ def init_pool() -> None:
         _pool = psycopg2.pool.ThreadedConnectionPool(
             minconn=settings.DB_POOL_MIN,
             maxconn=settings.DB_POOL_MAX,
-            dsn=settings.DATABASE_URL,
+            dsn=settings.DATABASE_DSN,
         )
         logger.info("Database connection pool initialized (min=%d, max=%d)",
                     settings.DB_POOL_MIN, settings.DB_POOL_MAX)

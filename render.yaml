@@ -3,6 +3,7 @@ services:
     name: personal-ai-assistant
     runtime: python
     buildCommand: pip install -r requirements.txt
+    releaseCommand: flask db upgrade
     startCommand: gunicorn main:app --config gunicorn.conf.py
     healthCheckPath: /health
     envVars:

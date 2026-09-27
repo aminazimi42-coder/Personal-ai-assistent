@@ -43,7 +43,36 @@ def _get_int(name: str, default: int) -> int:
 # ------------------------------------------------------------------ #
 # DATABASE
 # ------------------------------------------------------------------ #
-DATABASE_URL: str = _require("DATABASE_URL")
+def _normalize_db_url(raw: str) -> str:
+    """
+    Rewrite DATABASE_URL dialect so Flask-SQLAlchemy and Alembic always
+    use the psycopg2 driver.  Render (and older Heroku-style providers)
+    may supply postgres:// or postgresql:// without a driver specifier;
+    SQLAlchemy ≥2 requires postgresql+psycopg2://.  Never logs the URL.
+    """
+    if raw.startswith("postgres://"):
+        return "postgresql+psycopg2://" + raw[len("postgres://"):]
+    if raw.startswith("postgresql://"):
+        return "postgresql+psycopg2://" + raw[len("postgresql://"):]
+    return raw
+
+
+def _psycopg2_dsn(sqlalchemy_url: str) -> str:
+    """
+    Strip the SQLAlchemy driver specifier (+psycopg2) so the URL is valid
+    for psycopg2.connect() / ThreadedConnectionPool, which expects
+    postgresql:// not postgresql+psycopg2://.
+    """
+    return sqlalchemy_url.replace("postgresql+psycopg2://", "postgresql://", 1)
+
+
+_raw_db_url: str = _require("DATABASE_URL")
+
+# SQLAlchemy / Alembic URI — always postgresql+psycopg2://
+DATABASE_URL: str = _normalize_db_url(_raw_db_url)
+
+# psycopg2 DSN — postgresql:// (no driver specifier)
+DATABASE_DSN: str = _psycopg2_dsn(DATABASE_URL)
 
 # DB connection pool settings (used by psycopg2 pool)
 DB_POOL_MIN: int = _get_int("DB_POOL_MIN", 1)
