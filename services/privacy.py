@@ -6,6 +6,28 @@ Data classification, encryption where appropriate, secrets isolation,
 user/tenant isolation, retention/deletion, audit logs, AI data boundaries.
 Local processing is a future capability — never claim it exists unless
 implemented and verified.
+
+--- What is stored per user (all owner-deletable unless noted) ---
+  account        : name, email, bcrypt-hashed password, created_at
+  auth_tokens    : SHA-256 hash only — raw token never persisted; expiry timestamp
+  tasks          : title, description, status, priority, due_date, created_at
+  appointments   : title, description, appointment_time, location, status, created_at
+  files_metadata : filename (UUID-prefixed sanitized basename), content_type,
+                   size_bytes, created_at — file bytes on disk outside git;
+                   content never logged, never in DB
+  memories       : key/value pairs per user (short_term/task/preference/project)
+  usage          : daily AI call count per user — no prompt content logged
+  automations    : name, trigger_type, enabled, execution_count
+
+Not stored:
+  - Raw auth tokens (SHA-256 hash only)
+  - Prompt or response content in any log (model/tokens/duration only)
+  - Upload file bytes in the database (stored path only)
+  - Any cross-user data association
+
+GDPR controls present:
+  GET  /privacy/export             — structured export of all categories above
+  DELETE /privacy/account?confirm=true — cascade-deletes all user data
 """
 
 import hashlib
@@ -212,6 +234,7 @@ def export_user_data(user_id: int, get_connection) -> dict:
         "profile": None,
         "tasks": [],
         "appointments": [],
+        "files_metadata": [],
         "memories": [],
         "usage": {},
         "agent_runs": [],
@@ -252,6 +275,17 @@ def export_user_data(user_id: int, get_connection) -> dict:
                     (user_id,),
                 )
                 data["appointments"] = cur.fetchall()
+
+                # Files metadata (filename, content_type, size_bytes — no file content)
+                try:
+                    cur.execute(
+                        "SELECT id, filename, content_type, size_bytes, created_at "
+                        "FROM user_files WHERE user_id = %s ORDER BY created_at DESC",
+                        (user_id,),
+                    )
+                    data["files_metadata"] = cur.fetchall()
+                except Exception:
+                    pass  # user_files table may not exist in all environments
             finally:
                 cur.close()
                 from db.pool import return_connection

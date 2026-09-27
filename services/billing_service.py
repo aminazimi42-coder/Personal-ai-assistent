@@ -106,7 +106,15 @@ class PaymentProvider(ABC):
 
 
 class StripeProvider(PaymentProvider):
-    """Stripe webhook event processor."""
+    """
+    Stripe webhook event processor — idempotent skeleton only.
+
+    Live integration requires the owner to:
+      1. Set STRIPE_WEBHOOK_SECRET in the environment.
+      2. Verify stripe.WebhookSignature before processing any event.
+      3. Wire a live Stripe API key (STRIPE_API_KEY) for subscription lookups.
+    No live processor key is present here. Owner wires keys before going live.
+    """
 
     def process_event(self, event_type: str, payload: dict) -> dict:
         result = {
