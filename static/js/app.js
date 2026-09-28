@@ -1473,7 +1473,7 @@ async function loadExchangeRates() {
         exchangeRateCadText.textContent = rates.CAD || "—";
         exchangeRateTryText.textContent = rates.TRY || "—";
         exchangeRateAedText.textContent = rates.AED || "—";
-        exchangeRatesUpdatedText.textContent = data.updated || "—";
+        exchangeRatesUpdatedText.textContent = data.date || "—";
 
         exchangeRatesStatusText.textContent = "Exchange rates updated";
     } catch (error) {

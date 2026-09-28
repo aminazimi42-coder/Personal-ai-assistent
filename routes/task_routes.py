@@ -29,6 +29,8 @@ def _insert_task(get_connection, title, description="", status="pending",
     )
     conn = get_connection()
     cur = conn.cursor(cursor_factory=RealDictCursor)
+    db_exc = None
+    task = None
     try:
         cur.execute("""
             INSERT INTO tasks (title, description, status, priority, due_date, user_id)
@@ -40,9 +42,24 @@ def _insert_task(get_connection, title, description="", status="pending",
         ))
         task = cur.fetchone()
         conn.commit()
+    except Exception as exc:
+        db_exc = exc
+        try:
+            conn.rollback()
+        except Exception:
+            pass
     finally:
         cur.close()
         return_connection(conn)
+    if db_exc is not None:
+        pgcode = getattr(db_exc, "pgcode", None)
+        logger.error(
+            "Task INSERT error type=%s pgcode=%s",
+            type(db_exc).__name__, pgcode, exc_info=db_exc,
+        )
+        raise db_exc
+    if task is None:
+        raise RuntimeError("Task INSERT returned no row")
     return serialize_task(dict(task))
 
 

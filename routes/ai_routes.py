@@ -75,15 +75,16 @@ def init_ai_routes(app, get_connection):
             except EntitlementError as ee:
                 return jsonify({"status": "error", "message": str(ee)}), 403
 
+            # Provider check BEFORE quota — missing key must not consume quota.
+            if not _ai_provider_configured():
+                return _ai_error_response("AI provider not configured", 503)
+
             allowed, _ = check_and_increment(current_user["id"], get_connection)
             if not allowed:
                 return jsonify({
                     "status": "error",
                     "message": "Daily AI request limit reached. Please try again tomorrow.",
                 }), 429
-
-            if not _ai_provider_configured():
-                return _ai_error_response("AI provider not configured", 503)
 
             try:
                 reply = generate_ai_reply(message)
@@ -127,6 +128,10 @@ def init_ai_routes(app, get_connection):
             except EntitlementError as ee:
                 return jsonify({"status": "error", "message": str(ee)}), 403
 
+            # Provider check BEFORE quota — missing key must not consume quota.
+            if not _ai_provider_configured():
+                return _ai_error_response("AI provider not configured", 503)
+
             # Quota enforcement — ai-to-task also incurs an AI call
             allowed, _ = check_and_increment(current_user["id"], get_connection)
             if not allowed:
@@ -134,9 +139,6 @@ def init_ai_routes(app, get_connection):
                     "status": "error",
                     "message": "Daily AI request limit reached. Please try again tomorrow.",
                 }), 429
-
-            if not _ai_provider_configured():
-                return _ai_error_response("AI provider not configured", 503)
 
             try:
                 extracted = extract_task_from_message(message)
@@ -195,15 +197,16 @@ def init_ai_routes(app, get_connection):
             except EntitlementError as ee:
                 return jsonify({"status": "error", "message": str(ee)}), 403
 
+            # Provider check BEFORE quota — missing key must not consume quota.
+            if not _ai_provider_configured():
+                return _ai_error_response("AI provider not configured", 503)
+
             allowed, _ = check_and_increment(current_user["id"], get_connection)
             if not allowed:
                 return jsonify({
                     "status": "error",
                     "message": "Daily AI request limit reached. Please try again tomorrow.",
                 }), 429
-
-            if not _ai_provider_configured():
-                return _ai_error_response("AI provider not configured", 503)
 
             try:
                 decision = decide_smart_action(message)
